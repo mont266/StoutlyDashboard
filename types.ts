@@ -61,6 +61,11 @@ export interface UTMStat {
     count: number;
 }
 
+export interface UserKpis {
+    totalUsers: number;
+    activeToday: number;
+}
+
 // --- Content Tab ---
 export interface ContentAnalytics {
     totalPubs: number;

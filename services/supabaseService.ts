@@ -1,7 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
-import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis } from '../types';
+import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 
 // --- SUPABASE CLIENT SETUP ---
 
@@ -22,10 +22,30 @@ const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
 export const LAUNCH_DATE = new Date('2025-07-25');
 
-export const getDaysSinceLaunch = (): number => {
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - LAUNCH_DATE.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+export const getLaunchDuration = (): { years: number, months: number, days: number } => {
+    const startDate = LAUNCH_DATE;
+    const endDate = new Date();
+
+    if (endDate < startDate) {
+        return { years: 0, months: 0, days: 0 };
+    }
+    
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    let months = endDate.getMonth() - startDate.getMonth();
+    let days = endDate.getDate() - startDate.getDate();
+
+    if (days < 0) {
+        months--;
+        const daysInLastFullMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate();
+        days += daysInLastFullMonth;
+    }
+
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    return { years, months, days };
 };
 
 // Generic error handler for components to catch
@@ -117,6 +137,26 @@ export const getFinancialsData = async (timeframe: string): Promise<FinancialsDa
 };
 
 // --- USERS TAB ---
+export const getUserKpis = async (): Promise<UserKpis> => {
+    try {
+        const { data, error } = await supabase
+            .rpc('get_dashboard_stats', { time_period: '24h' })
+            .single();
+
+        if (error) throw error;
+        
+        const rawData = data as any;
+
+        return {
+            totalUsers: rawData.total_users ?? 0,
+            activeToday: rawData.active_users ?? 0,
+        };
+    } catch (error) {
+        handleSupabaseError(error, 'User KPIs');
+        throw error;
+    }
+};
+
 export const getAllUsers = async (): Promise<User[]> => {
     try {
         const { data, error } = await supabase.from('profiles').select('*');

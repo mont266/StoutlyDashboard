@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, getUsersToday, getUTMStats } from '../../services/supabaseService';
-import type { User, UTMStat } from '../../types';
+import { getAllUsers, getUsersToday, getUTMStats, getUserKpis } from '../../services/supabaseService';
+import type { User, UTMStat, UserKpis } from '../../types';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { UsersIcon, GlobeIcon } from '../icons/Icons';
@@ -13,19 +13,22 @@ const Users: React.FC = () => {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [todayUsers, setTodayUsers] = useState<User[]>([]);
     const [utmStats, setUtmStats] = useState<UTMStat[]>([]);
+    const [kpis, setKpis] = useState<UserKpis | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [all, today, utm] = await Promise.all([
+            const [all, today, utm, kpisData] = await Promise.all([
                 getAllUsers(),
                 getUsersToday(),
                 getUTMStats(),
+                getUserKpis(),
             ]);
             setAllUsers(all);
             setTodayUsers(today);
             setUtmStats(utm);
+            setKpis(kpisData);
             setLoading(false);
         };
         fetchData();
@@ -57,8 +60,8 @@ const Users: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">User Analytics</h2>
             <div className="space-y-8">
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                     <StatCard title="Total Users" value={allUsers.length.toLocaleString()} icon={<UsersIcon />} />
-                     <StatCard title="Active Today" value={todayUsers.length.toLocaleString()} icon={<UsersIcon />} />
+                     <StatCard title="Total Users" value={kpis ? kpis.totalUsers.toLocaleString() : '...'} icon={<UsersIcon />} />
+                     <StatCard title="Active Today" value={kpis ? kpis.activeToday.toLocaleString() : '...'} icon={<UsersIcon />} />
                      <StatCard title="UTM Sources" value={utmStats.length.toLocaleString()} icon={<GlobeIcon />} />
                  </div>
                  <div className="bg-surface p-2 sm:p-4 rounded-xl">

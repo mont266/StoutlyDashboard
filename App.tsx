@@ -6,7 +6,7 @@ import Financial from './components/tabs/Financial';
 import GA4 from './components/tabs/GA4';
 import Pubs from './components/tabs/Pubs';
 import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon } from './components/icons/Icons';
-import { getDaysSinceLaunch } from './services/supabaseService';
+import { getLaunchDuration } from './services/supabaseService';
 
 const TABS = {
     Home: { component: Home, icon: <HomeIcon /> },
@@ -21,13 +21,32 @@ type TabName = keyof typeof TABS;
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabName>('Home');
-    const [daysSinceLaunch, setDaysSinceLaunch] = useState<number>(0);
+    const [launchDuration, setLaunchDuration] = useState<{ years: number, months: number, days: number } | null>(null);
 
     useEffect(() => {
-        setDaysSinceLaunch(getDaysSinceLaunch());
+        setLaunchDuration(getLaunchDuration());
     }, []);
 
     const ActiveComponent = TABS[activeTab].component;
+
+    const formatDuration = (duration: { years: number, months: number, days: number } | null): string => {
+        if (!duration) return '...';
+        
+        const { years, months, days } = duration;
+        
+        const yearString = `${years} year${years !== 1 ? 's' : ''}`;
+        const monthString = `${months} month${months !== 1 ? 's' : ''}`;
+        const dayString = `${days} day${days !== 1 ? 's' : ''}`;
+
+        if (years > 0) {
+            return `${yearString}, ${monthString}, and ${dayString}`;
+        }
+        if (months > 0) {
+            return `${monthString} and ${dayString}`;
+        }
+        return dayString;
+    };
+
 
     return (
         <div className="min-h-screen bg-background text-text-primary flex flex-col">
@@ -68,7 +87,7 @@ const App: React.FC = () => {
             </div>
             <footer className="w-full bg-surface text-center p-4 border-t border-border mt-8">
                 <p className="text-sm text-text-secondary">
-                    Stoutly App Launched <span className="font-bold text-primary">{daysSinceLaunch}</span> days ago.
+                    Stoutly App Launched <span className="font-bold text-primary">{formatDuration(launchDuration)}</span> ago.
                 </p>
             </footer>
         </div>
