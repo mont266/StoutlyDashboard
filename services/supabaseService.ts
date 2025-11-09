@@ -190,24 +190,21 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 };
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
-     try {
-        // FIX: The `name` and `location` columns do not exist on `pub_scores`. 
-        // This joins with the `pub` table to retrieve the correct details.
-        const { data, error } = await supabase
-            .from('pub_scores')
-            .select('pub_id, average_score, total_ratings, pub(name, location)')
-            .order('total_ratings', { ascending: false })
-            .limit(50);
+    try {
+        // FIX: Use the 'get_top_pubs' RPC as it's more direct and efficient.
+        const { data, error } = await supabase.rpc('get_top_pubs', {
+            time_period: 'all'
+        });
 
         if (error) throw error;
-        
-        // FIX: Map the nested `pub` object from the join to the flat structure the UI expects.
+
+        // Map the snake_case results from the RPC to the camelCase Pub type.
         return ((data as any[]) || []).map(p => ({
-            id: p.pub_id,
-            name: p.pub?.name || 'Unknown Pub',
-            location: p.pub?.location || 'Unknown Location',
-            averageScore: p.average_score ?? 0,
-            totalRatings: p.total_ratings ?? 0,
+            id: p.id,
+            name: p.name,
+            location: p.address, // Map 'address' from RPC to 'location'
+            averageScore: p.avg_quality ?? 0, // Map 'avg_quality' to 'averageScore'
+            totalRatings: p.rating_count ?? 0, // Map 'rating_count' to 'totalRatings'
         }));
     } catch (error) {
         handleSupabaseError(error, 'Pubs Leaderboard');
@@ -231,7 +228,8 @@ export const getRatingsData = async (): Promise<Rating[]> => {
         return ((data as any[]) || []).map(r => ({
             id: r.rating_id,
             pubName: r.pub_name,
-            score: r.overall,
+            // FIX: Add a nullish coalescing operator to prevent crashes if 'overall' is null.
+            score: r.overall ?? 0,
             atmosphere: r.atmosphere,
             quality: r.quality,
             price: r.price,
