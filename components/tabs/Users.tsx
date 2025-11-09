@@ -92,10 +92,12 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const usersPerPage = 10;
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const query = searchQuery.toLowerCase();
+        const nameMatch = user.name ? user.name.toLowerCase().includes(query) : false;
+        const emailMatch = user.email ? user.email.toLowerCase().includes(query) : false;
+        return nameMatch || emailMatch;
+    });
 
     const paginatedUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
     const totalPages = Math.ceil(filteredUsers.length / usersPerPage);

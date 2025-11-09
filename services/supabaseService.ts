@@ -169,8 +169,8 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
         // FIX: Map snake_case properties from the DB to camelCase for the UI
         const mappedData: ContentAnalytics = {
-            // FIX: Use `total_pubs_with_ratings` from `get_dashboard_stats`
-            totalPubs: rawData.total_pubs_with_ratings ?? 0,
+            // FIX: Use `total_pubs` from `get_dashboard_stats` as per user instruction.
+            totalPubs: rawData.total_pubs ?? 0,
             // FIX: No function provides average rating, so default to 0.
             averageOverallRating: 0,
             // FIX: Use `total_ratings` from `get_dashboard_stats`
