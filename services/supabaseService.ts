@@ -1,6 +1,7 @@
 
 
 
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis } from '../types';
@@ -22,7 +23,7 @@ const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
 // --- STATIC HELPERS ---
 
-export const LAUNCH_DATE = new Date('2023-08-01');
+export const LAUNCH_DATE = new Date('2025-07-25');
 
 export const getDaysSinceLaunch = (): number => {
     const today = new Date();
@@ -221,35 +222,50 @@ export const getRatingsData = async (): Promise<Rating[]> => {
     }
 };
 
-export const getCommentsData = async (): Promise<Comment[]> => {
+export const getCommentsData = async (pageNumber: number, pageSize: number): Promise<Comment[]> => {
      try {
-        // Per spec, querying comments with joins. Supabase handles this via select.
         const { data, error } = await supabase
-            .from('comments')
-            .select('*, user:profiles(*)')
-            .order('timestamp', { ascending: false })
-            .limit(20); // Limiting to avoid fetching thousands of rows at once.
+            .rpc('get_all_comments', { 
+                page_number: pageNumber, 
+                page_size: pageSize 
+            });
             
         if (error) throw error;
-        return data as Comment[];
+        // The RPC likely returns flattened snake_case columns from a join. Map them to the nested camelCase structure.
+        return ((data as any[]) || []).map(c => ({
+            id: c.comment_id,
+            text: c.content,
+            timestamp: new Date(c.created_at).toLocaleString(),
+            user: {
+                name: c.username,
+                avatarUrl: c.avatar_url,
+            }
+        }));
     } catch (error) {
         handleSupabaseError(error, 'Comments Data');
         throw error;
     }
 };
 
-export const getImagesData = async (): Promise<UploadedImage[]> => {
+export const getImagesData = async (pageNumber: number, pageSize: number): Promise<UploadedImage[]> => {
     try {
-        // The component implements client-side pagination, so we fetch all.
-        // Let's add a reasonable limit to prevent crashing the browser.
         const { data, error } = await supabase
-            .from('images')
-            .select('*, user:profiles(*)')
-            .order('timestamp', { ascending: false })
-            .limit(100); 
+            .rpc('get_all_images', { 
+                page_number: pageNumber, 
+                page_size: pageSize 
+            });
             
         if (error) throw error;
-        return data as UploadedImage[];
+        // The RPC likely returns flattened snake_case columns from a join. Map them to the nested camelCase structure.
+        return ((data as any[]) || []).map(i => ({
+            id: i.image_id,
+            imageUrl: i.image_url,
+            timestamp: new Date(i.created_at).toLocaleString(),
+            user: {
+                name: i.username,
+                avatarUrl: i.avatar_url,
+            }
+        }));
     } catch (error) {
         handleSupabaseError(error, 'Images Data');
         throw error;

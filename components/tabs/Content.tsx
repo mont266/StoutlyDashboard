@@ -11,9 +11,23 @@ const Content: React.FC = () => {
     const [analytics, setAnalytics] = useState<ContentAnalytics | null>(null);
     const [pubs, setPubs] = useState<Pub[]>([]);
     const [ratings, setRatings] = useState<Rating[]>([]);
+    
+    // State for comments with infinite scroll
     const [comments, setComments] = useState<Comment[]>([]);
+    const [commentsPage, setCommentsPage] = useState(1);
+    const [hasMoreComments, setHasMoreComments] = useState(true);
+    const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+    
+    // State for images with server-side pagination
     const [images, setImages] = useState<UploadedImage[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [imagesPage, setImagesPage] = useState(1); // 1-based index for API
+    const [hasMoreImages, setHasMoreImages] = useState(true);
+    const [loadingImages, setLoadingImages] = useState(false);
+    
+    const [loading, setLoading] = useState(true); // For initial component load
+
+    const IMAGES_PER_PAGE = 6;
+    const COMMENTS_PER_PAGE = 20;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -22,18 +36,59 @@ const Content: React.FC = () => {
                 getContentAnalyticsData(),
                 getPubsLeaderboard(),
                 getRatingsData(),
-                getCommentsData(),
-                getImagesData()
+                getCommentsData(1, COMMENTS_PER_PAGE),
+                getImagesData(1, IMAGES_PER_PAGE)
             ]);
             setAnalytics(analyticsData);
             setPubs(pubsData);
             setRatings(ratingsData);
             setComments(commentsData);
             setImages(imagesData);
+
+            setHasMoreComments(commentsData.length === COMMENTS_PER_PAGE);
+            setHasMoreImages(imagesData.length === IMAGES_PER_PAGE);
             setLoading(false);
         };
         fetchData();
     }, []);
+
+    const handleLoadMoreComments = async () => {
+        if (loadingMoreComments || !hasMoreComments) return;
+
+        setLoadingMoreComments(true);
+        const nextPage = commentsPage + 1;
+        try {
+            const newComments = await getCommentsData(nextPage, COMMENTS_PER_PAGE);
+            setComments(prev => [...prev, ...newComments]);
+            setCommentsPage(nextPage);
+            if (newComments.length < COMMENTS_PER_PAGE) {
+                setHasMoreComments(false);
+            }
+        } catch (error) {
+            console.error("Failed to load more comments", error);
+        } finally {
+            setLoadingMoreComments(false);
+        }
+    };
+    
+    // Effect for handling image page changes after the initial load
+    useEffect(() => {
+        if (imagesPage === 1) return; // Initial load is handled in the main useEffect
+
+        const fetchImageData = async () => {
+            setLoadingImages(true);
+            try {
+                const newImages = await getImagesData(imagesPage, IMAGES_PER_PAGE);
+                setImages(newImages);
+                setHasMoreImages(newImages.length === IMAGES_PER_PAGE);
+            } catch (error) {
+                console.error(`Failed to fetch images for page ${imagesPage}`, error);
+            } finally {
+                setLoadingImages(false);
+            }
+        };
+        fetchImageData();
+    }, [imagesPage]);
     
      const subTabs: { id: SubTab; label: string, icon: React.ReactNode }[] = [
         { id: 'overview', label: 'Overview', icon: <BuildingIcon /> },
@@ -51,9 +106,9 @@ const Content: React.FC = () => {
             case 'ratings':
                 return <RatingsFeed ratings={ratings} />;
             case 'comments':
-                return <CommentsFeed comments={comments} />;
+                return <CommentsFeed comments={comments} onLoadMore={handleLoadMoreComments} hasMore={hasMoreComments} isLoadingMore={loadingMoreComments} />;
             case 'images':
-                return <ImageGallery images={images} />;
+                return <ImageGallery images={images} page={imagesPage - 1} setPage={(p) => setImagesPage(p + 1)} hasMore={hasMoreImages} isLoading={loadingImages} />;
             default:
                 return null;
         }
@@ -178,7 +233,7 @@ const RatingsFeed: React.FC<{ ratings: Rating[] }> = ({ ratings }) => (
     </div>
 );
 
-const CommentsFeed: React.FC<{ comments: Comment[] }> = ({ comments }) => (
+const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore }) => (
      <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
         {comments.map(comment => (
             <div key={comment.id} className="bg-background p-3 rounded-lg flex items-start space-x-4 border border-border">
@@ -189,34 +244,39 @@ const CommentsFeed: React.FC<{ comments: Comment[] }> = ({ comments }) => (
                 </div>
             </div>
         ))}
-        <button className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80">Load More</button>
+        {hasMore && (
+            <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80 disabled:opacity-50">
+                {isLoadingMore ? 'Loading...' : 'Load More'}
+            </button>
+        )}
     </div>
 );
 
 
-const ImageGallery: React.FC<{ images: UploadedImage[] }> = ({ images }) => {
-    const [page, setPage] = useState(0);
-    const imagesPerPage = 6;
-    const totalPages = Math.ceil(images.length / imagesPerPage);
-    const paginatedImages = images.slice(page * imagesPerPage, (page + 1) * imagesPerPage);
-
+const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean }> = ({ images, page, setPage, hasMore, isLoading }) => {
     return (
         <div className="bg-surface rounded-xl shadow-lg p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paginatedImages.map(image => (
-                    <div key={image.id} className="group relative">
-                        <img src={image.imageUrl} alt={`user upload ${image.id}`} className="w-full h-48 object-cover rounded-lg" />
-                        <div className="absolute bottom-0 left-0 bg-black/50 text-white p-2 w-full rounded-b-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                            <p className="font-semibold">{image.user.name}</p>
-                            <p>{image.timestamp}</p>
+            {isLoading ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+                    {[...Array(6)].map((_, i) => <div key={i} className="h-48 bg-border rounded-lg"></div>)}
+                 </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {images.map(image => (
+                        <div key={image.id} className="group relative">
+                            <img src={image.imageUrl} alt={`user upload ${image.id}`} className="w-full h-48 object-cover rounded-lg" />
+                            <div className="absolute bottom-0 left-0 bg-black/50 text-white p-2 w-full rounded-b-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="font-semibold">{image.user.name}</p>
+                                <p>{image.timestamp}</p>
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
             <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded bg-border disabled:opacity-50">Previous</button>
-                <span>Page {page + 1} of {totalPages}</span>
-                <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} className="px-3 py-1 rounded bg-border disabled:opacity-50">Next</button>
+                <button onClick={() => setPage(page - 1)} disabled={page === 0 || isLoading} className="px-3 py-1 rounded bg-border disabled:opacity-50">Previous</button>
+                <span>Page {page + 1}</span>
+                <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading} className="px-3 py-1 rounded bg-border disabled:opacity-50">Next</button>
             </div>
         </div>
     )
