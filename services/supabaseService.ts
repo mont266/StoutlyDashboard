@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
-import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data } from '../types';
+import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis } from '../types';
 
 // --- SUPABASE CLIENT SETUP ---
 
@@ -63,9 +63,25 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
                 value: row.new_ratings ?? 0,
             })),
         };
+        
+        // FIX: Map snake_case properties from the DB to camelCase for the UI
+        const rawKpis = kpisResult.data;
+        const mappedKpis: HomeKpis = {
+            totalUsers: rawKpis.total_users ?? 0,
+            newUsers: rawKpis.new_users ?? 0,
+            newUsersChange: rawKpis.new_users_change ?? 0,
+            activeUsers: rawKpis.active_users ?? 0,
+            activeUsersChange: rawKpis.active_users_change ?? 0,
+            totalRatings: rawKpis.total_ratings ?? 0,
+            newRatings: rawKpis.new_ratings ?? 0,
+            newRatingsChange: rawKpis.new_ratings_change ?? 0,
+            totalPubsWithRatings: rawKpis.total_pubs_with_ratings ?? 0,
+            totalUploadedImages: rawKpis.total_uploaded_images ?? 0,
+            totalComments: rawKpis.total_comments ?? 0,
+        };
 
         return {
-            kpis: kpisResult.data,
+            kpis: mappedKpis,
             charts: chartsData,
             tables: {
                 avgPintPriceByCountry: tablesResult.data
