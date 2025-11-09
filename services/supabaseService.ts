@@ -191,19 +191,21 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
      try {
-        // FIX: Query the pub_scores table directly for more accurate, up-to-date leaderboard data.
+        // FIX: The `name` and `location` columns do not exist on `pub_scores`. 
+        // This joins with the `pub` table to retrieve the correct details.
         const { data, error } = await supabase
             .from('pub_scores')
-            .select('pub_id, name, location, average_score, total_ratings')
+            .select('pub_id, average_score, total_ratings, pub(name, location)')
             .order('total_ratings', { ascending: false })
             .limit(50);
 
         if (error) throw error;
-        // Map snake_case from DB to camelCase for UI.
+        
+        // FIX: Map the nested `pub` object from the join to the flat structure the UI expects.
         return ((data as any[]) || []).map(p => ({
             id: p.pub_id,
-            name: p.name,
-            location: p.location,
+            name: p.pub?.name || 'Unknown Pub',
+            location: p.pub?.location || 'Unknown Location',
             averageScore: p.average_score ?? 0,
             totalRatings: p.total_ratings ?? 0,
         }));
