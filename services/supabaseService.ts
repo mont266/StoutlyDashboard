@@ -87,7 +87,9 @@ export const getLaunchDuration = (): { years: number, months: number, days: numb
 // Generic error handler for components to catch
 const handleSupabaseError = (error: any, context: string) => {
     console.error(`Error in ${context}:`, error);
-    throw new Error(`Failed to fetch data for ${context}. Ensure Supabase is configured correctly and the user has permission.`);
+    // Do not wrap and re-throw a generic error.
+    // Let the original error propagate so UI components can inspect it
+    // for details like HTTP status codes for more specific error handling.
 }
 
 // --- LIVE API CALLS ---

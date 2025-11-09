@@ -10,7 +10,7 @@ const Financial: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('30d');
-    const timeframes = { '24h': '24 Hours', '7d': '7 Days', '30d': '30 Days', '1y': '1 Year', 'All': 'All Time' };
+    const timeframes = { '24h': '24 Hours', '7d': '7 Days', '30d': '30 Days', '1y': '1 Year', 'all': 'All Time' };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -19,8 +19,12 @@ const Financial: React.FC = () => {
             try {
                 const result = await getFinancialsData(timeframe);
                 setData(result);
-            } catch (err) {
-                setError('Failed to fetch financial data.');
+            } catch (err: any) {
+                if (err.name === 'FunctionsHttpError' && err.context?.status === 403) {
+                    setError('Permission Denied: You must be a developer to view this data.');
+                } else {
+                    setError('An error occurred while fetching financial data. Please check the console.');
+                }
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -42,7 +46,7 @@ const Financial: React.FC = () => {
     );
 
     if (loading) return <section>{renderSkeleton()}</section>;
-    if (error) return <div className="text-red-500 bg-red-900/20 p-4 rounded-lg">{error}</div>;
+    if (error) return <div className="text-warning-red bg-warning-red/10 border border-warning-red/30 p-4 rounded-lg text-center">{error}</div>;
     if (!data) return <p>No financial data available.</p>;
 
     return (
