@@ -18,27 +18,36 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
 // --- AVATAR URL HELPER ---
-// FIX: Updated to handle JSON string from the database as well as plain IDs.
 export const getAvatarUrl = (avatarData: string): string => {
-    if (!avatarData) return '';
+    if (!avatarData) {
+        return ''; // Return empty string for null/empty data to trigger UI fallbacks.
+    }
 
-    // Stoutly stores avatar info in a JSON string in the `avatar_id` column.
-    // We need to parse it to get the actual public URL.
-    if (avatarData.startsWith('{') && avatarData.endsWith('}')) {
-        try {
-            const parsed = JSON.parse(avatarData);
-            // The URL might be timestamped, which is fine.
-            if (parsed && parsed.url) {
+    try {
+        const parsed = JSON.parse(avatarData);
+
+        // Check if the parsed content is a valid object.
+        if (parsed && typeof parsed === 'object') {
+            // Case 1: Dicebear generated avatar.
+            if (parsed.type === 'dicebear' && parsed.style && parsed.seed) {
+                return `https://api.dicebear.com/8.x/${parsed.style}/svg?seed=${encodeURIComponent(parsed.seed)}`;
+            }
+
+            // Case 2: User-uploaded avatar.
+            if (parsed.type === 'uploaded' && parsed.url) {
                 return parsed.url;
             }
-        } catch (e) {
-            // It failed to parse, fall through to treat as a raw ID.
-            console.warn("Could not parse avatarData JSON, falling back to ID:", avatarData);
         }
+        
+        // It was valid JSON, but didn't match the expected format.
+        // Per spec, this should show a fallback icon. Returning '' achieves this.
+        return '';
+    } catch (error) {
+        // Parsing failed, so it's not a JSON string.
+        // Assume it's a legacy raw ID for a user-uploaded image in Supabase storage.
+        // This maintains backward compatibility.
+        return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
     }
-    
-    // Fallback for older data where this might just be an ID.
-    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
 };
 
 
