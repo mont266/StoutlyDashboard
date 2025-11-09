@@ -33,7 +33,7 @@ const Pubs: React.FC = () => {
     const topRatedPubs = [...pubs].sort((a, b) => b.averageScore - a.averageScore).slice(0, 10);
     const mostReviewedPubs = [...pubs].sort((a, b) => b.totalRatings - a.totalRatings).slice(0, 10);
 
-    const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean }> = ({ title, data, loading }) => (
+    const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean, isScoreOutOf100?: boolean }> = ({ title, data, loading, isScoreOutOf100 = false }) => (
         <div className="bg-surface rounded-xl shadow-lg">
             <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">{title}</h3>
             <div className="overflow-x-auto">
@@ -41,7 +41,7 @@ const Pubs: React.FC = () => {
                     <thead className="text-xs text-text-secondary uppercase bg-background">
                         <tr>
                             <th scope="col" className="px-6 py-3">Pub</th>
-                            <th scope="col" className="px-6 py-3 text-center">Score</th>
+                            <th scope="col" className="px-6 py-3 text-center">{isScoreOutOf100 ? 'Score (/100)' : 'Score'}</th>
                             <th scope="col" className="px-6 py-3 text-center">Ratings</th>
                         </tr>
                     </thead>
@@ -64,10 +64,16 @@ const Pubs: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-text-primary text-center font-semibold">
-                                        <span className="flex items-center justify-center">
-                                            <StarIcon />
-                                            <span className="ml-1">{pub.averageScore.toFixed(1)}</span>
-                                        </span>
+                                        {isScoreOutOf100 ? (
+                                             <span className="flex items-center justify-center">
+                                                {pub.averageScore.toFixed(1)}
+                                             </span>
+                                        ) : (
+                                            <span className="flex items-center justify-center">
+                                                <StarIcon />
+                                                <span className="ml-1">{pub.averageScore.toFixed(1)}</span>
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-text-primary text-center">{pub.totalRatings.toLocaleString()}</td>
                                 </tr>
@@ -103,7 +109,7 @@ const Pubs: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                    <PubTable title="Top 10 Pub Scores" data={topRatedPubs} loading={loading} />
+                    <PubTable title="Top 10 Pub Scores" data={topRatedPubs} loading={loading} isScoreOutOf100={true} />
                     <PubTable title="Top 10 Most Reviewed Pubs" data={mostReviewedPubs} loading={loading} />
                 </div>
                  <div className="bg-surface rounded-xl shadow-lg h-fit">

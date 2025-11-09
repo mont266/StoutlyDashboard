@@ -86,14 +86,17 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         const rawKpis = kpisResult.data as any;
         const mappedKpis: HomeKpis = {
             totalUsers: rawKpis.total_users ?? 0,
-            newUsers: rawKpis.new_users ?? 0,
+            // FIX: Calculate new users from timeseries data for accuracy
+            newUsers: chartsData.newUsersOverTime.reduce((sum, current) => sum + current.value, 0),
             newUsersChange: rawKpis.new_users_change ?? 0,
             activeUsers: rawKpis.active_users ?? 0,
             activeUsersChange: rawKpis.active_users_change ?? 0,
             totalRatings: rawKpis.total_ratings ?? 0,
-            newRatings: rawKpis.new_ratings ?? 0,
+             // FIX: Calculate new ratings from timeseries data for accuracy
+            newRatings: chartsData.newRatingsOverTime.reduce((sum, current) => sum + current.value, 0),
             newRatingsChange: rawKpis.new_ratings_change ?? 0,
-            totalPubsWithRatings: rawKpis.total_pubs_with_ratings ?? 0,
+            // FIX: Use total_pubs instead of total_pubs_with_ratings
+            totalPubs: rawKpis.total_pubs ?? 0,
             totalUploadedImages: rawKpis.total_uploaded_images ?? 0,
             totalComments: rawKpis.total_comments ?? 0,
         };
@@ -102,9 +105,9 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             kpis: mappedKpis,
             charts: chartsData,
             tables: {
-                 // Map avg_price from DB to price for the UI
+                 // FIX: Use 'name' field for country name as 'country' might be null.
                 avgPintPriceByCountry: (tablesResult.data || []).map((v: any) => ({
-                    country: v.country,
+                    country: v.name,
                     flag: v.flag,
                     price: v.avg_price ?? 0,
                 }))
@@ -189,7 +192,25 @@ export const getUsersToday = async (): Promise<User[]> => {
         // As per spec, calling the specific RPC
         const { data, error } = await supabase.rpc('get_users_logged_in_today');
         if (error) throw error;
-        return data;
+        
+        // FIX: Added data mapping. The RPC returns raw snake_case data that must be mapped to the User type.
+        // This was the root cause of the entire Users tab breaking.
+        return (data as any[] || []).map(p => ({
+            id: p.id,
+            name: p.username,
+            email: p.email,
+            avatarUrl: p.avatar_url,
+            level: p.level,
+            banStatus: p.is_banned ? 'Banned' : 'Active',
+            signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            lastActive: new Date(p.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            countryCode: p.country_code,
+            isBetaTester: p.is_beta_tester,
+            isDeveloper: p.is_developer,
+            isTeamMember: p.is_team_member,
+            hasDonated: p.has_donated,
+            reviewsCount: p.reviews || 0,
+        }));
     } catch (error) {
         handleSupabaseError(error, 'Users Logged In Today');
         throw error;
@@ -245,19 +266,22 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
     try {
-        // Use the 'get_top_pubs' RPC as it's more direct and efficient.
-        const { data, error } = await supabase.rpc('get_top_pubs', {
-            time_period: 'all'
-        });
+        // FIX: Switched from RPC to querying the `pub_scores` view directly
+        // to get the correct score which is out of 100.
+        const { data, error } = await supabase
+            .from('pub_scores')
+            .select('id, name, address, overall_score, rating_count')
+            .order('overall_score', { ascending: false })
+            .limit(10);
 
         if (error) throw error;
 
-        // Map the snake_case results from the RPC to the camelCase Pub type.
+        // Map the snake_case results from the view to the camelCase Pub type.
         return ((data as any[]) || []).map(p => ({
             id: p.id,
             name: p.name,
-            location: p.address, // Map 'address' from RPC to 'location'
-            averageScore: p.avg_quality ?? 0, // Map 'avg_quality' to 'averageScore'
+            location: p.address, // Map 'address' from view to 'location'
+            averageScore: p.overall_score ?? 0, // Map 'overall_score' to 'averageScore'
             totalRatings: p.rating_count ?? 0, // Map 'rating_count' to 'totalRatings'
         }));
     } catch (error) {

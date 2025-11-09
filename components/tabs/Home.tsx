@@ -74,7 +74,7 @@ const Home: React.FC = () => {
                         <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<UsersIcon />} />
                         <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
                         <StatCard title="New Ratings" value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} icon={<StarIcon />} />
-                        <StatCard title="Total Pubs w/ Ratings" value={data.kpis.totalPubsWithRatings.toLocaleString()} icon={<BuildingIcon />} />
+                        <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
                         <StatCard title="Uploaded Images" value={data.kpis.totalUploadedImages.toLocaleString()} icon={<ImageIcon />} />
                         <StatCard title="Total Comments" value={data.kpis.totalComments.toLocaleString()} icon={<MessageSquareIcon />} />
                     </div>
