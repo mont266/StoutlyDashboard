@@ -357,26 +357,9 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
             });
             
         if (error) throw error;
-        if (!ratingsData || (ratingsData as any[]).length === 0) return [];
-
-        const userIds = [...new Set((ratingsData as any[]).map((r: any) => r.user_id).filter(id => id))];
-
-        let usersMap = new Map();
-        if (userIds.length > 0) {
-            const { data: usersData, error: usersError } = await supabase
-                .from('profiles')
-                .select('id, username, avatar_id')
-                .in('id', userIds);
-            
-            if (usersError) {
-                console.error("Error fetching user profiles for ratings:", usersError);
-            } else if (usersData) {
-                usersMap = new Map(usersData.map(u => [u.id, u]));
-            }
-        }
+        if (!ratingsData) return [];
 
         return (ratingsData as any[]).map(r => {
-            const userProfile = usersMap.get(r.user_id);
             // Calculate a fallback score if the main 'overall' score is missing.
             const subScores = [r.atmosphere, r.quality, r.price].filter(s => typeof s === 'number');
             const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
@@ -391,8 +374,8 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 price: r.price,
                 timestamp: new Date(r.created_at).toLocaleString(),
                 user: {
-                    name: userProfile?.username || 'Anonymous User',
-                    avatarId: userProfile?.avatar_id,
+                    name: r.username || 'Anonymous User',
+                    avatarId: r.avatar_id,
                 },
                 message: r.message,
             };
