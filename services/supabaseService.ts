@@ -297,28 +297,46 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
     try {
-        // FIX: Rewrote query to join pub_scores with the pubs table to get name and address.
-        const { data, error } = await supabase
+        // The original query with an implicit join failed due to a missing foreign key relationship in the schema.
+        // This workaround fetches the top scores first, then gets the corresponding pub details in a second query.
+
+        // 1. Get top 10 pub scores
+        const { data: scores, error: scoresError } = await supabase
             .from('pub_scores')
-            .select(`
-                pub_id, 
-                overall_score, 
-                rating_count,
-                pubs ( name, address )
-            `)
+            .select('pub_id, overall_score, rating_count')
             .order('overall_score', { ascending: false })
             .limit(10);
 
-        if (error) throw error;
+        if (scoresError) throw scoresError;
+        if (!scores || scores.length === 0) return [];
 
-        // Map the results, accessing the joined 'pubs' data.
-        return ((data as any[]) || []).map(p => ({
-            id: p.pub_id,
-            name: p.pubs?.name || 'Unknown Pub', // Safely access joined data
-            location: p.pubs?.address || 'Unknown Location',
-            averageScore: p.overall_score ?? 0,
-            totalRatings: p.rating_count ?? 0,
-        }));
+        const pubIds = scores.map(s => s.pub_id);
+
+        // 2. Get pub details for those IDs
+        const { data: pubsData, error: pubsError } = await supabase
+            .from('pubs')
+            .select('id, name, address')
+            .in('id', pubIds);
+
+        if (pubsError) throw pubsError;
+        if (!pubsData) return [];
+
+        // 3. Join the data in application code
+        const pubsMap = new Map(pubsData.map(p => [p.id, p]));
+        
+        const leaderboard = scores.map(score => {
+            const pubInfo = pubsMap.get(score.pub_id);
+            return {
+                id: score.pub_id,
+                name: pubInfo?.name || 'Unknown Pub',
+                location: pubInfo?.address || 'Unknown Location',
+                averageScore: score.overall_score ?? 0,
+                totalRatings: score.rating_count ?? 0,
+            };
+        });
+        
+        // The scores are already sorted by the initial query, and this mapping preserves the order.
+        return leaderboard;
     } catch (error) {
         handleSupabaseError(error, 'Pubs Leaderboard');
         throw error;
