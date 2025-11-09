@@ -1,7 +1,4 @@
 
-
-
-
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis } from '../types';
@@ -170,8 +167,8 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // --- CONTENT TAB ---
 export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
     try {
-        // FIX: Removed incorrect generic. The result data is cast to `any` below to allow property access.
-        const { data: rawData, error } = await supabase.rpc('get_content_analytics').single();
+        // FIX: Add a default time_period parameter to the RPC call to resolve the "function not found" error (PGRST202).
+        const { data: rawData, error } = await supabase.rpc('get_content_analytics', { time_period: 'All' }).single();
         if (error) throw error;
 
         // FIX: Map snake_case properties from the DB to camelCase for the UI
@@ -195,10 +192,17 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
      try {
-        // Leaderboards are often calculated fields, so an RPC is appropriate.
-        const { data, error } = await supabase.rpc('get_pubs_leaderboard');
+        // FIX: Add a default time_period parameter to the RPC call to resolve the "function not found" error (PGRST202).
+        const { data, error } = await supabase.rpc('get_pubs_leaderboard', { time_period: 'All' });
         if (error) throw error;
-        return data;
+        // FIX: Map snake_case properties from the DB to camelCase for UI consistency and type safety.
+        return ((data as any[]) || []).map(p => ({
+            id: p.pub_id,
+            name: p.pub_name,
+            location: p.pub_location,
+            averageScore: p.average_score ?? 0,
+            totalRatings: p.total_ratings ?? 0,
+        }));
     } catch (error) {
         handleSupabaseError(error, 'Pubs Leaderboard');
         throw error;
@@ -207,15 +211,25 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
 
 export const getRatingsData = async (): Promise<Rating[]> => {
     try {
-        // Per spec, using the `all_ratings_view`
         const { data, error } = await supabase
             .from('all_ratings_view')
             .select('*')
-            .order('timestamp', { ascending: false })
-            .limit(20); // Limiting to avoid fetching thousands of rows at once.
+            // FIX: Corrected column name from 'timestamp' to 'created_at' to resolve the "column does not exist" error (42703).
+            .order('created_at', { ascending: false })
+            .limit(20);
             
         if (error) throw error;
-        return data as Rating[];
+        // FIX: Map the flat view data to the nested object structure expected by the Rating type for type safety.
+        return ((data as any[]) || []).map(r => ({
+            id: r.rating_id,
+            pubName: r.pub_name,
+            score: r.overall,
+            timestamp: new Date(r.created_at).toLocaleString(),
+            user: {
+                name: r.username,
+                avatarUrl: r.avatar_url,
+            }
+        }));
     } catch (error) {
         handleSupabaseError(error, 'Ratings Data');
         throw error;
