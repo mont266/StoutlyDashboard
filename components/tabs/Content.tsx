@@ -174,44 +174,38 @@ const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: stri
 };
 
 const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore }) => (
-    <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
+    <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
         {ratings.map(rating => (
-            <div key={rating.id} className="bg-background p-4 rounded-lg flex space-x-4 border border-border">
-                <img 
-                    src={getAvatarUrl(rating.user.avatarId)} 
-                    alt={rating.user.name} 
-                    className="w-10 h-10 rounded-full bg-border"
-                    onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
-                />
-                <div className="flex-grow">
-                    <p className="text-sm"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
-                    <p className="text-xs text-text-secondary">{rating.timestamp}</p>
-                    
-                    {rating.message && (
-                        <p className="text-sm text-text-primary mt-2 italic border-l-2 border-border pl-2">
-                            "{rating.message}"
-                        </p>
-                    )}
+            <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
+                <div className="flex space-x-4">
+                    <img 
+                        src={getAvatarUrl(rating.user.avatarId)} 
+                        alt={rating.user.name} 
+                        className="w-10 h-10 rounded-full bg-border flex-shrink-0"
+                        onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                    />
+                    <div className="flex-grow">
+                        <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
+                        <p className="text-xs text-text-secondary">{rating.timestamp}</p>
+                        
+                        {rating.message && (
+                            <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
+                                "{rating.message}"
+                            </blockquote>
+                        )}
 
-                    {(rating.atmosphere !== undefined || rating.quality !== undefined || rating.price !== undefined) && (
-                        <div className="flex items-center justify-around space-x-4 mt-3 pt-3 border-t border-border">
-                            <RatingDetail score={rating.atmosphere} icon={<AtmosphereIcon />} name="Atmosphere" />
-                            <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
-                            <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
-                        </div>
-                    )}
-                </div>
-                 <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg p-2 h-fit">
-                    <div className="flex items-center text-lg font-bold text-primary">
-                        <StarIcon />
-                        <span className="ml-1">{rating.score.toFixed(1)}</span>
+                        {(rating.quality !== undefined || rating.price !== undefined) && (
+                            <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
+                                <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
+                                <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
+                            </div>
+                        )}
                     </div>
-                    <span className="text-xs text-primary/80">Overall</span>
                 </div>
             </div>
         ))}
         {hasMore && (
-             <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80 disabled:opacity-50">
+             <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
                 {isLoadingMore ? 'Loading...' : 'Load More'}
             </button>
         )}
@@ -219,18 +213,21 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
 );
 
 const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore }) => (
-     <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
+     <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
         {comments.map(comment => (
-            <div key={comment.id} className="bg-background p-3 rounded-lg flex items-start space-x-4 border border-border">
-                <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full" />
+            <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
+                <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0" />
                 <div className="flex-grow">
-                     <p><span className="font-semibold text-text-primary">{comment.user.name}</span> <span className="text-text-secondary text-xs">{comment.timestamp}</span></p>
-                    <p className="text-text-primary mt-1">{comment.text}</p>
+                    <div className="flex items-baseline space-x-2">
+                        <span className="font-semibold text-text-primary">{comment.user.name}</span>
+                        <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
+                    </div>
+                    <p className="text-text-primary mt-2">{comment.text}</p>
                 </div>
             </div>
         ))}
         {hasMore && (
-            <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80 disabled:opacity-50">
+            <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
                 {isLoadingMore ? 'Loading...' : 'Load More'}
             </button>
         )}

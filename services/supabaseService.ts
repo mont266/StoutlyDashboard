@@ -355,20 +355,27 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
             
         if (error) throw error;
 
-        return ((data as any[]) || []).map(r => ({
-            id: r.rating_id,
-            pubName: r.pub_name,
-            score: r.overall ?? 0,
-            atmosphere: r.atmosphere,
-            quality: r.quality,
-            price: r.price,
-            timestamp: new Date(r.created_at).toLocaleString(),
-            user: {
-                name: r.username || 'Anonymous User',
-                avatarId: r.avatar_id, // FIX: Mapped avatar_id
-            },
-            message: r.message,
-        }));
+        return ((data as any[]) || []).map(r => {
+            // Calculate a fallback score if the main 'overall' score is missing.
+            const subScores = [r.atmosphere, r.quality, r.price].filter(s => typeof s === 'number');
+            const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
+            const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
+
+            return {
+                id: r.rating_id,
+                pubName: r.pub_name,
+                score: score,
+                atmosphere: r.atmosphere,
+                quality: r.quality,
+                price: r.price,
+                timestamp: new Date(r.created_at).toLocaleString(),
+                user: {
+                    name: r.username || 'Anonymous User',
+                    avatarId: r.avatar_id,
+                },
+                message: r.message,
+            };
+        });
     } catch (error) {
         handleSupabaseError(error, 'Ratings Data');
         throw error;
