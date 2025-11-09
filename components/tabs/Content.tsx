@@ -7,8 +7,13 @@ type SubTab = 'ratings' | 'comments' | 'images';
 
 const Content: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('ratings');
-    const [ratings, setRatings] = useState<Rating[]>([]);
     
+    // State for ratings with "load more"
+    const [ratings, setRatings] = useState<Rating[]>([]);
+    const [ratingsPage, setRatingsPage] = useState(1);
+    const [hasMoreRatings, setHasMoreRatings] = useState(true);
+    const [loadingMoreRatings, setLoadingMoreRatings] = useState(false);
+
     // State for comments with infinite scroll
     const [comments, setComments] = useState<Comment[]>([]);
     const [commentsPage, setCommentsPage] = useState(1);
@@ -27,12 +32,13 @@ const Content: React.FC = () => {
 
     const IMAGES_PER_PAGE = 9;
     const COMMENTS_PER_PAGE = 20;
+    const RATINGS_PER_PAGE = 10;
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             const [ratingsData, commentsData, imagesData] = await Promise.all([
-                getRatingsData(),
+                getRatingsData(1, RATINGS_PER_PAGE),
                 getCommentsData(1, COMMENTS_PER_PAGE),
                 getImagesData(1, IMAGES_PER_PAGE)
             ]);
@@ -40,12 +46,32 @@ const Content: React.FC = () => {
             setComments(commentsData);
             setImages(imagesData);
 
+            setHasMoreRatings(ratingsData.length === RATINGS_PER_PAGE);
             setHasMoreComments(commentsData.length === COMMENTS_PER_PAGE);
             setHasMoreImages(imagesData.length === IMAGES_PER_PAGE);
             setLoading(false);
         };
         fetchData();
     }, []);
+
+    const handleLoadMoreRatings = async () => {
+        if (loadingMoreRatings || !hasMoreRatings) return;
+
+        setLoadingMoreRatings(true);
+        const nextPage = ratingsPage + 1;
+        try {
+            const newRatings = await getRatingsData(nextPage, RATINGS_PER_PAGE);
+            setRatings(prev => [...prev, ...newRatings]);
+            setRatingsPage(nextPage);
+            if (newRatings.length < RATINGS_PER_PAGE) {
+                setHasMoreRatings(false);
+            }
+        } catch (error) {
+            console.error("Failed to load more ratings", error);
+        } finally {
+            setLoadingMoreRatings(false);
+        }
+    };
 
     const handleLoadMoreComments = async () => {
         if (loadingMoreComments || !hasMoreComments) return;
@@ -95,7 +121,7 @@ const Content: React.FC = () => {
 
         switch (subTab) {
             case 'ratings':
-                return <RatingsFeed ratings={ratings} />;
+                return <RatingsFeed ratings={ratings} onLoadMore={handleLoadMoreRatings} hasMore={hasMoreRatings} isLoadingMore={loadingMoreRatings} />;
             case 'comments':
                 return <CommentsFeed comments={comments} onLoadMore={handleLoadMoreComments} hasMore={hasMoreComments} isLoadingMore={loadingMoreComments} />;
             case 'images':
@@ -147,7 +173,7 @@ const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: stri
     );
 };
 
-const RatingsFeed: React.FC<{ ratings: Rating[] }> = ({ ratings }) => (
+const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore }) => (
     <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
         {ratings.map(rating => (
             <div key={rating.id} className="bg-background p-4 rounded-lg flex space-x-4 border border-border">
@@ -184,7 +210,11 @@ const RatingsFeed: React.FC<{ ratings: Rating[] }> = ({ ratings }) => (
                 </div>
             </div>
         ))}
-         <button className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80">Load More</button>
+        {hasMore && (
+             <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-border/80 disabled:opacity-50">
+                {isLoadingMore ? 'Loading...' : 'Load More'}
+            </button>
+        )}
     </div>
 );
 

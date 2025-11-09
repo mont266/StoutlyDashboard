@@ -1,30 +1,31 @@
 
 
 import React, { useState, useEffect } from 'react';
-// FIX: Use correct function names from the service
 import { getPubsLeaderboard, getContentAnalyticsData } from '../../services/supabaseService';
-// FIX: Use the correct type for analytics data
 import type { Pub, ContentAnalytics } from '../../types';
 import { StarIcon, BuildingIcon, HashIcon } from '../icons/Icons';
 import StatCard from '../StatCard';
 
 const Pubs: React.FC = () => {
     const [pubs, setPubs] = useState<Pub[]>([]);
-    // FIX: Use the correct type for analytics state
     const [analytics, setAnalytics] = useState<ContentAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            // FIX: Use the correct function names to fetch data
-            const [pubsData, analyticsData] = await Promise.all([
-                getPubsLeaderboard(),
-                getContentAnalyticsData()
-            ]);
-            setPubs(pubsData);
-            setAnalytics(analyticsData);
-            setLoading(false);
+            try {
+                const [pubsData, analyticsData] = await Promise.all([
+                    getPubsLeaderboard(),
+                    getContentAnalyticsData()
+                ]);
+                setPubs(pubsData);
+                setAnalytics(analyticsData);
+            } catch (error) {
+                console.error("Failed to fetch pub data:", error);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);

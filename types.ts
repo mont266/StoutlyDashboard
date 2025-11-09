@@ -7,7 +7,7 @@ export interface TimeSeriesDataPoint {
 export interface NamedValueDataPoint {
     name: string;
     value: number;
-    // FIX: Add index signature to be compatible with Recharts components.
+    // Add index signature to be compatible with Recharts components.
     [key: string]: any;
 }
 
@@ -77,7 +77,7 @@ export interface ContentAnalytics {
     totalPubs: number;
     averageOverallRating: number;
     totalRatingsSubmitted: number;
-    // FIX: Add missing property to support Pubs.tsx component
+    // Add missing property to support Pubs.tsx component
     pintPriceByCountry: PintPriceByCountry[];
 }
 
@@ -130,7 +130,7 @@ export interface Donation {
     date: string;
 }
 
-// FIX: Add missing Transaction type for RecentTransactions component
+// Add missing Transaction type for RecentTransactions component
 export interface Transaction {
     id: string;
     user: { name: string; email: string; };
@@ -153,15 +153,15 @@ export interface FinancialsData {
 }
 
 // --- GA4 Tab ---
-// FIX: Add missing GA4ReportItem type
+// Add missing GA4ReportItem type
 export interface GA4ReportItem {
     name: string;
     value: number;
-    // FIX: Add index signature to be compatible with Recharts components.
+    // Add index signature to be compatible with Recharts components.
     [key: string]: any;
 }
 
-// FIX: Add missing GA4Data type
+// Add missing GA4Data type
 export interface GA4Data {
     kpis: {
         users: number;

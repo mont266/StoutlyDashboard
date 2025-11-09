@@ -1,11 +1,10 @@
 
 import { createClient } from '@supabase/supabase-js';
-// FIX: Import GA4Data type to support the new getGA4Data function.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 
 // --- SUPABASE CLIENT SETUP ---
 
-// FIX: Cast import.meta to any to resolve TypeScript error for Vite environment variables.
+// Cast import.meta to any to resolve TypeScript error for Vite environment variables.
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
 const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
@@ -60,9 +59,7 @@ const handleSupabaseError = (error: any, context: string) => {
 export const getHomeData = async (timeframe: string): Promise<HomeData> => {
     try {
         const [kpisResult, chartsRawResult, tablesResult] = await Promise.all([
-            // FIX: Removed incorrect generic which was causing a parameter type error.
             supabase.rpc('get_dashboard_stats', { time_period: timeframe }).single(),
-            // FIX: Remove .single() to allow multiple rows for time-series data
             supabase.rpc('get_dashboard_timeseries', { time_period: timeframe }),
             supabase.rpc('get_price_stats_by_country')
         ]);
@@ -71,11 +68,10 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         if (chartsRawResult.error) throw chartsRawResult.error;
         if (tablesResult.error) throw tablesResult.error;
         
-        // FIX: Transform the array of time-series rows into the structure the charts expect.
+        // Transform the array of time-series rows into the structure the charts expect.
         // Assuming the RPC returns rows with `date`, `new_users`, and `new_ratings` columns.
         const chartsData = {
             newUsersOverTime: chartsRawResult.data.map((row: any) => ({
-                // FIX: Corrected typo from `toLocaleDateDateString` to `toLocaleDateString`.
                 date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 value: row.new_users ?? 0,
             })),
@@ -85,7 +81,7 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             })),
         };
         
-        // FIX: Map snake_case properties from the DB to camelCase for the UI
+        // Map snake_case properties from the DB to camelCase for the UI
         // Cast RPC result data to `any` to allow dynamic property access.
         const rawKpis = kpisResult.data as any;
         const mappedKpis: HomeKpis = {
@@ -106,7 +102,7 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             kpis: mappedKpis,
             charts: chartsData,
             tables: {
-                 // FIX: Map avg_price from DB to price for the UI
+                 // Map avg_price from DB to price for the UI
                 avgPintPriceByCountry: (tablesResult.data || []).map((v: any) => ({
                     country: v.country,
                     flag: v.flag,
@@ -216,7 +212,7 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // --- CONTENT TAB ---
 export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
     try {
-        // FIX: Replace non-existent `get_content_analytics` with existing functions.
+        // Replace non-existent `get_content_analytics` with existing functions.
         const [statsResult, priceResult] = await Promise.all([
             supabase.rpc('get_dashboard_stats', { time_period: 'All' }).single(),
             supabase.rpc('get_price_stats_by_country')
@@ -227,13 +223,11 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
         
         const rawData = statsResult.data as any;
 
-        // FIX: Map snake_case properties from the DB to camelCase for the UI
+        // Map snake_case properties from the DB to camelCase for the UI
         const mappedData: ContentAnalytics = {
-            // FIX: Use `total_pubs` from `get_dashboard_stats` as per user instruction.
             totalPubs: rawData.total_pubs ?? 0,
-            // FIX: No function provides average rating, so default to 0.
+            // No function provides average rating, so default to 0.
             averageOverallRating: 0,
-            // FIX: Use `total_ratings` from `get_dashboard_stats`
             totalRatingsSubmitted: rawData.total_ratings ?? 0,
             pintPriceByCountry: (priceResult.data || []).map((v: any) => ({
                 country: v.country,
@@ -251,7 +245,7 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
     try {
-        // FIX: Use the 'get_top_pubs' RPC as it's more direct and efficient.
+        // Use the 'get_top_pubs' RPC as it's more direct and efficient.
         const { data, error } = await supabase.rpc('get_top_pubs', {
             time_period: 'all'
         });
@@ -272,23 +266,21 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
     }
 };
 
-export const getRatingsData = async (): Promise<Rating[]> => {
+export const getRatingsData = async (pageNumber: number, pageSize: number): Promise<Rating[]> => {
     try {
-        // FIX: Replace direct view access with the `get_community_feed` RPC for a more robust feed implementation.
         const { data, error } = await supabase
             .rpc('get_community_feed', {
-                page_size: 20, 
-                page_number: 1, 
+                page_size: pageSize, 
+                page_number: pageNumber, 
                 sort_by: 'latest', 
                 time_period: 'All'
             })
             
         if (error) throw error;
-        // FIX: Map detailed rating criteria and add fallbacks for user data.
+
         return ((data as any[]) || []).map(r => ({
             id: r.rating_id,
             pubName: r.pub_name,
-            // FIX: Add a nullish coalescing operator to prevent crashes if 'overall' is null.
             score: r.overall ?? 0,
             atmosphere: r.atmosphere,
             quality: r.quality,
@@ -356,7 +348,6 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
     }
 };
 
-// FIX: Add missing getGA4Data function to resolve import error in GA4.tsx
 // --- GA4 TAB ---
 export const getGA4Data = async (timeframe: string): Promise<GA4Data> => {
     try {
