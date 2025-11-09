@@ -1,4 +1,5 @@
 
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data } from '../types';
@@ -39,20 +40,33 @@ const handleSupabaseError = (error: any, context: string) => {
 // --- HOME TAB ---
 export const getHomeData = async (timeframe: string): Promise<HomeData> => {
     try {
-        const [kpisResult, chartsResult, tablesResult] = await Promise.all([
+        const [kpisResult, chartsRawResult, tablesResult] = await Promise.all([
             supabase.rpc('get_dashboard_stats', { time_period: timeframe }).single(),
-            supabase.rpc('get_dashboard_timeseries', { time_period: timeframe }).single(),
+            // FIX: Remove .single() to allow multiple rows for time-series data
+            supabase.rpc('get_dashboard_timeseries', { time_period: timeframe }),
             supabase.rpc('get_price_stats_by_country')
         ]);
 
         if (kpisResult.error) throw kpisResult.error;
-        if (chartsResult.error) throw chartsResult.error;
+        if (chartsRawResult.error) throw chartsRawResult.error;
         if (tablesResult.error) throw tablesResult.error;
         
-        // Combine results from the RPCs into the expected data structure
+        // FIX: Transform the array of time-series rows into the structure the charts expect.
+        // Assuming the RPC returns rows with `date`, `new_users`, and `new_ratings` columns.
+        const chartsData = {
+            newUsersOverTime: chartsRawResult.data.map((row: any) => ({
+                date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                value: row.new_users ?? 0,
+            })),
+            newRatingsOverTime: chartsRawResult.data.map((row: any) => ({
+                date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                value: row.new_ratings ?? 0,
+            })),
+        };
+
         return {
             kpis: kpisResult.data,
-            charts: chartsResult.data,
+            charts: chartsData,
             tables: {
                 avgPintPriceByCountry: tablesResult.data
             }
