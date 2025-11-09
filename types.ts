@@ -7,6 +7,8 @@ export interface TimeSeriesDataPoint {
 export interface NamedValueDataPoint {
     name: string;
     value: number;
+    // FIX: Add index signature to be compatible with Recharts components.
+    [key: string]: any;
 }
 
 // --- Home Tab ---
@@ -140,6 +142,8 @@ export interface FinancialsData {
 export interface GA4ReportItem {
     name: string;
     value: number;
+    // FIX: Add index signature to be compatible with Recharts components.
+    [key: string]: any;
 }
 
 // FIX: Add missing GA4Data type

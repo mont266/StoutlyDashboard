@@ -1,17 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, getOnlineUsers, getUsersToday, getUTMStats } from '../../services/supabaseService';
+import { getAllUsers, getUsersToday, getUTMStats } from '../../services/supabaseService';
 import type { User, UTMStat } from '../../types';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { UsersIcon, GlobeIcon } from '../icons/Icons';
 
-type SubTab = 'all' | 'online' | 'today' | 'utm';
+type SubTab = 'all' | 'today' | 'utm';
 
 const Users: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('all');
     const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
     const [todayUsers, setTodayUsers] = useState<User[]>([]);
     const [utmStats, setUtmStats] = useState<UTMStat[]>([]);
     const [loading, setLoading] = useState(true);
@@ -19,14 +18,12 @@ const Users: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [all, online, today, utm] = await Promise.all([
+            const [all, today, utm] = await Promise.all([
                 getAllUsers(),
-                getOnlineUsers(),
                 getUsersToday(),
                 getUTMStats(),
             ]);
             setAllUsers(all);
-            setOnlineUsers(online);
             setTodayUsers(today);
             setUtmStats(utm);
             setLoading(false);
@@ -36,7 +33,6 @@ const Users: React.FC = () => {
 
     const subTabs: { id: SubTab; label: string }[] = [
         { id: 'all', label: 'All Users' },
-        { id: 'online', label: 'Online' },
         { id: 'today', label: 'Logged in Today' },
         { id: 'utm', label: 'UTM Sources' },
     ];
@@ -47,8 +43,6 @@ const Users: React.FC = () => {
         switch (subTab) {
             case 'all':
                 return <UserTable users={allUsers} />;
-            case 'online':
-                return <UserList users={onlineUsers} />;
             case 'today':
                 return <UserList users={todayUsers} />;
             case 'utm':
@@ -62,9 +56,8 @@ const Users: React.FC = () => {
         <section>
             <h2 className="text-2xl font-bold mb-6">User Analytics</h2>
             <div className="space-y-8">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                      <StatCard title="Total Users" value={allUsers.length.toLocaleString()} icon={<UsersIcon />} />
-                     <StatCard title="Online Now" value={onlineUsers.length.toLocaleString()} icon={<UsersIcon />} />
                      <StatCard title="Active Today" value={todayUsers.length.toLocaleString()} icon={<UsersIcon />} />
                      <StatCard title="UTM Sources" value={utmStats.length.toLocaleString()} icon={<GlobeIcon />} />
                  </div>

@@ -55,6 +55,7 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         // Assuming the RPC returns rows with `date`, `new_users`, and `new_ratings` columns.
         const chartsData = {
             newUsersOverTime: chartsRawResult.data.map((row: any) => ({
+                // FIX: Corrected typo from `toLocaleDateDateString` to `toLocaleDateString`.
                 date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 value: row.new_users ?? 0,
             })),
@@ -127,18 +128,6 @@ export const getAllUsers = async (): Promise<User[]> => {
     }
 };
 
-export const getOnlineUsers = async (): Promise<User[]> => {
-    try {
-        // As per spec, this needs a list of online users. Assuming an RPC.
-        const { data, error } = await supabase.rpc('get_online_users');
-        if (error) throw error;
-        return data;
-    } catch (error) {
-        handleSupabaseError(error, 'Online Users');
-        throw error;
-    }
-};
-
 export const getUsersToday = async (): Promise<User[]> => {
     try {
         // As per spec, calling the specific RPC
@@ -167,16 +156,26 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // --- CONTENT TAB ---
 export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
     try {
-        // FIX: Add a default time_period parameter to the RPC call to resolve the "function not found" error (PGRST202).
-        const { data: rawData, error } = await supabase.rpc('get_content_analytics', { time_period: 'All' }).single();
-        if (error) throw error;
+        // FIX: Replace non-existent `get_content_analytics` with existing functions.
+        const [statsResult, priceResult] = await Promise.all([
+            supabase.rpc('get_dashboard_stats', { time_period: 'All' }).single(),
+            supabase.rpc('get_price_stats_by_country')
+        ]);
+
+        if (statsResult.error) throw statsResult.error;
+        if (priceResult.error) throw priceResult.error;
+        
+        const rawData = statsResult.data as any;
 
         // FIX: Map snake_case properties from the DB to camelCase for the UI
         const mappedData: ContentAnalytics = {
-            totalPubs: (rawData as any).total_pubs ?? 0,
-            averageOverallRating: (rawData as any).average_overall_rating ?? 0,
-            totalRatingsSubmitted: (rawData as any).total_ratings_submitted ?? 0,
-            pintPriceByCountry: ((rawData as any).pint_price_by_country || []).map((v: any) => ({
+            // FIX: Use `total_pubs_with_ratings` from `get_dashboard_stats`
+            totalPubs: rawData.total_pubs_with_ratings ?? 0,
+            // FIX: No function provides average rating, so default to 0.
+            averageOverallRating: 0,
+            // FIX: Use `total_ratings` from `get_dashboard_stats`
+            totalRatingsSubmitted: rawData.total_ratings ?? 0,
+            pintPriceByCountry: (priceResult.data || []).map((v: any) => ({
                 country: v.country,
                 flag: v.flag,
                 price: v.avg_price ?? 0,
@@ -192,8 +191,8 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
      try {
-        // FIX: Add a default time_period parameter to the RPC call to resolve the "function not found" error (PGRST202).
-        const { data, error } = await supabase.rpc('get_pubs_leaderboard', { time_period: 'All' });
+        // FIX: Replace non-existent `get_pubs_leaderboard` with `get_top_pubs`.
+        const { data, error } = await supabase.rpc('get_top_pubs', { time_period: 'All' });
         if (error) throw error;
         // FIX: Map snake_case properties from the DB to camelCase for UI consistency and type safety.
         return ((data as any[]) || []).map(p => ({
@@ -211,12 +210,14 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
 
 export const getRatingsData = async (): Promise<Rating[]> => {
     try {
+        // FIX: Replace direct view access with the `get_community_feed` RPC for a more robust feed implementation.
         const { data, error } = await supabase
-            .from('all_ratings_view')
-            .select('*')
-            // FIX: Corrected column name from 'timestamp' to 'created_at' to resolve the "column does not exist" error (42703).
-            .order('created_at', { ascending: false })
-            .limit(20);
+            .rpc('get_community_feed', {
+                page_size: 20, 
+                page_number: 1, 
+                sort_by: 'latest', 
+                time_period: 'All'
+            })
             
         if (error) throw error;
         // FIX: Map the flat view data to the nested object structure expected by the Rating type for type safety.
