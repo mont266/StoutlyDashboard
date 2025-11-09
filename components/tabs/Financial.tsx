@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getFinancialsData } from '../../services/supabaseService';
+import { getFinancialsData, getAvatarUrl } from '../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../types';
 import StatCard from '../StatCard';
 import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon } from '../icons/Icons';
@@ -90,7 +90,7 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => (
             <TrophyIcon />
             <h4 className="font-semibold ml-2">Top Donator</h4>
         </div>
-        <img src={donator.avatarUrl} alt={donator.name} className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary"/>
+        <img src={getAvatarUrl(donator.avatarId)} alt={donator.name} className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary"/>
         <p className="font-bold text-text-primary text-xl">{donator.name}</p>
         <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
     </div>
@@ -111,7 +111,7 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                     <tr key={donation.id} className="border-b border-border last:border-b-0 hover:bg-border/50">
                         <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                             <div className="flex items-center space-x-3">
-                                <img src={donation.user.avatarUrl} alt={donation.user.name} className="w-8 h-8 rounded-full" />
+                                <img src={getAvatarUrl(donation.user.avatarId)} alt={donation.user.name} className="w-8 h-8 rounded-full" />
                                 <span>{donation.user.name}</span>
                             </div>
                         </td>

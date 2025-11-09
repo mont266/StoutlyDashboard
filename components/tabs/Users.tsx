@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { getAllUsers, getUsersToday, getUTMStats, getUserKpis } from '../../services/supabaseService';
+import { getAllUsers, getUsersToday, getUTMStats, getUserKpis, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
@@ -184,7 +184,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                             <tr key={user.id} className="border-b border-border hover:bg-border/50">
                                 <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                                     <div className="flex items-center space-x-3">
-                                        <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
+                                        <img src={getAvatarUrl(user.avatarId)} alt={user.name} className="w-10 h-10 rounded-full" />
                                         <div>
                                             <div className="flex items-center">
                                                 <span>{user.name}</span>
@@ -221,7 +221,7 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {users.map(user => (
             <div key={user.id} className="bg-background p-4 rounded-lg flex items-center space-x-3 border border-border">
-                 <img src={user.avatarUrl} alt={user.name} className="w-12 h-12 rounded-full" />
+                 <img src={getAvatarUrl(user.avatarId)} alt={user.name} className="w-12 h-12 rounded-full" />
                 <div>
                     <p className="font-semibold text-text-primary">{user.name}</p>
                     <p className="text-xs text-text-secondary">{user.lastActive}</p>

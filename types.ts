@@ -48,7 +48,7 @@ export interface HomeData {
 export interface User {
   id: string;
   name: string;
-  avatarUrl: string;
+  avatarId: string;
   level: number;
   banStatus: 'Active' | 'Banned';
   signupDate: string;
@@ -90,7 +90,7 @@ export interface Pub {
 
 export interface Rating {
     id:string;
-    user: { name: string; avatarUrl: string };
+    user: { name: string; avatarId: string };
     pubName: string;
     score: number;
     atmosphere?: number;
@@ -102,14 +102,14 @@ export interface Rating {
 
 export interface Comment {
     id: string;
-    user: { name: string; avatarUrl: string };
+    user: { name: string; avatarId: string };
     text: string;
     timestamp: string;
 }
 
 export interface UploadedImage {
     id: string;
-    user: { name: string; avatarUrl: string };
+    user: { name: string; avatarId: string };
     imageUrl: string;
     timestamp: string;
 }
@@ -118,13 +118,13 @@ export interface UploadedImage {
 // --- Financials Tab ---
 export interface TopDonator {
     name: string;
-    avatarUrl: string;
+    avatarId: string;
     totalAmount: number;
 }
 
 export interface Donation {
     id: string;
-    user: { name: string; avatarUrl: string };
+    user: { name: string; avatarId: string };
     amount: number;
     date: string;
 }

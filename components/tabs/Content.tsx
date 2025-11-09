@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRatingsData, getCommentsData, getImagesData } from '../../services/supabaseService';
+import { getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
 import { StarIcon, MessageSquareIcon, CameraIcon, AtmosphereIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
@@ -178,7 +178,7 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
         {ratings.map(rating => (
             <div key={rating.id} className="bg-background p-4 rounded-lg flex space-x-4 border border-border">
                 <img 
-                    src={rating.user.avatarUrl} 
+                    src={getAvatarUrl(rating.user.avatarId)} 
                     alt={rating.user.name} 
                     className="w-10 h-10 rounded-full bg-border"
                     onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
@@ -222,7 +222,7 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
      <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
         {comments.map(comment => (
             <div key={comment.id} className="bg-background p-3 rounded-lg flex items-start space-x-4 border border-border">
-                <img src={comment.user.avatarUrl} alt={comment.user.name} className="w-10 h-10 rounded-full" />
+                <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full" />
                 <div className="flex-grow">
                      <p><span className="font-semibold text-text-primary">{comment.user.name}</span> <span className="text-text-secondary text-xs">{comment.timestamp}</span></p>
                     <p className="text-text-primary mt-1">{comment.text}</p>

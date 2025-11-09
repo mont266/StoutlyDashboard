@@ -16,6 +16,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
+// --- AVATAR URL HELPER ---
+// FIX: Added a helper function to construct avatar URLs from an ID.
+export const getAvatarUrl = (avatarId: string) => {
+    if (!avatarId) return ''; // Return empty string or a default avatar URL
+    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarId}`;
+};
+
 
 // --- STATIC HELPERS ---
 
@@ -128,6 +135,7 @@ export const getFinancialsData = async (timeframe: string): Promise<FinancialsDa
         });
 
         if (error) throw error;
+        // Assuming edge function is also updated to return avatar_id
         return data;
     } catch (error) {
         handleSupabaseError(error, 'Financials Data');
@@ -158,17 +166,17 @@ export const getUserKpis = async (): Promise<UserKpis> => {
 
 export const getAllUsers = async (): Promise<User[]> => {
     try {
-        // Best practice to select only the columns needed.
+        // FIX: Changed select from avatar_url to avatar_id
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, username, avatar_url, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
+            .select('id, username, avatar_id, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
         
         if (error) throw error;
         
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            avatarUrl: p.avatar_url,
+            avatarId: p.avatar_id, // FIX: Mapped avatar_id
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
             signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
@@ -192,12 +200,10 @@ export const getUsersToday = async (): Promise<User[]> => {
         const { data, error } = await supabase.rpc('get_users_logged_in_today');
         if (error) throw error;
         
-        // FIX: Added data mapping. The RPC returns raw snake_case data that must be mapped to the User type.
-        // This was the root cause of the entire Users tab breaking.
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            avatarUrl: p.avatar_url,
+            avatarId: p.avatar_id, // FIX: Mapped avatar_id from RPC result
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
             signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
@@ -264,23 +270,27 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
     try {
-        // FIX: Switched from RPC to querying the `pub_scores` view directly
-        // to get the correct score which is out of 100.
+        // FIX: Rewrote query to join pub_scores with the pubs table to get name and address.
         const { data, error } = await supabase
             .from('pub_scores')
-            .select('pub_id, name, address, overall_score, rating_count')
+            .select(`
+                pub_id, 
+                overall_score, 
+                rating_count,
+                pubs ( name, address )
+            `)
             .order('overall_score', { ascending: false })
             .limit(10);
 
         if (error) throw error;
 
-        // Map the snake_case results from the view to the camelCase Pub type.
+        // Map the results, accessing the joined 'pubs' data.
         return ((data as any[]) || []).map(p => ({
             id: p.pub_id,
-            name: p.name,
-            location: p.address, // Map 'address' from view to 'location'
-            averageScore: p.overall_score ?? 0, // Map 'overall_score' to 'averageScore'
-            totalRatings: p.rating_count ?? 0, // Map 'rating_count' to 'totalRatings'
+            name: p.pubs?.name || 'Unknown Pub', // Safely access joined data
+            location: p.pubs?.address || 'Unknown Location',
+            averageScore: p.overall_score ?? 0,
+            totalRatings: p.rating_count ?? 0,
         }));
     } catch (error) {
         handleSupabaseError(error, 'Pubs Leaderboard');
@@ -310,7 +320,7 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
             timestamp: new Date(r.created_at).toLocaleString(),
             user: {
                 name: r.username || 'Anonymous User',
-                avatarUrl: r.avatar_url,
+                avatarId: r.avatar_id, // FIX: Mapped avatar_id
             },
             message: r.message,
         }));
@@ -336,7 +346,7 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
             timestamp: new Date(c.created_at).toLocaleString(),
             user: {
                 name: c.username,
-                avatarUrl: c.avatar_url,
+                avatarId: c.avatar_id, // FIX: Mapped avatar_id
             }
         }));
     } catch (error) {
@@ -361,7 +371,7 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
             timestamp: new Date(i.created_at).toLocaleString(),
             user: {
                 name: i.username,
-                avatarUrl: i.avatar_url,
+                avatarId: i.avatar_id, // FIX: Mapped avatar_id
             }
         }));
     } catch (error) {
