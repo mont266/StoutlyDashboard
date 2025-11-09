@@ -3,7 +3,8 @@ import Home from './components/tabs/Home';
 import Users from './components/tabs/Users';
 import Content from './components/tabs/Content';
 import Financial from './components/tabs/Financial';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo } from './components/icons/Icons';
+import GA4 from './components/tabs/GA4';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon } from './components/icons/Icons';
 import { getDaysSinceLaunch } from './services/supabaseService';
 
 const TABS = {
@@ -11,6 +12,7 @@ const TABS = {
     Users: { component: Users, icon: <UsersIcon /> },
     Content: { component: Content, icon: <FileTextIcon /> },
     Financial: { component: Financial, icon: <CreditCardIcon /> },
+    GA4: { component: GA4, icon: <AnalyticsIcon /> },
 };
 
 type TabName = keyof typeof TABS;

@@ -1,5 +1,6 @@
 
 
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import GA4Data type to support the new getGA4Data function.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis } from '../types';
@@ -41,6 +42,7 @@ const handleSupabaseError = (error: any, context: string) => {
 export const getHomeData = async (timeframe: string): Promise<HomeData> => {
     try {
         const [kpisResult, chartsRawResult, tablesResult] = await Promise.all([
+            // FIX: Removed incorrect generic which was causing a parameter type error.
             supabase.rpc('get_dashboard_stats', { time_period: timeframe }).single(),
             // FIX: Remove .single() to allow multiple rows for time-series data
             supabase.rpc('get_dashboard_timeseries', { time_period: timeframe }),
@@ -65,7 +67,8 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         };
         
         // FIX: Map snake_case properties from the DB to camelCase for the UI
-        const rawKpis = kpisResult.data;
+        // Cast RPC result data to `any` to allow dynamic property access.
+        const rawKpis = kpisResult.data as any;
         const mappedKpis: HomeKpis = {
             totalUsers: rawKpis.total_users ?? 0,
             newUsers: rawKpis.new_users ?? 0,
@@ -84,7 +87,12 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             kpis: mappedKpis,
             charts: chartsData,
             tables: {
-                avgPintPriceByCountry: tablesResult.data
+                 // FIX: Map avg_price from DB to price for the UI
+                avgPintPriceByCountry: (tablesResult.data || []).map((v: any) => ({
+                    country: v.country,
+                    flag: v.flag,
+                    price: v.avg_price ?? 0,
+                }))
             }
         };
     } catch (error) {
@@ -161,10 +169,23 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // --- CONTENT TAB ---
 export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
     try {
-        // Assuming a single RPC for all overview stats on this page.
-        const { data, error } = await supabase.rpc('get_content_analytics').single();
+        // FIX: Removed incorrect generic. The result data is cast to `any` below to allow property access.
+        const { data: rawData, error } = await supabase.rpc('get_content_analytics').single();
         if (error) throw error;
-        return data;
+
+        // FIX: Map snake_case properties from the DB to camelCase for the UI
+        const mappedData: ContentAnalytics = {
+            totalPubs: (rawData as any).total_pubs ?? 0,
+            averageOverallRating: (rawData as any).average_overall_rating ?? 0,
+            totalRatingsSubmitted: (rawData as any).total_ratings_submitted ?? 0,
+            pintPriceByCountry: ((rawData as any).pint_price_by_country || []).map((v: any) => ({
+                country: v.country,
+                flag: v.flag,
+                price: v.avg_price ?? 0,
+            })),
+        };
+        
+        return mappedData;
     } catch (error) {
         handleSupabaseError(error, 'Content Analytics');
         throw error;
