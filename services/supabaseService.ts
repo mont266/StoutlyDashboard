@@ -5,11 +5,14 @@ import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Ra
 
 // --- SUPABASE CLIENT SETUP ---
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+// FIX: Cast import.meta to any to resolve TypeScript error for Vite environment variables.
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Supabase environment variables are missing. VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in your Netlify environment.");
+  // Throw an error to prevent the app from running without a database connection.
+  throw new Error("Supabase client failed to initialize. Missing environment variables.");
 }
 
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
