@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getContentAnalyticsData, getPubsLeaderboard, getRatingsData, getCommentsData, getImagesData } from '../../services/supabaseService';
-import type { Pub, ContentAnalytics, Rating, Comment, UploadedImage } from '../../types';
-import { StarIcon, BuildingIcon, HashIcon, MessageSquareIcon, CameraIcon } from '../icons/Icons';
-import StatCard from '../StatCard';
+import { getRatingsData, getCommentsData, getImagesData } from '../../services/supabaseService';
+import type { Rating, Comment, UploadedImage } from '../../types';
+import { StarIcon, MessageSquareIcon, CameraIcon, AtmosphereIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
-type SubTab = 'overview' | 'ratings' | 'comments' | 'images';
+type SubTab = 'ratings' | 'comments' | 'images';
 
 const Content: React.FC = () => {
-    const [subTab, setSubTab] = useState<SubTab>('overview');
-    const [analytics, setAnalytics] = useState<ContentAnalytics | null>(null);
-    const [pubs, setPubs] = useState<Pub[]>([]);
+    const [subTab, setSubTab] = useState<SubTab>('ratings');
     const [ratings, setRatings] = useState<Rating[]>([]);
     
     // State for comments with infinite scroll
@@ -25,22 +22,20 @@ const Content: React.FC = () => {
     const [loadingImages, setLoadingImages] = useState(false);
     
     const [loading, setLoading] = useState(true); // For initial component load
+    const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
 
-    const IMAGES_PER_PAGE = 6;
+
+    const IMAGES_PER_PAGE = 9;
     const COMMENTS_PER_PAGE = 20;
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [analyticsData, pubsData, ratingsData, commentsData, imagesData] = await Promise.all([
-                getContentAnalyticsData(),
-                getPubsLeaderboard(),
+            const [ratingsData, commentsData, imagesData] = await Promise.all([
                 getRatingsData(),
                 getCommentsData(1, COMMENTS_PER_PAGE),
                 getImagesData(1, IMAGES_PER_PAGE)
             ]);
-            setAnalytics(analyticsData);
-            setPubs(pubsData);
             setRatings(ratingsData);
             setComments(commentsData);
             setImages(imagesData);
@@ -71,9 +66,8 @@ const Content: React.FC = () => {
         }
     };
     
-    // Effect for handling image page changes after the initial load
     useEffect(() => {
-        if (imagesPage === 1) return; // Initial load is handled in the main useEffect
+        if (imagesPage === 1) return; 
 
         const fetchImageData = async () => {
             setLoadingImages(true);
@@ -91,7 +85,6 @@ const Content: React.FC = () => {
     }, [imagesPage]);
     
      const subTabs: { id: SubTab; label: string, icon: React.ReactNode }[] = [
-        { id: 'overview', label: 'Overview', icon: <BuildingIcon /> },
         { id: 'ratings', label: 'Ratings Feed', icon: <StarIcon /> },
         { id: 'comments', label: 'Comments Feed', icon: <MessageSquareIcon /> },
         { id: 'images', label: 'Image Gallery', icon: <CameraIcon /> },
@@ -101,23 +94,20 @@ const Content: React.FC = () => {
         if (loading) return <div className="bg-surface rounded-xl h-96 animate-pulse mt-4"></div>;
 
         switch (subTab) {
-            case 'overview':
-                return <OverviewTab analytics={analytics} pubs={pubs} loading={loading} />;
             case 'ratings':
                 return <RatingsFeed ratings={ratings} />;
             case 'comments':
                 return <CommentsFeed comments={comments} onLoadMore={handleLoadMoreComments} hasMore={hasMoreComments} isLoadingMore={loadingMoreComments} />;
             case 'images':
-                return <ImageGallery images={images} page={imagesPage - 1} setPage={(p) => setImagesPage(p + 1)} hasMore={hasMoreImages} isLoading={loadingImages} />;
+                return <ImageGallery images={images} page={imagesPage - 1} setPage={(p) => setImagesPage(p + 1)} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} />;
             default:
                 return null;
         }
     };
 
-
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-6">Content Analytics</h2>
+            <h2 className="text-2xl font-bold mb-6">Content Feeds</h2>
             
             <div className="flex space-x-2 border-b border-border overflow-x-auto pb-px">
                 {subTabs.map(tab => (
@@ -139,93 +129,52 @@ const Content: React.FC = () => {
             <div className="mt-6">
                 {renderContent()}
             </div>
+
+            {selectedImage && <ImageModal image={selectedImage} onClose={() => setSelectedImage(null)} />}
         </section>
     );
 };
 
-const OverviewTab: React.FC<{analytics: ContentAnalytics | null, pubs: Pub[], loading: boolean}> = ({ analytics, pubs, loading }) => {
-    const topRatedPubs = [...pubs].sort((a, b) => b.averageScore - a.averageScore).slice(0, 10);
-    const mostReviewedPubs = [...pubs].sort((a, b) => b.totalRatings - a.totalRatings).slice(0, 10);
-    
+
+const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: string }> = ({ score, icon, name }) => {
+    if (score === undefined) return null;
     return (
-        <div className="space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {loading || !analytics ? 
-                    [...Array(3)].map((_,i) => <div key={i} className="h-32 bg-surface rounded-xl animate-pulse"></div>) :
-                    <>
-                        <StatCard title="Total Pubs" value={analytics.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                        <StatCard title="Average Overall Rating" value={analytics.averageOverallRating.toFixed(2)} icon={<StarIcon />} />
-                        <StatCard title="Total Ratings Submitted" value={analytics.totalRatingsSubmitted.toLocaleString()} icon={<HashIcon />} />
-                    </>
-                }
-            </div>
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 <PubTable title="Top 10 Rated Pubs" data={topRatedPubs} loading={loading} />
-                 <PubTable title="Top 10 Most Reviewed Pubs" data={mostReviewedPubs} loading={loading} />
-            </div>
+        <div className="flex flex-col items-center space-y-1 text-xs text-text-secondary">
+            <div className="h-5 w-5">{icon}</div>
+            <span className="font-semibold text-text-primary">{score.toFixed(1)}</span>
+            <span>{name}</span>
         </div>
     );
 };
 
-const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean }> = ({ title, data, loading }) => (
-    <div className="bg-surface rounded-xl shadow-lg">
-        <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">{title}</h3>
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-text-secondary">
-                <thead className="text-xs text-text-secondary uppercase bg-background">
-                    <tr>
-                        <th scope="col" className="px-6 py-3">Pub</th>
-                        <th scope="col" className="px-6 py-3 text-center">Score</th>
-                        <th scope="col" className="px-6 py-3 text-center">Ratings</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {loading ? (
-                        [...Array(5)].map((_, i) => (
-                            <tr key={i} className="animate-pulse border-b border-border">
-                                <td className="px-6 py-4"><div className="h-4 bg-border rounded w-3/4"></div></td>
-                                <td className="px-6 py-4 text-center"><div className="h-4 bg-border rounded w-1/2 mx-auto"></div></td>
-                                <td className="px-6 py-4 text-center"><div className="h-4 bg-border rounded w-1/2 mx-auto"></div></td>
-                            </tr>
-                        ))
-                    ) : (
-                        data.map(pub => (
-                            <tr key={pub.id} className="border-b border-border hover:bg-border/50">
-                                <td className="px-6 py-4 font-medium text-text-primary">
-                                    <div className="flex flex-col">
-                                        <span>{pub.name}</span>
-                                        <span className="text-xs text-text-secondary">{pub.location}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-text-primary text-center font-semibold">
-                                    <span className="flex items-center justify-center">
-                                        <StarIcon />
-                                        <span className="ml-1">{pub.averageScore.toFixed(1)}</span>
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-text-primary text-center">{pub.totalRatings.toLocaleString()}</td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-);
-
-
 const RatingsFeed: React.FC<{ ratings: Rating[] }> = ({ ratings }) => (
     <div className="bg-surface rounded-xl shadow-lg p-4 space-y-4 max-w-2xl mx-auto">
         {ratings.map(rating => (
-            <div key={rating.id} className="bg-background p-3 rounded-lg flex items-center space-x-4 border border-border">
-                <img src={rating.user.avatarUrl} alt={rating.user.name} className="w-10 h-10 rounded-full" />
+            <div key={rating.id} className="bg-background p-4 rounded-lg flex space-x-4 border border-border">
+                <img 
+                    src={rating.user.avatarUrl} 
+                    alt={rating.user.name} 
+                    className="w-10 h-10 rounded-full bg-border"
+                    onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                />
                 <div className="flex-grow">
-                    <p><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
+                    <p className="text-sm"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
                     <p className="text-xs text-text-secondary">{rating.timestamp}</p>
+                    
+                    {(rating.atmosphere !== undefined || rating.quality !== undefined || rating.price !== undefined) && (
+                        <div className="flex items-center justify-around space-x-4 mt-3 pt-3 border-t border-border">
+                            <RatingDetail score={rating.atmosphere} icon={<AtmosphereIcon />} name="Atmosphere" />
+                            <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
+                            <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
+                        </div>
+                    )}
                 </div>
-                 <div className="flex items-center text-lg font-bold text-primary">
-                    <StarIcon />
-                    <span className="ml-1">{rating.score}</span>
+                 <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg p-2 h-fit">
+                    <div className="flex items-center text-lg font-bold text-primary">
+                        <StarIcon />
+                        <span className="ml-1">{rating.score.toFixed(1)}</span>
+                    </div>
+                    <span className="text-xs text-primary/80">Overall</span>
                 </div>
             </div>
         ))}
@@ -252,35 +201,53 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
     </div>
 );
 
+const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ image, onClose }) => (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-surface p-4 rounded-lg max-w-4xl max-h-[90vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
+            <img src={image.imageUrl} alt={`user upload ${image.id}`} className="max-w-full max-h-[75vh] object-contain rounded-lg mx-auto" />
+            <div className="mt-3 text-white">
+                <p>Posted by <span className="font-bold">{image.user.name}</span></p>
+                <p className="text-sm text-text-secondary">{image.timestamp}</p>
+            </div>
+            <button 
+                onClick={onClose} 
+                className="absolute top-[-10px] right-[-10px] text-text-primary bg-surface rounded-full h-8 w-8 flex items-center justify-center text-xl font-bold border-2 border-border hover:bg-warning-red hover:text-white transition-colors"
+                aria-label="Close image view"
+            >
+                &times;
+            </button>
+        </div>
+    </div>
+);
 
-const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean }> = ({ images, page, setPage, hasMore, isLoading }) => {
+const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean, onImageClick: (image: UploadedImage) => void }> = ({ images, page, setPage, hasMore, isLoading, onImageClick }) => {
     return (
         <div className="bg-surface rounded-xl shadow-lg p-4">
-            {isLoading ? (
+            {isLoading && images.length === 0 ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
-                    {[...Array(6)].map((_, i) => <div key={i} className="h-48 bg-border rounded-lg"></div>)}
+                    {[...Array(9)].map((_, i) => <div key={i} className="aspect-square bg-border rounded-lg"></div>)}
                  </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {images.map(image => (
-                        <div key={image.id} className="group relative">
-                            <img src={image.imageUrl} alt={`user upload ${image.id}`} className="w-full h-48 object-cover rounded-lg" />
-                            <div className="absolute bottom-0 left-0 bg-black/50 text-white p-2 w-full rounded-b-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                <p className="font-semibold">{image.user.name}</p>
-                                <p>{image.timestamp}</p>
+                        <div key={image.id} className="group relative aspect-square overflow-hidden rounded-lg" onClick={() => onImageClick(image)}>
+                            <img src={image.imageUrl} alt={`user upload ${image.id}`} className="w-full h-full object-cover rounded-lg transform group-hover:scale-110 transition-transform duration-300 cursor-pointer" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 p-3 text-white w-full">
+                                <p className="font-semibold text-sm truncate">{image.user.name}</p>
+                                <p className="text-xs text-text-secondary">{image.timestamp}</p>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
             <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => setPage(page - 1)} disabled={page === 0 || isLoading} className="px-3 py-1 rounded bg-border disabled:opacity-50">Previous</button>
+                <button onClick={() => setPage(page - 1)} disabled={page === 0 || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
                 <span>Page {page + 1}</span>
-                <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading} className="px-3 py-1 rounded bg-border disabled:opacity-50">Next</button>
+                <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Next</button>
             </div>
         </div>
     )
 };
-
 
 export default Content;

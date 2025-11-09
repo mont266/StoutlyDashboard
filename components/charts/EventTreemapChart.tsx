@@ -38,7 +38,8 @@ const EventTreemapChart: React.FC<EventTreemapChartProps> = ({ data }) => {
             <Treemap
                 data={data}
                 dataKey="value"
-                ratio={4 / 3}
+                // FIX: The `ratio` prop is not valid for the Recharts Treemap component. It should be `aspectRatio`.
+                aspectRatio={4 / 3}
                 stroke="#fff"
                 content={<CustomizedContent />}
                 isAnimationActive={false}

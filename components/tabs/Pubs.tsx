@@ -102,7 +102,7 @@ const Pubs: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                    <PubTable title="Top 10 Rated Pubs" data={topRatedPubs} loading={loading} />
+                    <PubTable title="Top 10 Pub Scores" data={topRatedPubs} loading={loading} />
                     <PubTable title="Top 10 Most Reviewed Pubs" data={mostReviewedPubs} loading={loading} />
                 </div>
                  <div className="bg-surface rounded-xl shadow-lg h-fit">

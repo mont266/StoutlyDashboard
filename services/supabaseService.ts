@@ -191,14 +191,19 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
 
 export const getPubsLeaderboard = async (): Promise<Pub[]> => {
      try {
-        // FIX: Replace non-existent `get_pubs_leaderboard` with `get_top_pubs`.
-        const { data, error } = await supabase.rpc('get_top_pubs', { time_period: 'All' });
+        // FIX: Query the pub_scores table directly for more accurate, up-to-date leaderboard data.
+        const { data, error } = await supabase
+            .from('pub_scores')
+            .select('pub_id, name, location, average_score, total_ratings')
+            .order('total_ratings', { ascending: false })
+            .limit(50);
+
         if (error) throw error;
-        // FIX: Map snake_case properties from the DB to camelCase for UI consistency and type safety.
+        // Map snake_case from DB to camelCase for UI.
         return ((data as any[]) || []).map(p => ({
             id: p.pub_id,
-            name: p.pub_name,
-            location: p.pub_location,
+            name: p.name,
+            location: p.location,
             averageScore: p.average_score ?? 0,
             totalRatings: p.total_ratings ?? 0,
         }));
@@ -220,14 +225,17 @@ export const getRatingsData = async (): Promise<Rating[]> => {
             })
             
         if (error) throw error;
-        // FIX: Map the flat view data to the nested object structure expected by the Rating type for type safety.
+        // FIX: Map detailed rating criteria and add fallbacks for user data.
         return ((data as any[]) || []).map(r => ({
             id: r.rating_id,
             pubName: r.pub_name,
             score: r.overall,
+            atmosphere: r.atmosphere,
+            quality: r.quality,
+            price: r.price,
             timestamp: new Date(r.created_at).toLocaleString(),
             user: {
-                name: r.username,
+                name: r.username || 'Anonymous User',
                 avatarUrl: r.avatar_url,
             }
         }));

@@ -83,6 +83,9 @@ export interface Rating {
     user: { name: string; avatarUrl: string };
     pubName: string;
     score: number;
+    atmosphere?: number;
+    quality?: number;
+    price?: number;
     timestamp: string;
 }
 

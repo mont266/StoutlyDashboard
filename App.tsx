@@ -4,12 +4,14 @@ import Users from './components/tabs/Users';
 import Content from './components/tabs/Content';
 import Financial from './components/tabs/Financial';
 import GA4 from './components/tabs/GA4';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon } from './components/icons/Icons';
+import Pubs from './components/tabs/Pubs';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon } from './components/icons/Icons';
 import { getDaysSinceLaunch } from './services/supabaseService';
 
 const TABS = {
     Home: { component: Home, icon: <HomeIcon /> },
     Users: { component: Users, icon: <UsersIcon /> },
+    Pubs: { component: Pubs, icon: <BuildingIcon /> },
     Content: { component: Content, icon: <FileTextIcon /> },
     Financial: { component: Financial, icon: <CreditCardIcon /> },
     GA4: { component: GA4, icon: <AnalyticsIcon /> },
