@@ -161,6 +161,12 @@ const RatingsFeed: React.FC<{ ratings: Rating[] }> = ({ ratings }) => (
                     <p className="text-sm"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
                     <p className="text-xs text-text-secondary">{rating.timestamp}</p>
                     
+                    {rating.message && (
+                        <p className="text-sm text-text-primary mt-2 italic border-l-2 border-border pl-2">
+                            "{rating.message}"
+                        </p>
+                    )}
+
                     {(rating.atmosphere !== undefined || rating.quality !== undefined || rating.price !== undefined) && (
                         <div className="flex items-center justify-around space-x-4 mt-3 pt-3 border-t border-border">
                             <RatingDetail score={rating.atmosphere} icon={<AtmosphereIcon />} name="Atmosphere" />

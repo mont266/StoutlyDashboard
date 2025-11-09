@@ -54,6 +54,11 @@ export interface User {
   banStatus: 'Active' | 'Banned';
   signupDate: string;
   lastActive: string;
+  countryCode?: string;
+  isBetaTester?: boolean;
+  isDeveloper?: boolean;
+  isTeamMember?: boolean;
+  hasDonated?: boolean;
 }
 
 export interface UTMStat {
@@ -92,6 +97,7 @@ export interface Rating {
     quality?: number;
     price?: number;
     timestamp: string;
+    message?: string;
 }
 
 export interface Comment {

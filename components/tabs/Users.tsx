@@ -19,17 +19,22 @@ const Users: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [all, today, utm, kpisData] = await Promise.all([
-                getAllUsers(),
-                getUsersToday(),
-                getUTMStats(),
-                getUserKpis(),
-            ]);
-            setAllUsers(all);
-            setTodayUsers(today);
-            setUtmStats(utm);
-            setKpis(kpisData);
-            setLoading(false);
+            try {
+                const [all, today, utm, kpisData] = await Promise.all([
+                    getAllUsers(),
+                    getUsersToday(),
+                    getUTMStats(),
+                    getUserKpis(),
+                ]);
+                setAllUsers(all);
+                setTodayUsers(today);
+                setUtmStats(utm);
+                setKpis(kpisData);
+            } catch (error) {
+                console.error("Failed to fetch user data:", error);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);
@@ -89,6 +94,15 @@ const Users: React.FC = () => {
     );
 };
 
+const UserBadges: React.FC<{ user: User }> = ({ user }) => (
+    <div className="flex items-center space-x-1.5 ml-2">
+        {user.isTeamMember && <span title="Team Member" className="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/20 text-indigo-400">Team</span>}
+        {user.isDeveloper && <span title="Developer" className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">Dev</span>}
+        {user.isBetaTester && <span title="Beta Tester" className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400">Beta</span>}
+        {user.hasDonated && <span title="Donator" className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/20 text-primary">Donator</span>}
+    </div>
+);
+
 const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
     // Basic pagination and search state
     const [currentPage, setCurrentPage] = useState(1);
@@ -119,9 +133,10 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                     <thead className="text-xs text-text-secondary uppercase bg-background">
                         <tr>
                             <th className="px-4 py-3">User</th>
+                            <th className="px-4 py-3 hidden md:table-cell">Country</th>
                             <th className="px-4 py-3">Level</th>
                             <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3 hidden sm:table-cell">Last Active</th>
+                            <th className="px-4 py-3 hidden lg:table-cell">Last Active</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,18 +146,22 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                     <div className="flex items-center space-x-3">
                                         <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
                                         <div>
-                                            <span>{user.name}</span>
+                                            <div className="flex items-center">
+                                                <span>{user.name}</span>
+                                                <UserBadges user={user} />
+                                            </div>
                                             <p className="text-xs text-text-secondary">{user.email}</p>
                                         </div>
                                     </div>
                                 </td>
+                                <td className="px-4 py-4 hidden md:table-cell">{user.countryCode || 'N/A'}</td>
                                 <td className="px-4 py-4">{user.level}</td>
                                 <td className="px-4 py-4">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${user.banStatus === 'Active' ? 'bg-value-green/20 text-value-green' : 'bg-warning-red/20 text-warning-red'}`}>
                                         {user.banStatus}
                                     </span>
                                 </td>
-                                <td className="px-4 py-4 hidden sm:table-cell">{user.lastActive}</td>
+                                <td className="px-4 py-4 hidden lg:table-cell">{user.lastActive}</td>
                             </tr>
                         ))}
                     </tbody>

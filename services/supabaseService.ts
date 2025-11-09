@@ -159,9 +159,26 @@ export const getUserKpis = async (): Promise<UserKpis> => {
 
 export const getAllUsers = async (): Promise<User[]> => {
     try {
+        // The original code cast this, but it's safer to map snake_case to camelCase
+        // and derive fields like banStatus.
         const { data, error } = await supabase.from('profiles').select('*');
         if (error) throw error;
-        return data as User[];
+        
+        return (data as any[] || []).map(p => ({
+            id: p.id,
+            name: p.username,
+            email: p.email, // Assuming the view/RLS policy provides this from auth.users
+            avatarUrl: p.avatar_url, // Assuming a full URL is provided, not just an ID
+            level: p.level,
+            banStatus: p.is_banned ? 'Banned' : 'Active',
+            signupDate: new Date(p.created_at).toLocaleDateString(),
+            lastActive: new Date(p.updated_at).toLocaleDateString(),
+            countryCode: p.country_code,
+            isBetaTester: p.is_beta_tester,
+            isDeveloper: p.is_developer,
+            isTeamMember: p.is_team_member,
+            hasDonated: p.has_donated,
+        }));
     } catch (error) {
         handleSupabaseError(error, 'All Users');
         throw error;
@@ -277,7 +294,8 @@ export const getRatingsData = async (): Promise<Rating[]> => {
             user: {
                 name: r.username || 'Anonymous User',
                 avatarUrl: r.avatar_url,
-            }
+            },
+            message: r.message,
         }));
     } catch (error) {
         handleSupabaseError(error, 'Ratings Data');
