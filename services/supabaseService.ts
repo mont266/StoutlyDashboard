@@ -159,25 +159,28 @@ export const getUserKpis = async (): Promise<UserKpis> => {
 
 export const getAllUsers = async (): Promise<User[]> => {
     try {
-        // The original code cast this, but it's safer to map snake_case to camelCase
-        // and derive fields like banStatus.
-        const { data, error } = await supabase.from('profiles').select('*');
+        // Best practice to select only the columns needed.
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, username, email, avatar_url, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
+        
         if (error) throw error;
         
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
             email: p.email, // Assuming the view/RLS policy provides this from auth.users
-            avatarUrl: p.avatar_url, // Assuming a full URL is provided, not just an ID
+            avatarUrl: p.avatar_url,
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
-            signupDate: new Date(p.created_at).toLocaleDateString(),
-            lastActive: new Date(p.updated_at).toLocaleDateString(),
+            signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            lastActive: new Date(p.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
             countryCode: p.country_code,
             isBetaTester: p.is_beta_tester,
             isDeveloper: p.is_developer,
             isTeamMember: p.is_team_member,
             hasDonated: p.has_donated,
+            reviewsCount: p.reviews || 0,
         }));
     } catch (error) {
         handleSupabaseError(error, 'All Users');

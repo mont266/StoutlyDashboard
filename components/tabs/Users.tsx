@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAllUsers, getUsersToday, getUTMStats, getUserKpis } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
-import { UsersIcon, GlobeIcon } from '../icons/Icons';
+import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon } from '../icons/Icons';
 
 type SubTab = 'all' | 'today' | 'utm';
 
@@ -103,21 +103,60 @@ const UserBadges: React.FC<{ user: User }> = ({ user }) => (
     </div>
 );
 
+type SortableUserKeys = 'name' | 'level' | 'reviewsCount' | 'lastActive' | 'signupDate';
+
 const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
     // Basic pagination and search state
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState<{ key: SortableUserKeys; direction: 'ascending' | 'descending' }>({ key: 'signupDate', direction: 'descending' });
     const usersPerPage = 10;
 
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = useMemo(() => users.filter(user => {
         const query = searchQuery.toLowerCase();
         const nameMatch = user.name ? user.name.toLowerCase().includes(query) : false;
         const emailMatch = user.email ? user.email.toLowerCase().includes(query) : false;
         return nameMatch || emailMatch;
-    });
+    }), [users, searchQuery]);
 
-    const paginatedUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
-    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    const sortedUsers = useMemo(() => {
+        let sortableUsers = [...filteredUsers];
+        if (sortConfig.key) {
+            sortableUsers.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+                
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableUsers;
+    }, [filteredUsers, sortConfig]);
+
+    const requestSort = (key: SortableUserKeys) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const paginatedUsers = sortedUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
+    const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
+
+    const SortableHeader: React.FC<{ sortKey: SortableUserKeys, children: React.ReactNode, className?: string }> = ({ sortKey, children, className }) => (
+         <th className={`px-4 py-3 group ${className}`} >
+            <button onClick={() => requestSort(sortKey)} className={`flex items-center w-full ${sortConfig.key === sortKey ? 'text-text-primary' : ''}`}>
+                {children}
+                <ChevronsUpDownIcon />
+            </button>
+        </th>
+    );
 
     return (
         <div>
@@ -132,11 +171,13 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                 <table className="w-full text-sm text-left text-text-secondary">
                     <thead className="text-xs text-text-secondary uppercase bg-background">
                         <tr>
-                            <th className="px-4 py-3">User</th>
+                            <SortableHeader sortKey="name">User</SortableHeader>
                             <th className="px-4 py-3 hidden md:table-cell">Country</th>
-                            <th className="px-4 py-3">Level</th>
+                            <SortableHeader sortKey="level">Level</SortableHeader>
+                            <SortableHeader sortKey="reviewsCount">Reviews</SortableHeader>
                             <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3 hidden lg:table-cell">Last Active</th>
+                            <SortableHeader sortKey="lastActive" className="hidden lg:table-cell">Last Active</SortableHeader>
+                            <SortableHeader sortKey="signupDate" className="hidden lg:table-cell">Sign Up</SortableHeader>
                         </tr>
                     </thead>
                     <tbody>
@@ -156,12 +197,14 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                 </td>
                                 <td className="px-4 py-4 hidden md:table-cell">{user.countryCode || 'N/A'}</td>
                                 <td className="px-4 py-4">{user.level}</td>
+                                <td className="px-4 py-4">{user.reviewsCount.toLocaleString()}</td>
                                 <td className="px-4 py-4">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${user.banStatus === 'Active' ? 'bg-value-green/20 text-value-green' : 'bg-warning-red/20 text-warning-red'}`}>
                                         {user.banStatus}
                                     </span>
                                 </td>
                                 <td className="px-4 py-4 hidden lg:table-cell">{user.lastActive}</td>
+                                <td className="px-4 py-4 hidden lg:table-cell">{user.signupDate}</td>
                             </tr>
                         ))}
                     </tbody>

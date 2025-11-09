@@ -59,6 +59,7 @@ export interface User {
   isDeveloper?: boolean;
   isTeamMember?: boolean;
   hasDonated?: boolean;
+  reviewsCount: number;
 }
 
 export interface UTMStat {
@@ -89,7 +90,7 @@ export interface Pub {
 }
 
 export interface Rating {
-    id: string;
+    id:string;
     user: { name: string; avatarUrl: string };
     pubName: string;
     score: number;
