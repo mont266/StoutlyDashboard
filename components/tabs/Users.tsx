@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllUsers, getUsersToday, getUTMStats, getUserKpis, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
@@ -184,12 +185,19 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                             <tr key={user.id} className="border-b border-border hover:bg-border/50">
                                 <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                                     <div className="flex items-center space-x-3">
-                                        <img src={getAvatarUrl(user.avatarId)} alt={user.name} className="w-10 h-10 rounded-full" />
+                                        <img 
+                                            src={getAvatarUrl(user.avatarId)} 
+                                            alt={`${user.name}'s avatar`}
+                                            className="w-10 h-10 rounded-full bg-border object-cover"
+                                            // Provide a fallback SVG icon if the image fails to load
+                                            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                                        />
                                         <div>
                                             <div className="flex items-center">
-                                                <span>{user.name}</span>
+                                                <span className="font-semibold">{user.name}</span>
                                                 <UserBadges user={user} />
                                             </div>
+                                            <p className="text-xs text-text-secondary">Joined: {user.signupDate}</p>
                                         </div>
                                     </div>
                                 </td>

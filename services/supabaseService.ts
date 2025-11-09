@@ -1,4 +1,5 @@
 
+
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 
@@ -17,10 +18,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
 // --- AVATAR URL HELPER ---
-// FIX: Added a helper function to construct avatar URLs from an ID.
-export const getAvatarUrl = (avatarId: string) => {
-    if (!avatarId) return ''; // Return empty string or a default avatar URL
-    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarId}`;
+// FIX: Updated to handle JSON string from the database as well as plain IDs.
+export const getAvatarUrl = (avatarData: string): string => {
+    if (!avatarData) return '';
+
+    // Stoutly stores avatar info in a JSON string in the `avatar_id` column.
+    // We need to parse it to get the actual public URL.
+    if (avatarData.startsWith('{') && avatarData.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(avatarData);
+            // The URL might be timestamped, which is fine.
+            if (parsed && parsed.url) {
+                return parsed.url;
+            }
+        } catch (e) {
+            // It failed to parse, fall through to treat as a raw ID.
+            console.warn("Could not parse avatarData JSON, falling back to ID:", avatarData);
+        }
+    }
+    
+    // Fallback for older data where this might just be an ID.
+    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
 };
 
 
