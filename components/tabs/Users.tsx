@@ -158,6 +158,11 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
         </th>
     );
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+
     return (
         <div>
             <input
@@ -197,7 +202,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                                 <span className="font-semibold">{user.name}</span>
                                                 <UserBadges user={user} />
                                             </div>
-                                            <p className="text-xs text-text-secondary">Joined: {user.signupDate}</p>
+                                            <p className="text-xs text-text-secondary">Joined: {formatDate(user.signupDate)}</p>
                                         </div>
                                     </div>
                                 </td>
@@ -209,8 +214,8 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                         {user.banStatus}
                                     </span>
                                 </td>
-                                <td className="px-4 py-4 hidden lg:table-cell">{user.lastActive}</td>
-                                <td className="px-4 py-4 hidden lg:table-cell">{user.signupDate}</td>
+                                <td className="px-4 py-4 hidden lg:table-cell">{formatDate(user.lastActive)}</td>
+                                <td className="px-4 py-4 hidden lg:table-cell">{formatDate(user.signupDate)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -232,7 +237,7 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
                  <img src={getAvatarUrl(user.avatarId)} alt={user.name} className="w-12 h-12 rounded-full" />
                 <div>
                     <p className="font-semibold text-text-primary">{user.name}</p>
-                    <p className="text-xs text-text-secondary">{user.lastActive}</p>
+                    <p className="text-xs text-text-secondary">{new Date(user.lastActive).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                 </div>
             </div>
         ))}

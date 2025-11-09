@@ -23,29 +23,32 @@ export const getAvatarUrl = (avatarData: string): string => {
         return ''; // Return empty string for null/empty data to trigger UI fallbacks.
     }
 
+    // The avatar_id can be a raw UUID, or a JSON string.
+    // The JSON can either be an object (for Dicebear/new uploads) or a string (for legacy UUIDs stored as JSON).
     try {
         const parsed = JSON.parse(avatarData);
-
-        // Check if the parsed content is a valid object.
+        
+        // Case 1: It's a structured object for Dicebear or a new uploaded image.
         if (parsed && typeof parsed === 'object') {
-            // Case 1: Dicebear generated avatar.
             if (parsed.type === 'dicebear' && parsed.style && parsed.seed) {
                 return `https://api.dicebear.com/8.x/${parsed.style}/svg?seed=${encodeURIComponent(parsed.seed)}`;
             }
-
-            // Case 2: User-uploaded avatar.
             if (parsed.type === 'uploaded' && parsed.url) {
                 return parsed.url;
             }
         }
-        
-        // It was valid JSON, but didn't match the expected format.
-        // Per spec, this should show a fallback icon. Returning '' achieves this.
+
+        // Case 2: It's a JSON-encoded string, e.g., '"legacy-uuid-123"'.
+        // `parsed` will be the string "legacy-uuid-123".
+        if (typeof parsed === 'string' && parsed.length > 0) {
+            return `${supabaseUrl}/storage/v1/object/public/avatars/${parsed}`;
+        }
+
+        // It was valid JSON but not a recognized format.
         return '';
+
     } catch (error) {
-        // Parsing failed, so it's not a JSON string.
-        // Assume it's a legacy raw ID for a user-uploaded image in Supabase storage.
-        // This maintains backward compatibility.
+        // Case 3: It's not valid JSON, so it must be a raw legacy ID string.
         return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
     }
 };
@@ -206,8 +209,8 @@ export const getAllUsers = async (): Promise<User[]> => {
             avatarId: p.avatar_id, // FIX: Mapped avatar_id
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
-            signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-            lastActive: new Date(p.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            signupDate: p.created_at,
+            lastActive: p.updated_at,
             countryCode: p.country_code,
             isBetaTester: p.is_beta_tester,
             isDeveloper: p.is_developer,
@@ -233,8 +236,8 @@ export const getUsersToday = async (): Promise<User[]> => {
             avatarId: p.avatar_id, // FIX: Mapped avatar_id from RPC result
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
-            signupDate: new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-            lastActive: new Date(p.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            signupDate: p.created_at,
+            lastActive: p.updated_at,
             countryCode: p.country_code,
             isBetaTester: p.is_beta_tester,
             isDeveloper: p.is_developer,
@@ -345,17 +348,35 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
 
 export const getRatingsData = async (pageNumber: number, pageSize: number): Promise<Rating[]> => {
     try {
-        const { data, error } = await supabase
+        const { data: ratingsData, error } = await supabase
             .rpc('get_community_feed', {
                 page_size: pageSize, 
                 page_number: pageNumber, 
                 sort_by: 'latest', 
                 time_period: 'All'
-            })
+            });
             
         if (error) throw error;
+        if (!ratingsData || (ratingsData as any[]).length === 0) return [];
 
-        return ((data as any[]) || []).map(r => {
+        const userIds = [...new Set((ratingsData as any[]).map((r: any) => r.user_id).filter(id => id))];
+
+        let usersMap = new Map();
+        if (userIds.length > 0) {
+            const { data: usersData, error: usersError } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_id')
+                .in('id', userIds);
+            
+            if (usersError) {
+                console.error("Error fetching user profiles for ratings:", usersError);
+            } else if (usersData) {
+                usersMap = new Map(usersData.map(u => [u.id, u]));
+            }
+        }
+
+        return (ratingsData as any[]).map(r => {
+            const userProfile = usersMap.get(r.user_id);
             // Calculate a fallback score if the main 'overall' score is missing.
             const subScores = [r.atmosphere, r.quality, r.price].filter(s => typeof s === 'number');
             const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
@@ -370,8 +391,8 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 price: r.price,
                 timestamp: new Date(r.created_at).toLocaleString(),
                 user: {
-                    name: r.username || 'Anonymous User',
-                    avatarId: r.avatar_id,
+                    name: userProfile?.username || 'Anonymous User',
+                    avatarId: userProfile?.avatar_id,
                 },
                 message: r.message,
             };
