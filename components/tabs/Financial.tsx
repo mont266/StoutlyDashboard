@@ -66,10 +66,10 @@ const Financial: React.FC = () => {
 
             <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="Gross Donations" value={`£${data.grossDonations.toLocaleString()}`} change={data.grossDonationsChange} icon={<DollarSignIcon />} />
-                    <StatCard title="Stripe Fees" value={`£${data.stripeFees.toLocaleString()}`} change={data.stripeFeesChange} icon={<ReceiptIcon />} isChurn />
-                    <StatCard title="Net Donations" value={`£${data.netDonations.toLocaleString()}`} change={data.netDonationsChange} icon={<DollarSignIcon />} />
-                    <StatCard title="Total Donations" value={data.totalDonations.toLocaleString()} change={data.totalDonationsChange} icon={<GiftIcon />} />
+                    <StatCard title="Gross Donations" value={`£${data.grossDonations.toLocaleString()}`} icon={<DollarSignIcon />} />
+                    <StatCard title="Stripe Fees" value={`£${data.stripeFees.toLocaleString()}`} icon={<ReceiptIcon />} isChurn />
+                    <StatCard title="Net Donations" value={`£${data.netDonations.toLocaleString()}`} icon={<DollarSignIcon />} />
+                    <StatCard title="Total Donations" value={data.totalDonations.toLocaleString()} icon={<GiftIcon />} />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

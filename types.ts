@@ -140,13 +140,9 @@ export interface Transaction {
 
 export interface FinancialsData {
     grossDonations: number;
-    grossDonationsChange: number;
     stripeFees: number;
-    stripeFeesChange: number;
     netDonations: number;
-    netDonationsChange: number;
     totalDonations: number;
-    totalDonationsChange: number;
     topDonator: TopDonator;
     recentDonations: Donation[];
 }
