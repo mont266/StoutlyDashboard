@@ -115,8 +115,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
     const filteredUsers = useMemo(() => users.filter(user => {
         const query = searchQuery.toLowerCase();
         const nameMatch = user.name ? user.name.toLowerCase().includes(query) : false;
-        const emailMatch = user.email ? user.email.toLowerCase().includes(query) : false;
-        return nameMatch || emailMatch;
+        return nameMatch;
     }), [users, searchQuery]);
 
     const sortedUsers = useMemo(() => {
@@ -162,7 +161,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
         <div>
             <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Search by name..."
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 className="bg-background w-full max-w-sm px-3 py-2 rounded-lg border border-border focus:ring-primary focus:border-primary mb-4"
@@ -191,7 +190,6 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                                 <span>{user.name}</span>
                                                 <UserBadges user={user} />
                                             </div>
-                                            <p className="text-xs text-text-secondary">{user.email}</p>
                                         </div>
                                     </div>
                                 </td>

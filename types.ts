@@ -48,7 +48,6 @@ export interface HomeData {
 export interface User {
   id: string;
   name: string;
-  email: string;
   avatarUrl: string;
   level: number;
   banStatus: 'Active' | 'Banned';

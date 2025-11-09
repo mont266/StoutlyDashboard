@@ -161,14 +161,13 @@ export const getAllUsers = async (): Promise<User[]> => {
         // Best practice to select only the columns needed.
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, username, email, avatar_url, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
+            .select('id, username, avatar_url, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
         
         if (error) throw error;
         
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            email: p.email, // Assuming the view/RLS policy provides this from auth.users
             avatarUrl: p.avatar_url,
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
@@ -198,7 +197,6 @@ export const getUsersToday = async (): Promise<User[]> => {
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            email: p.email,
             avatarUrl: p.avatar_url,
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
@@ -270,7 +268,7 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
         // to get the correct score which is out of 100.
         const { data, error } = await supabase
             .from('pub_scores')
-            .select('id, name, address, overall_score, rating_count')
+            .select('pub_id, name, address, overall_score, rating_count')
             .order('overall_score', { ascending: false })
             .limit(10);
 
@@ -278,7 +276,7 @@ export const getPubsLeaderboard = async (): Promise<Pub[]> => {
 
         // Map the snake_case results from the view to the camelCase Pub type.
         return ((data as any[]) || []).map(p => ({
-            id: p.id,
+            id: p.pub_id,
             name: p.name,
             location: p.address, // Map 'address' from view to 'location'
             averageScore: p.overall_score ?? 0, // Map 'overall_score' to 'averageScore'
