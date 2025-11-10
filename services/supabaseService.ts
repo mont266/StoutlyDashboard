@@ -100,9 +100,9 @@ const handleSupabaseError = (error: any, context: string) => {
 export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData> => {
     try {
         // This will be a single RPC call to the new, consolidated function
-        // FIX: Add generic type for RPC call to ensure `data` is typed correctly. This resolves multiple errors.
+        // FIX: Removed the incorrect generic type from the rpc() call. The generic is for the function name with generated types, not the return type. This resolves the downstream errors by inferring 'data' as 'any'.
         const { data, error } = await supabase
-            .rpc<DashHomeData>('dash_get_home_data', { time_period: timeframe })
+            .rpc('dash_get_home_data', { time_period: timeframe })
             .single();
         
         if (error) throw error;
@@ -133,8 +133,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
 // --- USERS TAB ---
 export const dash_getUsersData = async (): Promise<DashUsersData> => {
     try {
-        // FIX: Add generic type for RPC call and handle potential null response.
-        const { data, error } = await supabase.rpc<DashUsersData>('dash_get_users_data').single();
+        // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
+        const { data, error } = await supabase.rpc('dash_get_users_data').single();
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_users_data");
         // The RPC will return an object matching the DashUsersData contract.
@@ -148,8 +148,8 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
 // --- PUBS TAB ---
 export const dash_getPubsData = async (): Promise<DashPubsData> => {
     try {
-        // FIX: Add generic type for RPC call and handle potential null response.
-        const { data, error } = await supabase.rpc<DashPubsData>('dash_get_pubs_data').single();
+        // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
+        const { data, error } = await supabase.rpc('dash_get_pubs_data').single();
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_pubs_data");
         // The RPC will return an object matching the DashPubsData contract.
@@ -335,8 +335,8 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // The initial load can be consolidated. Paginated loads will remain separate for now.
 export const dash_getContentInitialData = async (ratingsPageSize: number, commentsPageSize: number, imagesPageSize: number): Promise<DashContentInitialData> => {
      try {
-        // FIX: Add generic type for RPC call and handle potential null response.
-        const { data, error } = await supabase.rpc<DashContentInitialData>('dash_get_content_initial_feeds', {
+        // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
+        const { data, error } = await supabase.rpc('dash_get_content_initial_feeds', {
             ratings_page_size: ratingsPageSize,
             comments_page_size: commentsPageSize,
             images_page_size: imagesPageSize,

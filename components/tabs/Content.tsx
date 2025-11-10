@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
 import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
@@ -8,6 +8,9 @@ type SubTab = 'ratings' | 'comments' | 'images';
 const Content: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('ratings');
     
+    // State for initial load
+    const [initialLoading, setInitialLoading] = useState(true);
+
     // State for ratings
     const [ratings, setRatings] = useState<Rating[]>([]);
     const [ratingsPage, setRatingsPage] = useState(1);
@@ -30,6 +33,36 @@ const Content: React.FC = () => {
 
     const IMAGES_PER_PAGE = 9;
     const ITEMS_PER_PAGE = 15;
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            setInitialLoading(true);
+            try {
+                // Use the new consolidated function for a single, efficient initial fetch
+                const initialData = await dash_getContentInitialData(ITEMS_PER_PAGE, ITEMS_PER_PAGE, IMAGES_PER_PAGE);
+                
+                setRatings(initialData.ratings.items);
+                setHasMoreRatings(initialData.ratings.hasMore);
+                setRatingsPage(2); // Next page to load will be 2
+
+                setComments(initialData.comments.items);
+                setHasMoreComments(initialData.comments.hasMore);
+                setCommentsPage(2);
+
+                setImages(initialData.images.items);
+                setHasMoreImages(initialData.images.hasMore);
+                setImagesPage(1); // Current page is 1 for pagination
+            } catch (error) {
+                console.error("Failed to fetch initial content data", error);
+                setHasMoreRatings(false);
+                setHasMoreComments(false);
+                setHasMoreImages(false);
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+        fetchInitialData();
+    }, []);
 
     const loadRatings = async () => {
         if (loadingRatings || !hasMoreRatings) return;
@@ -66,33 +99,19 @@ const Content: React.FC = () => {
     };
     
     const fetchImageData = async (page: number) => {
+        if (page < 1) return;
         setLoadingImages(true);
         try {
             const newImages = await getImagesData(page, IMAGES_PER_PAGE);
             setImages(newImages);
             setImagesPage(page);
-            // The API for images doesn't return `hasMore`, so we infer it.
-            // This logic might need adjustment if the API changes.
-            // FIX: `getImagesData` returns an array directly, not an object with a `data` property.
-            const nextImages = await getImagesData(page + 1, 1);
-            setHasMoreImages(nextImages.length > 0);
+            setHasMoreImages(newImages.length === IMAGES_PER_PAGE);
         } catch (error) {
             console.error(`Failed to fetch images for page ${page}`, error);
         } finally {
             setLoadingImages(false);
         }
     };
-
-    // Automatically load content for the active tab if it's empty
-    useEffect(() => {
-        if (subTab === 'ratings' && ratings.length === 0) {
-            loadRatings();
-        } else if (subTab === 'comments' && comments.length === 0) {
-            loadComments();
-        } else if (subTab === 'images' && images.length === 0) {
-            fetchImageData(1);
-        }
-    }, [subTab]);
     
      const subTabs: { id: SubTab; label: string, icon: React.ReactNode }[] = [
         { id: 'ratings', label: 'Ratings Feed', icon: <StarIcon /> },
@@ -103,11 +122,11 @@ const Content: React.FC = () => {
     const renderContent = () => {
         switch (subTab) {
             case 'ratings':
-                return <RatingsFeed ratings={ratings} onLoadMore={loadRatings} hasMore={hasMoreRatings} isLoadingMore={loadingRatings} />;
+                return <RatingsFeed ratings={ratings} onLoadMore={loadRatings} hasMore={hasMoreRatings} isLoadingMore={loadingRatings} initialLoading={initialLoading} />;
             case 'comments':
-                return <CommentsFeed comments={comments} onLoadMore={loadComments} hasMore={hasMoreComments} isLoadingMore={loadingComments} />;
+                return <CommentsFeed comments={comments} onLoadMore={loadComments} hasMore={hasMoreComments} isLoadingMore={loadingComments} initialLoading={initialLoading} />;
             case 'images':
-                return <ImageGallery images={images} page={imagesPage} setPage={fetchImageData} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} />;
+                return <ImageGallery images={images} page={imagesPage} setPage={fetchImageData} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} initialLoading={initialLoading} />;
             default:
                 return null;
         }
@@ -155,7 +174,25 @@ const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: stri
     );
 };
 
-const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore }) => {
+const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean, initialLoading: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore, initialLoading }) => {
+    if (initialLoading) {
+        return (
+            <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto animate-pulse">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-background p-4 rounded-lg border border-border">
+                        <div className="flex space-x-4">
+                            <div className="w-10 h-10 rounded-full bg-border flex-shrink-0"></div>
+                            <div className="flex-grow space-y-2">
+                                <div className="h-4 bg-border rounded w-3/4"></div>
+                                <div className="h-3 bg-border rounded w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    
     const showEmptyState = ratings.length === 0 && !isLoadingMore;
 
     return (
@@ -205,7 +242,26 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
     );
 };
 
-const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore }) => {
+const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean, initialLoading: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore, initialLoading }) => {
+    if (initialLoading) {
+        return (
+            <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto animate-pulse">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-background p-4 rounded-lg border border-border">
+                        <div className="flex space-x-4">
+                            <div className="w-10 h-10 rounded-full bg-border flex-shrink-0"></div>
+                            <div className="flex-grow space-y-2">
+                                <div className="h-4 bg-border rounded w-1/4"></div>
+                                <div className="h-3 bg-border rounded w-full mt-2"></div>
+                                <div className="h-3 bg-border rounded w-5/6"></div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    
     const showEmptyState = comments.length === 0 && !isLoadingMore;
     
     return (
@@ -257,13 +313,23 @@ const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ i
     </div>
 );
 
-const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean, onImageClick: (image: UploadedImage) => void }> = ({ images, page, setPage, hasMore, isLoading, onImageClick }) => {
+const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean, onImageClick: (image: UploadedImage) => void, initialLoading: boolean }> = ({ images, page, setPage, hasMore, isLoading, onImageClick, initialLoading }) => {
+    const showSkeleton = initialLoading || (isLoading && images.length === 0);
+
+    const showEmptyState = !initialLoading && !isLoading && images.length === 0;
+
     return (
         <div className="bg-surface rounded-xl shadow-lg p-4">
-            {isLoading && images.length === 0 ? (
+            {showSkeleton ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
                     {[...Array(9)].map((_, i) => <div key={i} className="aspect-square bg-border rounded-lg"></div>)}
                  </div>
+            ) : showEmptyState ? (
+                <div className="text-center py-12 text-text-secondary">
+                    <CameraIcon />
+                    <p className="mt-2 font-semibold">No Images Yet</p>
+                    <p className="text-sm">When users upload images, they'll appear here.</p>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {images.map(image => (
@@ -278,11 +344,14 @@ const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (
                     ))}
                 </div>
             )}
-            <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => setPage(page - 1)} disabled={page === 1 || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
-                <span>Page {page}</span>
-                <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Next</button>
-            </div>
+            
+            {!showEmptyState && (
+                <div className="flex justify-between items-center mt-4 text-sm">
+                    <button onClick={() => setPage(page - 1)} disabled={page === 1 || isLoading || initialLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
+                    <span>Page {page}</span>
+                    <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading || initialLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Next</button>
+                </div>
+            )}
         </div>
     )
 };
