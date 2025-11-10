@@ -32,6 +32,7 @@ const Pubs: React.FC = () => {
                 <table className="w-full text-sm text-left text-text-secondary">
                     <thead className="text-xs text-text-secondary uppercase bg-background">
                         <tr>
+                            <th scope="col" className="px-4 py-3 text-center">#</th>
                             <th scope="col" className="px-6 py-3">Pub</th>
                             <th scope="col" className="px-6 py-3 text-center">{isScoreOutOf100 ? 'Score (/100)' : 'Score'}</th>
                             <th scope="col" className="px-6 py-3 text-center">Ratings</th>
@@ -41,14 +42,16 @@ const Pubs: React.FC = () => {
                         {loading ? (
                             [...Array(5)].map((_, i) => (
                                 <tr key={i} className="animate-pulse border-b border-border">
+                                    <td className="px-4 py-4 text-center"><div className="h-4 bg-border rounded w-4 mx-auto"></div></td>
                                     <td className="px-6 py-4"><div className="h-4 bg-border rounded w-3/4"></div></td>
                                     <td className="px-6 py-4 text-center"><div className="h-4 bg-border rounded w-1/2 mx-auto"></div></td>
                                     <td className="px-6 py-4 text-center"><div className="h-4 bg-border rounded w-1/2 mx-auto"></div></td>
                                 </tr>
                             ))
                         ) : (
-                            data.map(pub => (
+                            data.map((pub, index) => (
                                 <tr key={pub.id} className="border-b border-border hover:bg-border/50">
+                                    <td className="px-4 py-4 text-center font-medium text-text-primary">{index + 1}</td>
                                     <td className="px-6 py-4 font-medium text-text-primary">
                                         <div className="flex flex-col">
                                             <span>{pub.name}</span>
