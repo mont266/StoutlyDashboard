@@ -1,119 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
+import { getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
-import { StarIcon, MessageSquareIcon, CameraIcon, AtmosphereIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
+import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
 type SubTab = 'ratings' | 'comments' | 'images';
 
 const Content: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('ratings');
     
-    // State for ratings with "load more"
+    // State for ratings
     const [ratings, setRatings] = useState<Rating[]>([]);
     const [ratingsPage, setRatingsPage] = useState(1);
     const [hasMoreRatings, setHasMoreRatings] = useState(true);
-    const [loadingMoreRatings, setLoadingMoreRatings] = useState(false);
+    const [loadingRatings, setLoadingRatings] = useState(false);
 
-    // State for comments with infinite scroll
+    // State for comments
     const [comments, setComments] = useState<Comment[]>([]);
     const [commentsPage, setCommentsPage] = useState(1);
     const [hasMoreComments, setHasMoreComments] = useState(true);
-    const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+    const [loadingComments, setLoadingComments] = useState(false);
     
     // State for images with server-side pagination
     const [images, setImages] = useState<UploadedImage[]>([]);
-    const [imagesPage, setImagesPage] = useState(1); // 1-based index for API
+    const [imagesPage, setImagesPage] = useState(1);
     const [hasMoreImages, setHasMoreImages] = useState(true);
     const [loadingImages, setLoadingImages] = useState(false);
     
-    const [loading, setLoading] = useState(true); // For initial component load
     const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
 
-
     const IMAGES_PER_PAGE = 9;
-    const COMMENTS_PER_PAGE = 20;
-    const RATINGS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 15;
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Use the new consolidated function for the initial load
-                const initialData = await dash_getContentInitialData(RATINGS_PER_PAGE, COMMENTS_PER_PAGE, IMAGES_PER_PAGE);
-
-                setRatings(initialData.ratings.items);
-                setHasMoreRatings(initialData.ratings.hasMore);
-
-                setComments(initialData.comments.items);
-                setHasMoreComments(initialData.comments.hasMore);
-
-                setImages(initialData.images.items);
-                setHasMoreImages(initialData.images.hasMore);
-
-            } catch(e) {
-                console.error("Failed to fetch initial content data", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    const handleLoadMoreRatings = async () => {
-        if (loadingMoreRatings || !hasMoreRatings) return;
-
-        setLoadingMoreRatings(true);
-        const nextPage = ratingsPage + 1;
+    const loadRatings = async () => {
+        if (loadingRatings || !hasMoreRatings) return;
+        setLoadingRatings(true);
         try {
-            const newRatings = await getRatingsData(nextPage, RATINGS_PER_PAGE);
+            const newRatings = await getRatingsData(ratingsPage, ITEMS_PER_PAGE);
             setRatings(prev => [...prev, ...newRatings]);
-            setRatingsPage(nextPage);
-            if (newRatings.length < RATINGS_PER_PAGE) {
+            setRatingsPage(prev => prev + 1);
+            if (newRatings.length < ITEMS_PER_PAGE) {
                 setHasMoreRatings(false);
             }
         } catch (error) {
-            console.error("Failed to load more ratings", error);
+            console.error("Failed to load ratings", error);
         } finally {
-            setLoadingMoreRatings(false);
+            setLoadingRatings(false);
         }
     };
 
-    const handleLoadMoreComments = async () => {
-        if (loadingMoreComments || !hasMoreComments) return;
-
-        setLoadingMoreComments(true);
-        const nextPage = commentsPage + 1;
+    const loadComments = async () => {
+        if (loadingComments || !hasMoreComments) return;
+        setLoadingComments(true);
         try {
-            const newComments = await getCommentsData(nextPage, COMMENTS_PER_PAGE);
+            const newComments = await getCommentsData(commentsPage, ITEMS_PER_PAGE);
             setComments(prev => [...prev, ...newComments]);
-            setCommentsPage(nextPage);
-            if (newComments.length < COMMENTS_PER_PAGE) {
+            setCommentsPage(prev => prev + 1);
+            if (newComments.length < ITEMS_PER_PAGE) {
                 setHasMoreComments(false);
             }
         } catch (error) {
-            console.error("Failed to load more comments", error);
+            console.error("Failed to load comments", error);
         } finally {
-            setLoadingMoreComments(false);
+            setLoadingComments(false);
         }
     };
     
-    useEffect(() => {
-        if (imagesPage === 1) return; 
+    const fetchImageData = async (page: number) => {
+        setLoadingImages(true);
+        try {
+            const newImages = await getImagesData(page, IMAGES_PER_PAGE);
+            setImages(newImages);
+            setImagesPage(page);
+            // The API for images doesn't return `hasMore`, so we infer it.
+            // This logic might need adjustment if the API changes.
+            // FIX: `getImagesData` returns an array directly, not an object with a `data` property.
+            const nextImages = await getImagesData(page + 1, 1);
+            setHasMoreImages(nextImages.length > 0);
+        } catch (error) {
+            console.error(`Failed to fetch images for page ${page}`, error);
+        } finally {
+            setLoadingImages(false);
+        }
+    };
 
-        const fetchImageData = async () => {
-            setLoadingImages(true);
-            try {
-                const newImages = await getImagesData(imagesPage, IMAGES_PER_PAGE);
-                setImages(newImages);
-                setHasMoreImages(newImages.length === IMAGES_PER_PAGE);
-            } catch (error) {
-                console.error(`Failed to fetch images for page ${imagesPage}`, error);
-            } finally {
-                setLoadingImages(false);
-            }
-        };
-        fetchImageData();
-    }, [imagesPage]);
+    // Automatically load content for the active tab if it's empty
+    useEffect(() => {
+        if (subTab === 'ratings' && ratings.length === 0) {
+            loadRatings();
+        } else if (subTab === 'comments' && comments.length === 0) {
+            loadComments();
+        } else if (subTab === 'images' && images.length === 0) {
+            fetchImageData(1);
+        }
+    }, [subTab]);
     
      const subTabs: { id: SubTab; label: string, icon: React.ReactNode }[] = [
         { id: 'ratings', label: 'Ratings Feed', icon: <StarIcon /> },
@@ -122,15 +101,13 @@ const Content: React.FC = () => {
     ];
 
     const renderContent = () => {
-        if (loading) return <div className="bg-surface rounded-xl h-96 animate-pulse mt-4"></div>;
-
         switch (subTab) {
             case 'ratings':
-                return <RatingsFeed ratings={ratings} onLoadMore={handleLoadMoreRatings} hasMore={hasMoreRatings} isLoadingMore={loadingMoreRatings} />;
+                return <RatingsFeed ratings={ratings} onLoadMore={loadRatings} hasMore={hasMoreRatings} isLoadingMore={loadingRatings} />;
             case 'comments':
-                return <CommentsFeed comments={comments} onLoadMore={handleLoadMoreComments} hasMore={hasMoreComments} isLoadingMore={loadingMoreComments} />;
+                return <CommentsFeed comments={comments} onLoadMore={loadComments} hasMore={hasMoreComments} isLoadingMore={loadingComments} />;
             case 'images':
-                return <ImageGallery images={images} page={imagesPage - 1} setPage={(p) => setImagesPage(p + 1)} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} />;
+                return <ImageGallery images={images} page={imagesPage} setPage={fetchImageData} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} />;
             default:
                 return null;
         }
@@ -178,66 +155,88 @@ const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: stri
     );
 };
 
-const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore }) => (
-    <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
-        {ratings.map(rating => (
-            <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
-                <div className="flex space-x-4">
-                    <img 
-                        src={getAvatarUrl(rating.user.avatarId)} 
-                        alt={rating.user.name} 
-                        className="w-10 h-10 rounded-full bg-border flex-shrink-0"
-                        onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
-                    />
+const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore }) => {
+    const showEmptyState = ratings.length === 0 && !isLoadingMore;
+
+    return (
+        <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
+            {showEmptyState && (
+                <div className="text-center py-12 text-text-secondary">
+                    <StarIcon />
+                    <p className="mt-2 font-semibold">No Ratings Yet</p>
+                    <p className="text-sm">When users submit ratings, they'll appear here.</p>
+                </div>
+            )}
+            {ratings.map(rating => (
+                <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
+                    <div className="flex space-x-4">
+                        <img 
+                            src={getAvatarUrl(rating.user.avatarId)} 
+                            alt={rating.user.name} 
+                            className="w-10 h-10 rounded-full bg-border flex-shrink-0"
+                            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                        />
+                        <div className="flex-grow">
+                            <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
+                            <p className="text-xs text-text-secondary">{rating.timestamp}</p>
+                            
+                            {rating.message && (
+                                <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
+                                    "{rating.message}"
+                                </blockquote>
+                            )}
+
+                            {(rating.quality !== undefined || rating.price !== undefined) && (
+                                <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
+                                    <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
+                                    <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))}
+            {hasMore && (
+                 <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
+                    {isLoadingMore ? 'Loading...' : 'Load More'}
+                </button>
+            )}
+        </div>
+    );
+};
+
+const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore }) => {
+    const showEmptyState = comments.length === 0 && !isLoadingMore;
+    
+    return (
+        <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
+            {showEmptyState && (
+                <div className="text-center py-12 text-text-secondary">
+                    <MessageSquareIcon />
+                    <p className="mt-2 font-semibold">No Comments Yet</p>
+                    <p className="text-sm">When users submit comments, they'll appear here.</p>
+                </div>
+            )}
+            {comments.map(comment => (
+                <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
+                    <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0" />
                     <div className="flex-grow">
-                        <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
-                        <p className="text-xs text-text-secondary">{rating.timestamp}</p>
-                        
-                        {rating.message && (
-                            <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
-                                "{rating.message}"
-                            </blockquote>
-                        )}
-
-                        {(rating.quality !== undefined || rating.price !== undefined) && (
-                            <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
-                                <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
-                                <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
-                            </div>
-                        )}
+                        <div className="flex items-baseline space-x-2">
+                            <span className="font-semibold text-text-primary">{comment.user.name}</span>
+                            <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
+                        </div>
+                        <p className="text-text-primary mt-2">{comment.text}</p>
                     </div>
                 </div>
-            </div>
-        ))}
-        {hasMore && (
-             <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
-                {isLoadingMore ? 'Loading...' : 'Load More'}
-            </button>
-        )}
-    </div>
-);
-
-const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean }> = ({ comments, onLoadMore, hasMore, isLoadingMore }) => (
-     <div className="bg-surface rounded-xl shadow-lg p-2 sm:p-4 space-y-4 max-w-3xl mx-auto">
-        {comments.map(comment => (
-            <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
-                <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0" />
-                <div className="flex-grow">
-                    <div className="flex items-baseline space-x-2">
-                        <span className="font-semibold text-text-primary">{comment.user.name}</span>
-                        <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
-                    </div>
-                    <p className="text-text-primary mt-2">{comment.text}</p>
-                </div>
-            </div>
-        ))}
-        {hasMore && (
-            <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
-                {isLoadingMore ? 'Loading...' : 'Load More'}
-            </button>
-        )}
-    </div>
-);
+            ))}
+            {hasMore && (
+                <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
+                    {isLoadingMore ? 'Loading...' : 'Load More'}
+                </button>
+            )}
+        </div>
+    );
+};
 
 const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ image, onClose }) => (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -280,8 +279,8 @@ const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (
                 </div>
             )}
             <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => setPage(page - 1)} disabled={page === 0 || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
-                <span>Page {page + 1}</span>
+                <button onClick={() => setPage(page - 1)} disabled={page === 1 || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
+                <span>Page {page}</span>
                 <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Next</button>
             </div>
         </div>
