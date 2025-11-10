@@ -125,16 +125,13 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         const rawKpis = kpisResult.data as any;
         const mappedKpis: HomeKpis = {
             totalUsers: rawKpis.total_users ?? 0,
-            // FIX: Calculate new users from timeseries data for accuracy
-            newUsers: chartsData.newUsersOverTime.reduce((sum, current) => sum + current.value, 0),
+            newUsers: rawKpis.new_users ?? 0,
             newUsersChange: rawKpis.new_users_change ?? 0,
             activeUsers: rawKpis.active_users ?? 0,
             activeUsersChange: rawKpis.active_users_change ?? 0,
             totalRatings: rawKpis.total_ratings ?? 0,
-             // FIX: Calculate new ratings from timeseries data for accuracy
-            newRatings: chartsData.newRatingsOverTime.reduce((sum, current) => sum + current.value, 0),
+            newRatings: rawKpis.new_ratings ?? 0,
             newRatingsChange: rawKpis.new_ratings_change ?? 0,
-            // FIX: Use total_pubs instead of total_pubs_with_ratings
             totalPubs: rawKpis.total_pubs ?? 0,
             totalUploadedImages: rawKpis.total_uploaded_images ?? 0,
             totalComments: rawKpis.total_comments ?? 0,
