@@ -63,24 +63,3 @@ export interface DashPubsData {
         mostReviewed: Pub[];
     };
 }
-
-
-// --- Content Tab Contract ---
-// This is for the *initial* load of the content tab.
-// To be returned by `dash_get_content_initial_feeds()`.
-// Subsequent "load more" actions will still require individual calls
-// (e.g., `dash_get_ratings_page(page)`) for each feed.
-export interface DashContentInitialData {
-    ratings: {
-        items: Rating[];
-        hasMore: boolean;
-    };
-    comments: {
-        items: Comment[];
-        hasMore: boolean;
-    };
-    images: {
-        items: UploadedImage[];
-        hasMore: boolean;
-    };
-}

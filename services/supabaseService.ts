@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
-import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
+import type { DashHomeData, DashUsersData, DashPubsData } from './dashContracts';
 
 
 // --- SUPABASE CLIENT SETUP ---
@@ -111,14 +111,16 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         
         // The data should already match the DashHomeData contract perfectly.
         // We just need to format the date for the chart display.
+        // FIX: Cast `data` to `any` to allow property access and spreading, as its type is inferred as `unknown` without generated types.
+        const responseData = data as any;
         return {
-            ...data,
+            ...responseData,
             charts: {
-                newUsersOverTime: data.charts.newUsersOverTime.map((row) => ({
+                newUsersOverTime: responseData.charts.newUsersOverTime.map((row: any) => ({
                     ...row,
                     date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 })),
-                newRatingsOverTime: data.charts.newRatingsOverTime.map((row) => ({
+                newRatingsOverTime: responseData.charts.newRatingsOverTime.map((row: any) => ({
                     ...row,
                     date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 })),
@@ -138,7 +140,8 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_users_data");
         // The RPC will return an object matching the DashUsersData contract.
-        return data;
+        // FIX: Cast the returned data to the expected DashUsersData type to satisfy the function's return type promise.
+        return data as DashUsersData;
     } catch (error) {
         handleSupabaseError(error, 'Users Data (New)');
         throw error;
@@ -153,7 +156,8 @@ export const dash_getPubsData = async (): Promise<DashPubsData> => {
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_pubs_data");
         // The RPC will return an object matching the DashPubsData contract.
-        return data;
+        // FIX: Cast the returned data to the expected DashPubsData type to satisfy the function's return type promise.
+        return data as DashPubsData;
     } catch (error) {
         handleSupabaseError(error, 'Pubs Data (New)');
         throw error;
@@ -332,26 +336,6 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // The individual user fetch functions will be replaced by the single dash_getUsersData call.
 
 // --- CONTENT TAB ---
-// The initial load can be consolidated. Paginated loads will remain separate for now.
-export const dash_getContentInitialData = async (ratingsPageSize: number, commentsPageSize: number, imagesPageSize: number): Promise<DashContentInitialData> => {
-     try {
-        // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
-        const { data, error } = await supabase.rpc('dash_get_content_initial_feeds', {
-            ratings_page_size: ratingsPageSize,
-            comments_page_size: commentsPageSize,
-            images_page_size: imagesPageSize,
-        }).single();
-
-        if (error) throw error;
-        if (!data) throw new Error("No data received from dash_get_content_initial_feeds");
-        return data;
-    } catch (error) {
-        handleSupabaseError(error, 'Initial Content Feeds (New)');
-        throw error;
-    }
-}
-
-
 // These will be refactored to call new, simpler `dash_` functions.
 export const getRatingsData = async (pageNumber: number, pageSize: number): Promise<Rating[]> => {
     try {
@@ -365,7 +349,6 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 created_at,
                 message,
                 overall,
-                atmosphere,
                 quality,
                 price,
                 pubs ( name ),
@@ -378,7 +361,7 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
         if (!ratingsData) return [];
 
         return (ratingsData as any[]).map(r => {
-            const subScores = [r.atmosphere, r.quality, r.price].filter(s => typeof s === 'number');
+            const subScores = [r.quality, r.price].filter(s => typeof s === 'number');
             const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
             const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
 
@@ -386,7 +369,6 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 id: r.id,
                 pubName: r.pubs?.name || 'Unknown Pub',
                 score: score,
-                atmosphere: r.atmosphere,
                 quality: r.quality,
                 price: r.price,
                 timestamp: new Date(r.created_at).toLocaleString(),

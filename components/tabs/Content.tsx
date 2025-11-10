@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
+import { getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
 import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
@@ -38,20 +38,24 @@ const Content: React.FC = () => {
         const fetchInitialData = async () => {
             setInitialLoading(true);
             try {
-                // Use the new consolidated function for a single, efficient initial fetch
-                const initialData = await dash_getContentInitialData(ITEMS_PER_PAGE, ITEMS_PER_PAGE, IMAGES_PER_PAGE);
-                
-                setRatings(initialData.ratings.items);
-                setHasMoreRatings(initialData.ratings.hasMore);
-                setRatingsPage(2); // Next page to load will be 2
+                // Fetch all initial feeds in parallel since the consolidated function is broken
+                const [initialRatings, initialComments, initialImages] = await Promise.all([
+                    getRatingsData(1, ITEMS_PER_PAGE),
+                    getCommentsData(1, ITEMS_PER_PAGE),
+                    getImagesData(1, IMAGES_PER_PAGE)
+                ]);
 
-                setComments(initialData.comments.items);
-                setHasMoreComments(initialData.comments.hasMore);
+                setRatings(initialRatings);
+                setHasMoreRatings(initialRatings.length === ITEMS_PER_PAGE);
+                setRatingsPage(2);
+
+                setComments(initialComments);
+                setHasMoreComments(initialComments.length === ITEMS_PER_PAGE);
                 setCommentsPage(2);
 
-                setImages(initialData.images.items);
-                setHasMoreImages(initialData.images.hasMore);
-                setImagesPage(1); // Current page is 1 for pagination
+                setImages(initialImages);
+                setHasMoreImages(initialImages.length === IMAGES_PER_PAGE);
+                setImagesPage(1);
             } catch (error) {
                 console.error("Failed to fetch initial content data", error);
                 setHasMoreRatings(false);
