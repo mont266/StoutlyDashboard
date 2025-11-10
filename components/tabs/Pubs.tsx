@@ -133,11 +133,11 @@ const Pubs: React.FC = () => {
                                 ) : (
                                     analytics?.pintPriceByCountry.map(item => (
                                         <tr key={item.country} className="border-b border-border hover:bg-border/50">
-                                            <td className="px-6 py-4 font-medium text-text-primary">
+                                            <td className="px-6 py-3 font-medium text-text-primary">
                                                 <span className="mr-2">{item.flag}</span>
                                                 {item.country}
                                             </td>
-                                            <td className="px-6 py-4 text-text-primary text-right font-mono">
+                                            <td className="px-6 py-3 text-text-primary text-right font-mono">
                                                 £{item.price.toFixed(2)}
                                             </td>
                                         </tr>

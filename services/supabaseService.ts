@@ -123,14 +123,21 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         // Map snake_case properties from the DB to camelCase for the UI
         // Cast RPC result data to `any` to allow dynamic property access.
         const rawKpis = kpisResult.data as any;
+
+        // The `get_dashboard_stats` RPC incorrectly returns 0 for new users and ratings.
+        // To ensure the KPI cards match the data shown in the charts, we calculate the total
+        // by summing the timeseries data. This is preferable to showing an incorrect "0" value.
+        const newUsersFromChart = chartsData.newUsersOverTime.reduce((sum, current) => sum + current.value, 0);
+        const newRatingsFromChart = chartsData.newRatingsOverTime.reduce((sum, current) => sum + current.value, 0);
+
         const mappedKpis: HomeKpis = {
             totalUsers: rawKpis.total_users ?? 0,
-            newUsers: rawKpis.new_users ?? 0,
+            newUsers: newUsersFromChart,
             newUsersChange: rawKpis.new_users_change ?? 0,
             activeUsers: rawKpis.active_users ?? 0,
             activeUsersChange: rawKpis.active_users_change ?? 0,
             totalRatings: rawKpis.total_ratings ?? 0,
-            newRatings: rawKpis.new_ratings ?? 0,
+            newRatings: newRatingsFromChart,
             newRatingsChange: rawKpis.new_ratings_change ?? 0,
             totalPubs: rawKpis.total_pubs ?? 0,
             totalUploadedImages: rawKpis.total_uploaded_images ?? 0,
@@ -284,7 +291,7 @@ export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
             averageOverallRating: 0,
             totalRatingsSubmitted: rawData.total_ratings ?? 0,
             pintPriceByCountry: (priceResult.data || []).map((v: any) => ({
-                country: v.country,
+                country: v.name,
                 flag: v.flag,
                 price: v.avg_price ?? 0,
             })),
