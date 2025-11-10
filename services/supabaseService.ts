@@ -262,23 +262,24 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
 };
 
 
-// --- DEPRECATED/OLD FUNCTIONS (To be removed after refactor) ---
-
 // --- FINANCIALS TAB ---
-// This already uses a single endpoint, which is good. Renaming to `dash_` for consistency.
-export const dash_getFinancialsData = async (timeframe: string): Promise<FinancialsData> => {
+// This function now calls a dedicated Supabase function that securely fetches data from the Stripe API.
+export const dash_getStripeFinancials = async (timeframe: string): Promise<FinancialsData> => {
     try {
-        const { data, error } = await supabase.functions.invoke('dash-get-financial-stats', {
+        const { data, error } = await supabase.functions.invoke('dash-get-stripe-data', {
             body: { time_period: timeframe },
         });
 
         if (error) throw error;
         return data;
     } catch (error) {
-        handleSupabaseError(error, 'Financials Data');
+        handleSupabaseError(error, 'Stripe Financials Data');
         throw error;
     }
 };
+
+
+// --- DEPRECATED/OLD FUNCTIONS (To be removed after refactor) ---
 
 // --- CONTENT TAB (OLD - for pagination) ---
 // These will be refactored to call new, simpler `dash_` functions.

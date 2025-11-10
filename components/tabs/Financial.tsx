@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { dash_getFinancialsData, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getStripeFinancials, getAvatarUrl } from '../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../types';
 import StatCard from '../StatCard';
 import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon } from '../icons/Icons';
@@ -17,14 +17,10 @@ const Financial: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                const result = await dash_getFinancialsData(timeframe);
+                const result = await dash_getStripeFinancials(timeframe);
                 setData(result);
             } catch (err: any) {
-                if (err.name === 'FunctionsHttpError' && err.context?.status === 403) {
-                    setError('Permission Denied: You must be a developer to view this data.');
-                } else {
-                    setError('An error occurred while fetching financial data. Please check the console.');
-                }
+                setError('An error occurred while fetching financial data. Please check the console.');
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -94,7 +90,12 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => (
             <TrophyIcon />
             <h4 className="font-semibold ml-2">Top Donator</h4>
         </div>
-        <img src={getAvatarUrl(donator.avatarId)} alt={donator.name} className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary"/>
+        <img 
+            src={getAvatarUrl(donator.avatarId)} 
+            alt={donator.name} 
+            className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary bg-border object-cover"
+            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+        />
         <p className="font-bold text-text-primary text-xl">{donator.name}</p>
         <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
     </div>
@@ -115,7 +116,12 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                     <tr key={donation.id} className="border-b border-border last:border-b-0 hover:bg-border/50">
                         <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                             <div className="flex items-center space-x-3">
-                                <img src={getAvatarUrl(donation.user.avatarId)} alt={donation.user.name} className="w-8 h-8 rounded-full" />
+                                <img 
+                                    src={getAvatarUrl(donation.user.avatarId)} 
+                                    alt={donation.user.name} 
+                                    className="w-8 h-8 rounded-full bg-border object-cover"
+                                    onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                                />
                                 <span>{donation.user.name}</span>
                             </div>
                         </td>
