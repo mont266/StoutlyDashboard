@@ -1,3 +1,5 @@
+
+
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
@@ -98,22 +100,25 @@ const handleSupabaseError = (error: any, context: string) => {
 export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData> => {
     try {
         // This will be a single RPC call to the new, consolidated function
+        // FIX: Add generic type for RPC call to ensure `data` is typed correctly. This resolves multiple errors.
         const { data, error } = await supabase
-            .rpc('dash_get_home_data', { time_period: timeframe })
+            .rpc<DashHomeData>('dash_get_home_data', { time_period: timeframe })
             .single();
         
         if (error) throw error;
+        // FIX: Handle cases where no data is returned.
+        if (!data) throw new Error("No data received from dash_get_home_data");
         
         // The data should already match the DashHomeData contract perfectly.
         // We just need to format the date for the chart display.
         return {
             ...data,
             charts: {
-                newUsersOverTime: data.charts.newUsersOverTime.map((row: any) => ({
+                newUsersOverTime: data.charts.newUsersOverTime.map((row) => ({
                     ...row,
                     date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 })),
-                newRatingsOverTime: data.charts.newRatingsOverTime.map((row: any) => ({
+                newRatingsOverTime: data.charts.newRatingsOverTime.map((row) => ({
                     ...row,
                     date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 })),
@@ -128,8 +133,10 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
 // --- USERS TAB ---
 export const dash_getUsersData = async (): Promise<DashUsersData> => {
     try {
-        const { data, error } = await supabase.rpc('dash_get_users_data').single();
+        // FIX: Add generic type for RPC call and handle potential null response.
+        const { data, error } = await supabase.rpc<DashUsersData>('dash_get_users_data').single();
         if (error) throw error;
+        if (!data) throw new Error("No data received from dash_get_users_data");
         // The RPC will return an object matching the DashUsersData contract.
         return data;
     } catch (error) {
@@ -141,8 +148,10 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
 // --- PUBS TAB ---
 export const dash_getPubsData = async (): Promise<DashPubsData> => {
     try {
-        const { data, error } = await supabase.rpc('dash_get_pubs_data').single();
+        // FIX: Add generic type for RPC call and handle potential null response.
+        const { data, error } = await supabase.rpc<DashPubsData>('dash_get_pubs_data').single();
         if (error) throw error;
+        if (!data) throw new Error("No data received from dash_get_pubs_data");
         // The RPC will return an object matching the DashPubsData contract.
         return data;
     } catch (error) {
@@ -326,13 +335,15 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
 // The initial load can be consolidated. Paginated loads will remain separate for now.
 export const dash_getContentInitialData = async (ratingsPageSize: number, commentsPageSize: number, imagesPageSize: number): Promise<DashContentInitialData> => {
      try {
-        const { data, error } = await supabase.rpc('dash_get_content_initial_feeds', {
+        // FIX: Add generic type for RPC call and handle potential null response.
+        const { data, error } = await supabase.rpc<DashContentInitialData>('dash_get_content_initial_feeds', {
             ratings_page_size: ratingsPageSize,
             comments_page_size: commentsPageSize,
             images_page_size: imagesPageSize,
         }).single();
 
         if (error) throw error;
+        if (!data) throw new Error("No data received from dash_get_content_initial_feeds");
         return data;
     } catch (error) {
         handleSupabaseError(error, 'Initial Content Feeds (New)');
@@ -344,13 +355,24 @@ export const dash_getContentInitialData = async (ratingsPageSize: number, commen
 // These will be refactored to call new, simpler `dash_` functions.
 export const getRatingsData = async (pageNumber: number, pageSize: number): Promise<Rating[]> => {
     try {
+        const from = (pageNumber - 1) * pageSize;
+        const to = from + pageSize - 1;
+
         const { data: ratingsData, error } = await supabase
-            .rpc('get_community_feed', {
-                page_size: pageSize, 
-                page_number: pageNumber, 
-                sort_by: 'latest', 
-                time_period: 'All'
-            });
+            .from('ratings')
+            .select(`
+                id,
+                created_at,
+                message,
+                overall,
+                atmosphere,
+                quality,
+                price,
+                pubs ( name ),
+                profiles ( username, avatar_id )
+            `)
+            .order('created_at', { ascending: false })
+            .range(from, to);
             
         if (error) throw error;
         if (!ratingsData) return [];
@@ -361,16 +383,16 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
             const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
 
             return {
-                id: r.rating_id,
-                pubName: r.pub_name,
+                id: r.id,
+                pubName: r.pubs?.name || 'Unknown Pub',
                 score: score,
                 atmosphere: r.atmosphere,
                 quality: r.quality,
                 price: r.price,
                 timestamp: new Date(r.created_at).toLocaleString(),
                 user: {
-                    name: r.username || 'Anonymous User',
-                    avatarId: r.avatar_id,
+                    name: r.profiles?.username || 'Anonymous User',
+                    avatarId: r.profiles?.avatar_id || '',
                 },
                 message: r.message,
             };
@@ -383,20 +405,28 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
 
 export const getCommentsData = async (pageNumber: number, pageSize: number): Promise<Comment[]> => {
      try {
+        const from = (pageNumber - 1) * pageSize;
+        const to = from + pageSize - 1;
+
         const { data, error } = await supabase
-            .rpc('get_all_comments', { 
-                page_number: pageNumber, 
-                page_size: pageSize 
-            });
+            .from('comments')
+            .select(`
+                id,
+                content,
+                created_at,
+                profiles ( username, avatar_id )
+            `)
+            .order('created_at', { ascending: false })
+            .range(from, to);
             
         if (error) throw error;
         return ((data as any[]) || []).map(c => ({
-            id: c.comment_id,
+            id: c.id,
             text: c.content,
             timestamp: new Date(c.created_at).toLocaleString(),
             user: {
-                name: c.username,
-                avatarId: c.avatar_id,
+                name: c.profiles?.username || 'Anonymous User',
+                avatarId: c.profiles?.avatar_id || '',
             }
         }));
     } catch (error) {
@@ -407,20 +437,28 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
 
 export const getImagesData = async (pageNumber: number, pageSize: number): Promise<UploadedImage[]> => {
     try {
+        const from = (pageNumber - 1) * pageSize;
+        const to = from + pageSize - 1;
+
         const { data, error } = await supabase
-            .rpc('get_all_images', { 
-                page_number: pageNumber, 
-                page_size: pageSize 
-            });
+            .from('images')
+            .select(`
+                id,
+                image_url,
+                created_at,
+                profiles ( username, avatar_id )
+            `)
+            .order('created_at', { ascending: false })
+            .range(from, to);
             
         if (error) throw error;
         return ((data as any[]) || []).map(i => ({
-            id: i.image_id,
+            id: i.id,
             imageUrl: i.image_url,
             timestamp: new Date(i.created_at).toLocaleString(),
             user: {
-                name: i.username,
-                avatarId: i.avatar_id,
+                name: i.profiles?.username || 'Anonymous User',
+                avatarId: i.profiles?.avatar_id || '',
             }
         }));
     } catch (error) {
