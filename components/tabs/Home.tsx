@@ -110,7 +110,6 @@ const Home: React.FC = () => {
                                     {data.tables.avgPintPriceByCountry.map(item => (
                                         <tr key={item.country} className="border-b border-border last:border-b-0 hover:bg-border/50">
                                             <td className="px-6 py-3 font-medium text-text-primary">
-                                                <span className="mr-2">{item.flag}</span>
                                                 {item.country}
                                             </td>
                                             <td className="px-6 py-3 text-text-primary text-center">
