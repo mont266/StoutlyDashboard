@@ -1,26 +1,23 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { getPubsLeaderboard, getContentAnalyticsData } from '../../services/supabaseService';
-import type { Pub, ContentAnalytics } from '../../types';
+import { dash_getPubsData } from '../../services/supabaseService';
+import type { Pub } from '../../types';
+import type { DashPubsData } from '../../services/dashContracts';
 import { StarIcon, BuildingIcon, HashIcon } from '../icons/Icons';
 import StatCard from '../StatCard';
 
 const Pubs: React.FC = () => {
-    const [pubs, setPubs] = useState<Pub[]>([]);
-    const [analytics, setAnalytics] = useState<ContentAnalytics | null>(null);
+    const [data, setData] = useState<DashPubsData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [pubsData, analyticsData] = await Promise.all([
-                    getPubsLeaderboard(),
-                    getContentAnalyticsData()
-                ]);
-                setPubs(pubsData);
-                setAnalytics(analyticsData);
+                // A single, consolidated call
+                const result = await dash_getPubsData();
+                setData(result);
             } catch (error) {
                 console.error("Failed to fetch pub data:", error);
             } finally {
@@ -29,9 +26,6 @@ const Pubs: React.FC = () => {
         };
         fetchData();
     }, []);
-
-    const topRatedPubs = [...pubs].sort((a, b) => b.averageScore - a.averageScore).slice(0, 10);
-    const mostReviewedPubs = [...pubs].sort((a, b) => b.totalRatings - a.totalRatings).slice(0, 10);
 
     const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean, isScoreOutOf100?: boolean }> = ({ title, data, loading, isScoreOutOf100 = false }) => (
         <div className="bg-surface rounded-xl shadow-lg">
@@ -98,19 +92,19 @@ const Pubs: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">Pub Analytics</h2>
             
             <div className="mb-6">
-                {loading || !analytics ? renderAnalyticsSkeleton() : (
+                {loading || !data ? renderAnalyticsSkeleton() : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <StatCard title="Total Pubs" value={analytics.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                        <StatCard title="Average Overall Rating" value={analytics.averageOverallRating.toFixed(2)} icon={<StarIcon />} />
-                        <StatCard title="Total Ratings Submitted" value={analytics.totalRatingsSubmitted.toLocaleString()} icon={<HashIcon />} />
+                        <StatCard title="Total Pubs" value={data.analytics.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
+                        <StatCard title="Average Overall Rating" value={data.analytics.averageOverallRating.toFixed(2)} icon={<StarIcon />} />
+                        <StatCard title="Total Ratings Submitted" value={data.analytics.totalRatingsSubmitted.toLocaleString()} icon={<HashIcon />} />
                     </div>
                 )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                    <PubTable title="Top 10 Pub Scores" data={topRatedPubs} loading={loading} isScoreOutOf100={true} />
-                    <PubTable title="Top 10 Most Reviewed Pubs" data={mostReviewedPubs} loading={loading} />
+                    <PubTable title="Top 10 Pub Scores" data={data?.leaderboards.topRated ?? []} loading={loading} isScoreOutOf100={true} />
+                    <PubTable title="Top 10 Most Reviewed Pubs" data={data?.leaderboards.mostReviewed ?? []} loading={loading} />
                 </div>
                  <div className="bg-surface rounded-xl shadow-lg h-fit">
                     <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price by Country</h3>
@@ -131,7 +125,7 @@ const Pubs: React.FC = () => {
                                         </tr>
                                     ))
                                 ) : (
-                                    analytics?.pintPriceByCountry.map(item => (
+                                    data?.analytics.pintPriceByCountry.map(item => (
                                         <tr key={item.country} className="border-b border-border hover:bg-border/50">
                                             <td className="px-6 py-3 font-medium text-text-primary">
                                                 <span className="mr-2">{item.flag}</span>

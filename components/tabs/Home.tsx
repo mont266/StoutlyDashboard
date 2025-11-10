@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { getHomeData } from '../../services/supabaseService';
-import type { HomeData } from '../../types';
+import { dash_getHomeData } from '../../services/supabaseService';
+import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
 import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon } from '../icons/Icons';
 
 const Home: React.FC = () => {
-    const [data, setData] = useState<HomeData | null>(null);
+    const [data, setData] = useState<DashHomeData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('30d');
@@ -18,11 +18,12 @@ const Home: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                const result = await getHomeData(timeframe);
+                // A single, reliable API call
+                const result = await dash_getHomeData(timeframe);
                 setData(result);
             } catch (err)
  {
-                setError('Failed to fetch dashboard data.');
+                setError('Failed to fetch dashboard data. The new dash_ function may not be deployed yet.');
                 console.error(err);
             } finally {
                 setLoading(false);

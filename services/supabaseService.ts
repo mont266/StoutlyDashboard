@@ -1,7 +1,7 @@
-
-
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
+import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
+
 
 // --- SUPABASE CLIENT SETUP ---
 
@@ -92,9 +92,70 @@ const handleSupabaseError = (error: any, context: string) => {
     // for details like HTTP status codes for more specific error handling.
 }
 
-// --- LIVE API CALLS ---
+// --- LIVE API CALLS (NEW CONSOLIDATED DASHBOARD FUNCTIONS) ---
 
 // --- HOME TAB ---
+export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData> => {
+    try {
+        // This will be a single RPC call to the new, consolidated function
+        const { data, error } = await supabase
+            .rpc('dash_get_home_data', { time_period: timeframe })
+            .single();
+        
+        if (error) throw error;
+        
+        // The data should already match the DashHomeData contract perfectly.
+        // We just need to format the date for the chart display.
+        return {
+            ...data,
+            charts: {
+                newUsersOverTime: data.charts.newUsersOverTime.map((row: any) => ({
+                    ...row,
+                    date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                })),
+                newRatingsOverTime: data.charts.newRatingsOverTime.map((row: any) => ({
+                    ...row,
+                    date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                })),
+            }
+        };
+    } catch (error) {
+        handleSupabaseError(error, 'Home Dashboard (New)');
+        throw error;
+    }
+};
+
+// --- USERS TAB ---
+export const dash_getUsersData = async (): Promise<DashUsersData> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_users_data').single();
+        if (error) throw error;
+        // The RPC will return an object matching the DashUsersData contract.
+        return data;
+    } catch (error) {
+        handleSupabaseError(error, 'Users Data (New)');
+        throw error;
+    }
+};
+
+// --- PUBS TAB ---
+export const dash_getPubsData = async (): Promise<DashPubsData> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_pubs_data').single();
+        if (error) throw error;
+        // The RPC will return an object matching the DashPubsData contract.
+        return data;
+    } catch (error) {
+        handleSupabaseError(error, 'Pubs Data (New)');
+        throw error;
+    }
+};
+
+
+// --- DEPRECATED/OLD FUNCTIONS (To be removed after refactor) ---
+
+// --- HOME TAB (OLD) ---
+/*
 export const getHomeData = async (timeframe: string): Promise<HomeData> => {
     try {
         const [kpisResult, chartsRawResult, tablesResult] = await Promise.all([
@@ -107,8 +168,6 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         if (chartsRawResult.error) throw chartsRawResult.error;
         if (tablesResult.error) throw tablesResult.error;
         
-        // Transform the array of time-series rows into the structure the charts expect.
-        // Assuming the RPC returns rows with `date`, `new_users`, and `new_ratings` columns.
         const chartsData = {
             newUsersOverTime: chartsRawResult.data.map((row: any) => ({
                 date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -120,13 +179,8 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             })),
         };
         
-        // Map snake_case properties from the DB to camelCase for the UI
-        // Cast RPC result data to `any` to allow dynamic property access.
         const rawKpis = kpisResult.data as any;
 
-        // The `get_dashboard_stats` RPC incorrectly returns 0 for new users and ratings.
-        // To ensure the KPI cards match the data shown in the charts, we calculate the total
-        // by summing the timeseries data. This is preferable to showing an incorrect "0" value.
         const newUsersFromChart = chartsData.newUsersOverTime.reduce((sum, current) => sum + current.value, 0);
         const newRatingsFromChart = chartsData.newRatingsOverTime.reduce((sum, current) => sum + current.value, 0);
 
@@ -148,7 +202,6 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
             kpis: mappedKpis,
             charts: chartsData,
             tables: {
-                 // FIX: Use 'name' field for country name as 'country' might be null.
                 avgPintPriceByCountry: (tablesResult.data || []).map((v: any) => ({
                     country: v.name,
                     flag: v.flag,
@@ -161,17 +214,17 @@ export const getHomeData = async (timeframe: string): Promise<HomeData> => {
         throw error;
     }
 };
+*/
 
 // --- FINANCIALS TAB ---
-export const getFinancialsData = async (timeframe: string): Promise<FinancialsData> => {
+// This already uses a single endpoint, which is good. Renaming to `dash_` for consistency.
+export const dash_getFinancialsData = async (timeframe: string): Promise<FinancialsData> => {
     try {
-        // Supabase Edge Functions are invoked this way
-        const { data, error } = await supabase.functions.invoke('get-financial-stats', {
+        const { data, error } = await supabase.functions.invoke('dash-get-financial-stats', {
             body: { time_period: timeframe },
         });
 
         if (error) throw error;
-        // Assuming edge function is also updated to return avatar_id
         return data;
     } catch (error) {
         handleSupabaseError(error, 'Financials Data');
@@ -179,7 +232,8 @@ export const getFinancialsData = async (timeframe: string): Promise<FinancialsDa
     }
 };
 
-// --- USERS TAB ---
+// --- USERS TAB (OLD) ---
+/*
 export const getUserKpis = async (): Promise<UserKpis> => {
     try {
         const { data, error } = await supabase
@@ -202,7 +256,6 @@ export const getUserKpis = async (): Promise<UserKpis> => {
 
 export const getAllUsers = async (): Promise<User[]> => {
     try {
-        // FIX: Changed select from avatar_url to avatar_id
         const { data, error } = await supabase
             .from('profiles')
             .select('id, username, avatar_id, level, is_banned, created_at, updated_at, country_code, is_beta_tester, is_developer, is_team_member, has_donated, reviews');
@@ -212,7 +265,7 @@ export const getAllUsers = async (): Promise<User[]> => {
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            avatarId: p.avatar_id, // FIX: Mapped avatar_id
+            avatarId: p.avatar_id,
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
             signupDate: p.created_at,
@@ -232,14 +285,13 @@ export const getAllUsers = async (): Promise<User[]> => {
 
 export const getUsersToday = async (): Promise<User[]> => {
     try {
-        // As per spec, calling the specific RPC
         const { data, error } = await supabase.rpc('get_users_logged_in_today');
         if (error) throw error;
         
         return (data as any[] || []).map(p => ({
             id: p.id,
             name: p.username,
-            avatarId: p.avatar_id, // FIX: Mapped avatar_id from RPC result
+            avatarId: p.avatar_id,
             level: p.level,
             banStatus: p.is_banned ? 'Banned' : 'Active',
             signupDate: p.created_at,
@@ -259,7 +311,6 @@ export const getUsersToday = async (): Promise<User[]> => {
 
 export const getUTMStats = async (): Promise<UTMStat[]> => {
     try {
-        // As per spec, calling the specific RPC
         const { data, error } = await supabase.rpc('get_utm_stats');
         if (error) throw error;
         return data;
@@ -268,90 +319,29 @@ export const getUTMStats = async (): Promise<UTMStat[]> => {
         throw error;
     }
 };
-
+*/
+// The individual user fetch functions will be replaced by the single dash_getUsersData call.
 
 // --- CONTENT TAB ---
-export const getContentAnalyticsData = async (): Promise<ContentAnalytics> => {
-    try {
-        // Replace non-existent `get_content_analytics` with existing functions.
-        const [statsResult, priceResult] = await Promise.all([
-            supabase.rpc('get_dashboard_stats', { time_period: 'All' }).single(),
-            supabase.rpc('get_price_stats_by_country')
-        ]);
+// The initial load can be consolidated. Paginated loads will remain separate for now.
+export const dash_getContentInitialData = async (ratingsPageSize: number, commentsPageSize: number, imagesPageSize: number): Promise<DashContentInitialData> => {
+     try {
+        const { data, error } = await supabase.rpc('dash_get_content_initial_feeds', {
+            ratings_page_size: ratingsPageSize,
+            comments_page_size: commentsPageSize,
+            images_page_size: imagesPageSize,
+        }).single();
 
-        if (statsResult.error) throw statsResult.error;
-        if (priceResult.error) throw priceResult.error;
-        
-        const rawData = statsResult.data as any;
-
-        // Map snake_case properties from the DB to camelCase for the UI
-        const mappedData: ContentAnalytics = {
-            totalPubs: rawData.total_pubs ?? 0,
-            // No function provides average rating, so default to 0.
-            averageOverallRating: 0,
-            totalRatingsSubmitted: rawData.total_ratings ?? 0,
-            pintPriceByCountry: (priceResult.data || []).map((v: any) => ({
-                country: v.name,
-                flag: v.flag,
-                price: v.avg_price ?? 0,
-            })),
-        };
-        
-        return mappedData;
+        if (error) throw error;
+        return data;
     } catch (error) {
-        handleSupabaseError(error, 'Content Analytics');
+        handleSupabaseError(error, 'Initial Content Feeds (New)');
         throw error;
     }
-};
+}
 
-export const getPubsLeaderboard = async (): Promise<Pub[]> => {
-    try {
-        // The original query with an implicit join failed due to a missing foreign key relationship in the schema.
-        // This workaround fetches the top scores first, then gets the corresponding pub details in a second query.
 
-        // 1. Get top 10 pub scores
-        const { data: scores, error: scoresError } = await supabase
-            .from('pub_scores')
-            .select('pub_id, overall_score, rating_count')
-            .order('overall_score', { ascending: false })
-            .limit(10);
-
-        if (scoresError) throw scoresError;
-        if (!scores || scores.length === 0) return [];
-
-        const pubIds = scores.map(s => s.pub_id);
-
-        // 2. Get pub details for those IDs
-        const { data: pubsData, error: pubsError } = await supabase
-            .from('pubs')
-            .select('id, name, address')
-            .in('id', pubIds);
-
-        if (pubsError) throw pubsError;
-        if (!pubsData) return [];
-
-        // 3. Join the data in application code
-        const pubsMap = new Map(pubsData.map(p => [p.id, p]));
-        
-        const leaderboard = scores.map(score => {
-            const pubInfo = pubsMap.get(score.pub_id);
-            return {
-                id: score.pub_id,
-                name: pubInfo?.name || 'Unknown Pub',
-                location: pubInfo?.address || 'Unknown Location',
-                averageScore: score.overall_score ?? 0,
-                totalRatings: score.rating_count ?? 0,
-            };
-        });
-        
-        // The scores are already sorted by the initial query, and this mapping preserves the order.
-        return leaderboard;
-    } catch (error) {
-        handleSupabaseError(error, 'Pubs Leaderboard');
-        throw error;
-    }
-};
-
+// These will be refactored to call new, simpler `dash_` functions.
 export const getRatingsData = async (pageNumber: number, pageSize: number): Promise<Rating[]> => {
     try {
         const { data: ratingsData, error } = await supabase
@@ -366,7 +356,6 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
         if (!ratingsData) return [];
 
         return (ratingsData as any[]).map(r => {
-            // Calculate a fallback score if the main 'overall' score is missing.
             const subScores = [r.atmosphere, r.quality, r.price].filter(s => typeof s === 'number');
             const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
             const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
@@ -401,14 +390,13 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
             });
             
         if (error) throw error;
-        // The RPC likely returns flattened snake_case columns from a join. Map them to the nested camelCase structure.
         return ((data as any[]) || []).map(c => ({
             id: c.comment_id,
             text: c.content,
             timestamp: new Date(c.created_at).toLocaleString(),
             user: {
                 name: c.username,
-                avatarId: c.avatar_id, // FIX: Mapped avatar_id
+                avatarId: c.avatar_id,
             }
         }));
     } catch (error) {
@@ -426,14 +414,13 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
             });
             
         if (error) throw error;
-        // The RPC likely returns flattened snake_case columns from a join. Map them to the nested camelCase structure.
         return ((data as any[]) || []).map(i => ({
             id: i.image_id,
             imageUrl: i.image_url,
             timestamp: new Date(i.created_at).toLocaleString(),
             user: {
                 name: i.username,
-                avatarId: i.avatar_id, // FIX: Mapped avatar_id
+                avatarId: i.avatar_id,
             }
         }));
     } catch (error) {
@@ -443,10 +430,10 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
 };
 
 // --- GA4 TAB ---
-export const getGA4Data = async (timeframe: string): Promise<GA4Data> => {
+// This also uses a single endpoint. Renaming for consistency.
+export const dash_getGA4Data = async (timeframe: string): Promise<GA4Data> => {
     try {
-        // Supabase Edge Functions are invoked this way
-        const { data, error } = await supabase.functions.invoke('get-ga4-stats', {
+        const { data, error } = await supabase.functions.invoke('dash-get-ga4-stats', {
             body: { time_period: timeframe },
         });
 

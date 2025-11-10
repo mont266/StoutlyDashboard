@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getGA4Data } from '../../services/supabaseService';
+import { dash_getGA4Data } from '../../services/supabaseService';
 import type { GA4Data, GA4ReportItem } from '../../types';
 import StatCard from '../StatCard';
 import GA4UsersChart from '../charts/GA4UsersChart';
@@ -44,7 +44,7 @@ const GA4: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                const result = await getGA4Data(timeframe);
+                const result = await dash_getGA4Data(timeframe);
                 setData(result);
             } catch (err) {
                 setError('Failed to fetch GA4 analytics data.');

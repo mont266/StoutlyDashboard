@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getFinancialsData, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getFinancialsData, getAvatarUrl } from '../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../types';
 import StatCard from '../StatCard';
 import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon } from '../icons/Icons';
@@ -17,7 +17,7 @@ const Financial: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                const result = await getFinancialsData(timeframe);
+                const result = await dash_getFinancialsData(timeframe);
                 setData(result);
             } catch (err: any) {
                 if (err.name === 'FunctionsHttpError' && err.context?.status === 403) {

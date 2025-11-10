@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
 import { StarIcon, MessageSquareIcon, CameraIcon, AtmosphereIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
 
@@ -37,19 +37,24 @@ const Content: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [ratingsData, commentsData, imagesData] = await Promise.all([
-                getRatingsData(1, RATINGS_PER_PAGE),
-                getCommentsData(1, COMMENTS_PER_PAGE),
-                getImagesData(1, IMAGES_PER_PAGE)
-            ]);
-            setRatings(ratingsData);
-            setComments(commentsData);
-            setImages(imagesData);
+            try {
+                // Use the new consolidated function for the initial load
+                const initialData = await dash_getContentInitialData(RATINGS_PER_PAGE, COMMENTS_PER_PAGE, IMAGES_PER_PAGE);
 
-            setHasMoreRatings(ratingsData.length === RATINGS_PER_PAGE);
-            setHasMoreComments(commentsData.length === COMMENTS_PER_PAGE);
-            setHasMoreImages(imagesData.length === IMAGES_PER_PAGE);
-            setLoading(false);
+                setRatings(initialData.ratings.items);
+                setHasMoreRatings(initialData.ratings.hasMore);
+
+                setComments(initialData.comments.items);
+                setHasMoreComments(initialData.comments.hasMore);
+
+                setImages(initialData.images.items);
+                setHasMoreImages(initialData.images.hasMore);
+
+            } catch(e) {
+                console.error("Failed to fetch initial content data", e);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);

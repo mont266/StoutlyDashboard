@@ -1,8 +1,9 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { getAllUsers, getUsersToday, getUTMStats, getUserKpis, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getUsersData, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
+import type { DashUsersData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon } from '../icons/Icons';
@@ -11,26 +12,16 @@ type SubTab = 'all' | 'today' | 'utm';
 
 const Users: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('all');
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [todayUsers, setTodayUsers] = useState<User[]>([]);
-    const [utmStats, setUtmStats] = useState<UTMStat[]>([]);
-    const [kpis, setKpis] = useState<UserKpis | null>(null);
+    const [data, setData] = useState<DashUsersData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [all, today, utm, kpisData] = await Promise.all([
-                    getAllUsers(),
-                    getUsersToday(),
-                    getUTMStats(),
-                    getUserKpis(),
-                ]);
-                setAllUsers(all);
-                setTodayUsers(today);
-                setUtmStats(utm);
-                setKpis(kpisData);
+                // Single, consolidated API call
+                const result = await dash_getUsersData();
+                setData(result);
             } catch (error) {
                 console.error("Failed to fetch user data:", error);
             } finally {
@@ -47,15 +38,15 @@ const Users: React.FC = () => {
     ];
 
     const renderContent = () => {
-        if (loading) return <div className="bg-surface rounded-xl h-96 animate-pulse"></div>;
+        if (loading || !data) return <div className="bg-surface rounded-xl h-96 animate-pulse"></div>;
 
         switch (subTab) {
             case 'all':
-                return <UserTable users={allUsers} />;
+                return <UserTable users={data.allUsers} />;
             case 'today':
-                return <UserList users={todayUsers} />;
+                return <UserList users={data.todayUsers} />;
             case 'utm':
-                return <UTMChart data={utmStats} />;
+                return <UTMChart data={data.utmStats} />;
             default:
                 return null;
         }
@@ -66,9 +57,9 @@ const Users: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">User Analytics</h2>
             <div className="space-y-8">
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                     <StatCard title="Total Users" value={kpis ? kpis.totalUsers.toLocaleString() : '...'} icon={<UsersIcon />} />
-                     <StatCard title="Active Today" value={kpis ? kpis.activeToday.toLocaleString() : '...'} icon={<UsersIcon />} />
-                     <StatCard title="UTM Sources" value={utmStats.length.toLocaleString()} icon={<GlobeIcon />} />
+                     <StatCard title="Total Users" value={data?.kpis.totalUsers.toLocaleString() ?? '...'} icon={<UsersIcon />} />
+                     <StatCard title="Active Today" value={data?.kpis.activeToday.toLocaleString() ?? '...'} icon={<UsersIcon />} />
+                     <StatCard title="UTM Sources" value={data?.utmStats.length.toLocaleString() ?? '...'} icon={<GlobeIcon />} />
                  </div>
                  <div className="bg-surface p-2 sm:p-4 rounded-xl">
                     <div className="mb-4">
