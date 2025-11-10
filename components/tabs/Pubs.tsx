@@ -113,6 +113,7 @@ const Pubs: React.FC = () => {
                              <thead className="text-xs text-text-secondary uppercase bg-background">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">Country</th>
+                                    <th scope="col" className="px-6 py-3 text-center">Ratings</th>
                                     <th scope="col" className="px-6 py-3 text-right">Avg. Price</th>
                                 </tr>
                             </thead>
@@ -121,6 +122,7 @@ const Pubs: React.FC = () => {
                                     [...Array(5)].map((_, i) => (
                                         <tr key={i} className="animate-pulse border-b border-border">
                                             <td className="px-6 py-4"><div className="h-4 bg-border rounded w-3/4"></div></td>
+                                            <td className="px-6 py-4 text-center"><div className="h-4 bg-border rounded w-1/4 mx-auto"></div></td>
                                             <td className="px-6 py-4 text-right"><div className="h-4 bg-border rounded w-1/2 ml-auto"></div></td>
                                         </tr>
                                     ))
@@ -130,6 +132,9 @@ const Pubs: React.FC = () => {
                                             <td className="px-6 py-3 font-medium text-text-primary">
                                                 <span className="mr-2">{item.flag}</span>
                                                 {item.country}
+                                            </td>
+                                            <td className="px-6 py-3 text-text-primary text-center">
+                                                {item.ratingsCount.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-3 text-text-primary text-right font-mono">
                                                 £{item.price.toFixed(2)}

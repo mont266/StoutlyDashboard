@@ -102,6 +102,7 @@ const Home: React.FC = () => {
                                  <thead className="text-xs text-text-secondary uppercase bg-background">
                                     <tr>
                                         <th scope="col" className="px-6 py-3">Country</th>
+                                        <th scope="col" className="px-6 py-3 text-center">Ratings</th>
                                         <th scope="col" className="px-6 py-3 text-right">Avg. Price</th>
                                     </tr>
                                 </thead>
@@ -111,6 +112,9 @@ const Home: React.FC = () => {
                                             <td className="px-6 py-3 font-medium text-text-primary">
                                                 <span className="mr-2">{item.flag}</span>
                                                 {item.country}
+                                            </td>
+                                            <td className="px-6 py-3 text-text-primary text-center">
+                                                {item.ratingsCount.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-3 text-text-primary text-right font-mono">
                                                 £{item.price.toFixed(2)}
