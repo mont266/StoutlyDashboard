@@ -63,3 +63,13 @@ export interface DashPubsData {
         mostReviewed: Pub[];
     };
 }
+
+// --- Content Tab Contract ---
+// To be returned by a new `dash_get_content_initial_feeds()` function.
+// This single object replaces three separate API calls on initial load
+// for a faster, more efficient Content tab.
+export interface DashContentInitialData {
+    ratings: Rating[];
+    comments: Comment[];
+    images: UploadedImage[];
+}
