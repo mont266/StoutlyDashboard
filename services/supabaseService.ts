@@ -352,7 +352,7 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 quality,
                 price,
                 pubs ( name ),
-                profiles ( username, avatar_id )
+                profiles!ratings_user_id_fkey ( username, avatar_id )
             `)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -396,7 +396,7 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
                 id,
                 content,
                 created_at,
-                profiles ( username, avatar_id )
+                profiles!comments_user_id_fkey ( username, avatar_id )
             `)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -423,13 +423,14 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
         const to = from + pageSize - 1;
 
         const { data, error } = await supabase
-            .from('images')
+            .from('ratings')
             .select(`
                 id,
                 image_url,
                 created_at,
-                profiles ( username, avatar_id )
+                profiles!ratings_user_id_fkey ( username, avatar_id )
             `)
+            .not('image_url', 'is', null)
             .order('created_at', { ascending: false })
             .range(from, to);
             
