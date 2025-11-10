@@ -30,6 +30,7 @@ export interface PintPriceByCountry {
     country: string;
     price: number;
     ratingsCount: number;
+    countryCode: string;
 }
 
 export interface HomeData {

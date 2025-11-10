@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { dash_getPubsData } from '../../services/supabaseService';
+import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
 import type { DashPubsData } from '../../services/dashContracts';
 import { StarIcon, BuildingIcon, HashIcon } from '../icons/Icons';
@@ -136,7 +134,7 @@ const Pubs: React.FC = () => {
                                             {item.ratingsCount.toLocaleString()}
                                         </td>
                                         <td className="px-6 py-3 text-text-primary text-right font-mono">
-                                            £{item.price.toFixed(2)}
+                                            {formatCurrency(item.price, item.countryCode)}
                                         </td>
                                     </tr>
                                 ))

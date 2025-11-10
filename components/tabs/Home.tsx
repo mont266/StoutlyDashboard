@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { dash_getHomeData } from '../../services/supabaseService';
+import { dash_getHomeData, formatCurrency } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
@@ -116,7 +115,7 @@ const Home: React.FC = () => {
                                                 {item.ratingsCount.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-3 text-text-primary text-right font-mono">
-                                                £{item.price.toFixed(2)}
+                                                {formatCurrency(item.price, item.countryCode)}
                                             </td>
                                         </tr>
                                     ))}

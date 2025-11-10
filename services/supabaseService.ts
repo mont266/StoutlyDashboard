@@ -1,7 +1,3 @@
-
-
-
-
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
@@ -54,6 +50,52 @@ export const getAvatarUrl = (avatarData: string): string => {
     } catch (error) {
         // Case 3: It's not valid JSON, so it must be a raw legacy ID string.
         return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
+    }
+};
+
+// --- CURRENCY FORMATTING HELPER ---
+interface CurrencyInfo {
+    symbol: string;
+    code: string;
+}
+
+const CURRENCY_MAP: Record<string, CurrencyInfo> = {
+    'GB': { symbol: '£', code: 'GBP' },
+    'IE': { symbol: '€', code: 'EUR' },
+    'US': { symbol: '$', code: 'USD' },
+    'DE': { symbol: '€', code: 'EUR' },
+    'FR': { symbol: '€', code: 'EUR' },
+    'ES': { symbol: '€', code: 'EUR' },
+    'NL': { symbol: '€', code: 'EUR' },
+    'AU': { symbol: '$', code: 'AUD' },
+    'PT': { symbol: '€', code: 'EUR' },
+    'DK': { symbol: 'kr', code: 'DKK' },
+    'CA': { symbol: '$', code: 'CAD' },
+    'PL': { symbol: 'zł', code: 'PLN' },
+    'TR': { symbol: '₺', code: 'TRY' },
+    'IT': { symbol: '€', code: 'EUR' },
+    'IL': { symbol: '₪', code: 'ILS' },
+    'AT': { symbol: '€', code: 'EUR' },
+};
+
+// Default to GBP if country code not found
+const DEFAULT_CURRENCY: CurrencyInfo = { symbol: '£', code: 'GBP' };
+
+export const formatCurrency = (price: number, countryCode?: string | null): string => {
+    const currency = (countryCode && CURRENCY_MAP[countryCode.toUpperCase()]) ? CURRENCY_MAP[countryCode.toUpperCase()] : DEFAULT_CURRENCY;
+    
+    try {
+        // Use Intl.NumberFormat for proper formatting based on the currency code
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: currency.code,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(price);
+    } catch (error) {
+        // Fallback for unsupported currency codes, using the symbol
+        console.warn(`Currency code ${currency.code} might not be supported. Falling back to symbol.`, error);
+        return `${currency.symbol}${price.toFixed(2)}`;
     }
 };
 
