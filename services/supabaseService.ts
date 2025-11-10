@@ -1,6 +1,7 @@
 
 
 
+
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
@@ -177,8 +178,7 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
         return {
             ratings: (rawData.ratings || []).map((r: any) => {
                 const subScores = [r.quality, r.price].filter(s => typeof s === 'number');
-                const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
-                const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
+                const score = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
 
                 return {
                     id: r.id,
@@ -251,7 +251,6 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 id,
                 created_at,
                 message,
-                overall,
                 quality,
                 price,
                 pubs ( name ),
@@ -265,8 +264,7 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
 
         return (ratingsData as any[]).map(r => {
             const subScores = [r.quality, r.price].filter(s => typeof s === 'number');
-            const calculatedScore = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
-            const score = (r.overall && r.overall > 0) ? r.overall : calculatedScore;
+            const score = subScores.length > 0 ? subScores.reduce((a, b) => a + b, 0) / subScores.length : 0;
 
             return {
                 id: r.id,
