@@ -117,14 +117,14 @@ export interface UploadedImage {
 
 // --- Financials Tab ---
 export interface TopDonator {
-    name: string;
-    avatarId: string;
+    username: string;
+    avatar_url: string;
     totalAmount: number;
 }
 
 export interface Donation {
     id: string;
-    user: { name: string; avatarId: string };
+    user: { username: string; avatar_url: string };
     amount: number;
     date: string;
 }

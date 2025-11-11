@@ -77,7 +77,7 @@ serve(async (req) => {
         console.log('[DEBUG] Fetching profiles from Supabase for IDs:', userIds);
         const { data: profiles, error } = await supabase
             .from('profiles')
-            .select('id, username, avatar_id')
+            .select('id, username, avatar_url')
             .in('id', userIds);
 
         if (error) {
@@ -90,8 +90,8 @@ serve(async (req) => {
         if (profiles) {
             for (const profile of profiles) {
                 userProfilesMap.set(profile.id, {
-                    name: profile.username,
-                    avatarId: profile.avatar_id
+                    username: profile.username,
+                    avatar_url: profile.avatar_url
                 });
             }
         }
@@ -103,7 +103,7 @@ serve(async (req) => {
     // --- 4. PROCESS CHARGES WITH ENRICHED USER DATA ---
     let grossDonations = 0;
     let stripeFees = 0;
-    const donationsByUser: { [key: string]: { name: string; avatarId: string; totalAmount: number } } = {};
+    const donationsByUser: { [key: string]: { username: string; avatar_url: string; totalAmount: number } } = {};
     const recentDonations: any[] = [];
 
     for (const charge of successfulCharges) {
@@ -116,18 +116,18 @@ serve(async (req) => {
       const userId = charge.metadata.user_id || 'anonymous';
       const userProfile = userProfilesMap.get(userId);
       
-      const userName = userProfile ? userProfile.name : 'Anonymous';
-      const avatarId = userProfile ? userProfile.avatarId : '';
+      const username = userProfile ? userProfile.username : 'Anonymous';
+      const avatar_url = userProfile ? userProfile.avatar_url : '';
 
       if (!donationsByUser[userId]) {
-        donationsByUser[userId] = { name: userName, avatarId, totalAmount: 0 };
+        donationsByUser[userId] = { username, avatar_url, totalAmount: 0 };
       }
       donationsByUser[userId].totalAmount += amount;
 
       if (recentDonations.length < 10) {
         recentDonations.push({
           id: charge.id,
-          user: { name: userName, avatarId },
+          user: { username, avatar_url },
           amount: amount,
           date: new Date(charge.created * 1000).toLocaleDateString('en-GB'),
         });
@@ -135,7 +135,7 @@ serve(async (req) => {
     }
 
     // --- 5. FIND TOP DONATOR ---
-    let topDonator = { name: 'N/A', avatarId: '', totalAmount: 0 };
+    let topDonator = { username: 'N/A', avatar_url: '', totalAmount: 0 };
     if (Object.keys(donationsByUser).length > 0) {
         topDonator = Object.values(donationsByUser).reduce((top, current) => 
             current.totalAmount > top.totalAmount ? current : top
