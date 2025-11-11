@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { dash_getStripeFinancials, getAvatarUrl } from '../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../types';
@@ -18,6 +19,17 @@ const Financial: React.FC = () => {
             setError(null);
             try {
                 const result = await dash_getStripeFinancials(timeframe);
+                
+                // --- DEBUG LOGGING ---
+                console.log("Financials data received from server:", result);
+                if (result?.topDonator) {
+                    console.log("Top donator object:", result.topDonator);
+                }
+                if (result?.recentDonations?.length > 0) {
+                    console.log("First donation user object:", result.recentDonations[0].user);
+                }
+                // --- END DEBUG LOGGING ---
+
                 setData(result);
             } catch (err: any) {
                 setError('An error occurred while fetching financial data. Please check the console.');
