@@ -139,23 +139,35 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                 </tr>
             </thead>
             <tbody>
-                {donations.map((donation) => (
-                    <tr key={donation.id} className="border-b border-border last:border-b-0 hover:bg-border/50">
-                        <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
-                            <div className="flex items-center space-x-3">
-                                <img 
-                                    src={getAvatarUrl(donation.user.avatar_id)} 
-                                    alt={donation.user.username} 
-                                    className="w-8 h-8 rounded-full bg-border object-cover"
-                                    onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
-                                />
-                                <span>{donation.user.username}</span>
-                            </div>
-                        </td>
-                        <td className="px-4 py-4 hidden sm:table-cell">{donation.date}</td>
-                        <td className="px-4 py-4 text-value-green text-right font-mono">+ £{donation.amount.toFixed(2)}</td>
-                    </tr>
-                ))}
+                {donations.map((donation) => {
+                    const isAnonymous = donation.user.username === 'Anonymous';
+                    const avatarSrc = isAnonymous
+                        ? `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`
+                        : getAvatarUrl(donation.user.avatar_id);
+
+                    return (
+                        <tr key={donation.id} className="border-b border-border last:border-b-0 hover:bg-border/50">
+                            <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
+                                <div className="flex items-center space-x-3">
+                                    <img 
+                                        src={avatarSrc} 
+                                        alt={donation.user.username} 
+                                        className="w-8 h-8 rounded-full bg-border object-cover"
+                                        onError={(e) => { 
+                                            // Only apply fallback for non-anonymous users with broken image links
+                                            if (!isAnonymous) {
+                                                e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
+                                            }
+                                        }}
+                                    />
+                                    <span>{donation.user.username}</span>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4 hidden sm:table-cell">{donation.date}</td>
+                            <td className="px-4 py-4 text-value-green text-right font-mono">+ £{donation.amount.toFixed(2)}</td>
+                        </tr>
+                    );
+                })}
             </tbody>
         </table>
     </div>
