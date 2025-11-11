@@ -96,22 +96,37 @@ const Financial: React.FC = () => {
     );
 };
 
-const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => (
-    <div className="bg-surface p-6 rounded-xl text-center shadow-lg h-full flex flex-col justify-center items-center">
-        <div className="flex justify-center items-center text-primary mb-3">
-            <TrophyIcon />
-            <h4 className="font-semibold ml-2">Top Donator</h4>
+const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => {
+    const isNA = donator.username === 'N/A';
+
+    // If there's no top donator, use a generic placeholder SVG. Otherwise, generate the URL.
+    const avatarSrc = isNA
+        ? `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`
+        : getAvatarUrl(donator.avatar_id);
+
+    return (
+        <div className="bg-surface p-6 rounded-xl text-center shadow-lg h-full flex flex-col justify-center items-center">
+            <div className="flex justify-center items-center text-primary mb-3">
+                <TrophyIcon />
+                <h4 className="font-semibold ml-2">Top Donator</h4>
+            </div>
+            <img 
+                src={avatarSrc} 
+                alt={donator.username} 
+                // The border color and username text color change based on whether there's a real top donator.
+                className={`w-20 h-20 rounded-full mx-auto mb-3 border-2 ${isNA ? 'border-border' : 'border-primary'} bg-border object-cover`}
+                onError={(e) => { 
+                    // This fallback is for real users whose avatar URL might be broken.
+                    if (!isNA) {
+                        e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`
+                    }
+                }}
+            />
+            <p className={`font-bold text-xl ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</p>
+            <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
         </div>
-        <img 
-            src={getAvatarUrl(donator.avatar_id)} 
-            alt={donator.username} 
-            className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary bg-border object-cover"
-            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
-        />
-        <p className="font-bold text-text-primary text-xl">{donator.username}</p>
-        <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
-    </div>
-);
+    );
+};
 
 const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }) => (
     <div className="overflow-x-auto">
