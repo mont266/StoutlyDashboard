@@ -103,7 +103,7 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => (
             <h4 className="font-semibold ml-2">Top Donator</h4>
         </div>
         <img 
-            src={getAvatarUrl(donator.avatar_url)} 
+            src={getAvatarUrl(donator.avatar_id)} 
             alt={donator.username} 
             className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary bg-border object-cover"
             onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
@@ -129,7 +129,7 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                         <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                             <div className="flex items-center space-x-3">
                                 <img 
-                                    src={getAvatarUrl(donation.user.avatar_url)} 
+                                    src={getAvatarUrl(donation.user.avatar_id)} 
                                     alt={donation.user.username} 
                                     className="w-8 h-8 rounded-full bg-border object-cover"
                                     onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}

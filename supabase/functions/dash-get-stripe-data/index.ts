@@ -66,78 +66,91 @@ serve(async (req) => {
     }
     const successfulCharges = charges.filter(c => c.paid && c.status === 'succeeded');
 
-    // --- 3. GET USER IDS & FETCH PROFILES FROM SUPABASE ---
-    const userIds = [
-      ...new Set(successfulCharges.map(c => c.metadata.user_id).filter(Boolean))
-    ];
-    console.log(`[DEBUG] Found ${userIds.length} unique user IDs from Stripe metadata.`);
-    
-    const userProfilesMap = new Map();
+    // --- 3. GET USER IDS & EMAILS, THEN FETCH PROFILES FROM SUPABASE ---
+    const userIds = [...new Set(successfulCharges.map(c => c.metadata.supabase_user_id).filter(Boolean))];
+    const userEmails = [...new Set(successfulCharges.map(c => c.receipt_email?.toLowerCase()).filter(Boolean))];
+
+    console.log(`[DEBUG] Found ${userIds.length} unique user IDs and ${userEmails.length} unique emails from Stripe.`);
+
+    const profilesById = new Map();
     if (userIds.length > 0) {
-        console.log('[DEBUG] Fetching profiles from Supabase for IDs:', userIds);
-        const { data: profiles, error } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
-            .select('id, username, avatar_url')
+            .select('id, username, avatar_id')
             .in('id', userIds);
-
         if (error) {
-            console.error('[DEBUG] Supabase profile fetch error:', error);
-            throw new Error(`Supabase profile fetch error: ${error.message}`);
+            console.error('[DEBUG] Supabase profile fetch by ID error:', error);
+        } else if (data) {
+            data.forEach(p => profilesById.set(p.id, p));
+            console.log(`[DEBUG] Fetched ${profilesById.size} profiles by ID.`);
         }
-        
-        console.log(`[DEBUG] Received ${profiles?.length ?? 0} profiles from Supabase.`);
-
-        if (profiles) {
-            for (const profile of profiles) {
-                userProfilesMap.set(profile.id, {
-                    username: profile.username,
-                    avatar_url: profile.avatar_url
-                });
-            }
-        }
-        console.log(`[DEBUG] Mapped ${userProfilesMap.size} user profiles from Supabase.`);
-    } else {
-      console.log('[DEBUG] No user IDs found in Stripe charge metadata. All donors will appear as "Anonymous". Check if the main app is saving user_id to Stripe metadata.');
     }
 
+    const profilesByEmail = new Map();
+    if (userEmails.length > 0) {
+        // This assumes an 'email' column exists and is queryable in the 'profiles' table.
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, email, username, avatar_id')
+            .in('email', userEmails);
+        if (error) {
+            console.error('[DEBUG] Supabase profile fetch by email error:', error);
+        } else if (data) {
+            data.forEach(p => profilesByEmail.set(p.email, p));
+            console.log(`[DEBUG] Fetched ${profilesByEmail.size} profiles by email.`);
+        }
+    }
+    
     // --- 4. PROCESS CHARGES WITH ENRICHED USER DATA ---
     let grossDonations = 0;
     let stripeFees = 0;
-    const donationsByUser: { [key: string]: { username: string; avatar_url: string; totalAmount: number } } = {};
+    const donationsByUser = new Map();
     const recentDonations: any[] = [];
 
     for (const charge of successfulCharges) {
-      const amount = charge.amount / 100;
-      const fee = (charge.balance_transaction as Stripe.BalanceTransaction)?.fee / 100 || 0;
+        const amount = charge.amount / 100;
+        const fee = (charge.balance_transaction as Stripe.BalanceTransaction)?.fee / 100 || 0;
       
-      grossDonations += amount;
-      stripeFees += fee;
+        grossDonations += amount;
+        stripeFees += fee;
 
-      const userId = charge.metadata.user_id || 'anonymous';
-      const userProfile = userProfilesMap.get(userId);
+        const userId = charge.metadata.supabase_user_id;
+        const userEmail = charge.receipt_email?.toLowerCase();
+
+        // Find profile: by ID first, then fallback to email.
+        let profile = userId ? profilesById.get(userId) : null;
+        if (!profile && userEmail) {
+            profile = profilesByEmail.get(userEmail);
+        }
+
+        const username = profile ? profile.username : 'Anonymous';
+        const avatar_id = profile ? profile.avatar_id : '';
       
-      const username = userProfile ? userProfile.username : 'Anonymous';
-      const avatar_url = userProfile ? userProfile.avatar_url : '';
+        // Use a consistent key for aggregation: profile ID, then email, then a unique charge ID for anonymous.
+        const aggregationKey = profile ? (profile.id || profile.email) : `anonymous-${charge.id}`;
 
-      if (!donationsByUser[userId]) {
-        donationsByUser[userId] = { username, avatar_url, totalAmount: 0 };
-      }
-      donationsByUser[userId].totalAmount += amount;
+        const currentUserDonation = donationsByUser.get(aggregationKey) || {
+            username,
+            avatar_id,
+            totalAmount: 0,
+        };
+        currentUserDonation.totalAmount += amount;
+        donationsByUser.set(aggregationKey, currentUserDonation);
 
-      if (recentDonations.length < 10) {
-        recentDonations.push({
-          id: charge.id,
-          user: { username, avatar_url },
-          amount: amount,
-          date: new Date(charge.created * 1000).toLocaleDateString('en-GB'),
-        });
-      }
+        if (recentDonations.length < 10) {
+            recentDonations.push({
+                id: charge.id,
+                user: { username, avatar_id },
+                amount: amount,
+                date: new Date(charge.created * 1000).toLocaleDateString('en-GB'),
+            });
+        }
     }
 
     // --- 5. FIND TOP DONATOR ---
-    let topDonator = { username: 'N/A', avatar_url: '', totalAmount: 0 };
-    if (Object.keys(donationsByUser).length > 0) {
-        topDonator = Object.values(donationsByUser).reduce((top, current) => 
+    let topDonator = { username: 'N/A', avatar_id: '', totalAmount: 0 };
+    if (donationsByUser.size > 0) {
+        topDonator = [...donationsByUser.values()].reduce((top, current) => 
             current.totalAmount > top.totalAmount ? current : top
         );
     }
