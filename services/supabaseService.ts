@@ -19,7 +19,8 @@ const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
 // --- AVATAR URL HELPER ---
 export const getAvatarUrl = (avatarData: string): string => {
-    if (!avatarData) {
+    // FIX: Also check for the literal string 'null' which may be stored in the DB.
+    if (!avatarData || avatarData.trim() === 'null') {
         return ''; // Return empty string for null/empty data to trigger UI fallbacks.
     }
 
@@ -40,7 +41,8 @@ export const getAvatarUrl = (avatarData: string): string => {
 
         // Case 2: It's a JSON-encoded string, e.g., '"legacy-uuid-123"'.
         // `parsed` will be the string "legacy-uuid-123".
-        if (typeof parsed === 'string' && parsed.length > 0) {
+        // FIX: Add check for the parsed string being 'null' (from a JSON value of "null").
+        if (typeof parsed === 'string' && parsed.length > 0 && parsed !== 'null') {
             return `${supabaseUrl}/storage/v1/object/public/avatars/${parsed}`;
         }
 
@@ -49,6 +51,7 @@ export const getAvatarUrl = (avatarData: string): string => {
 
     } catch (error) {
         // Case 3: It's not valid JSON, so it must be a raw legacy ID string.
+        // The check at the top handles the raw string 'null'.
         return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarData}`;
     }
 };
