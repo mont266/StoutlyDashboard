@@ -206,35 +206,38 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
                     <p className="text-sm">When users submit ratings, they'll appear here.</p>
                 </div>
             )}
-            {ratings.map(rating => (
-                <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
-                    <div className="flex space-x-4">
-                        <img 
-                            src={getAvatarUrl(rating.user.avatarId)} 
-                            alt={rating.user.name} 
-                            className="w-10 h-10 rounded-full bg-border flex-shrink-0 object-cover"
-                            onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
-                        />
-                        <div className="flex-grow">
-                            <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
-                            <p className="text-xs text-text-secondary">{rating.timestamp}</p>
-                            
-                            {rating.message && (
-                                <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
-                                    "{rating.message}"
-                                </blockquote>
-                            )}
+            {ratings.map(rating => {
+                const avatarUrl = getAvatarUrl(rating.user.avatarId);
+                return (
+                    <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
+                        <div className="flex space-x-4">
+                            <img 
+                                src={avatarUrl || PLACEHOLDER_AVATAR} 
+                                alt={rating.user.name} 
+                                className="w-10 h-10 rounded-full bg-border flex-shrink-0 object-cover"
+                                onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
+                            />
+                            <div className="flex-grow">
+                                <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
+                                <p className="text-xs text-text-secondary">{rating.timestamp}</p>
+                                
+                                {rating.message && (
+                                    <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
+                                        "{rating.message}"
+                                    </blockquote>
+                                )}
 
-                            {(rating.quality !== undefined || rating.price !== undefined) && (
-                                <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
-                                    <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
-                                    <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
-                                </div>
-                            )}
+                                {(rating.quality !== undefined || rating.price !== undefined) && (
+                                    <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
+                                        <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
+                                        <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
             {hasMore && (
                  <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
                     {isLoadingMore ? 'Loading...' : 'Load More'}
@@ -275,23 +278,26 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
                     <p className="text-sm">When users submit comments, they'll appear here.</p>
                 </div>
             )}
-            {comments.map(comment => (
-                <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
-                    <img 
-                        src={getAvatarUrl(comment.user.avatarId)} 
-                        alt={comment.user.name} 
-                        className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0 object-cover" 
-                        onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
-                    />
-                    <div className="flex-grow">
-                        <div className="flex items-baseline space-x-2">
-                            <span className="font-semibold text-text-primary">{comment.user.name}</span>
-                            <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
+            {comments.map(comment => {
+                const avatarUrl = getAvatarUrl(comment.user.avatarId);
+                return (
+                    <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
+                        <img 
+                            src={avatarUrl || PLACEHOLDER_AVATAR} 
+                            alt={comment.user.name} 
+                            className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0 object-cover" 
+                            onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
+                        />
+                        <div className="flex-grow">
+                            <div className="flex items-baseline space-x-2">
+                                <span className="font-semibold text-text-primary">{comment.user.name}</span>
+                                <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
+                            </div>
+                            <p className="text-text-primary mt-2">{comment.text}</p>
                         </div>
-                        <p className="text-text-primary mt-2">{comment.text}</p>
                     </div>
-                </div>
-            ))}
+                );
+            })}
             {hasMore && (
                 <button onClick={onLoadMore} disabled={isLoadingMore} className="w-full mt-4 bg-border text-text-secondary py-2 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50">
                     {isLoadingMore ? 'Loading...' : 'Load More'}
