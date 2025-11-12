@@ -76,29 +76,44 @@ export interface DashContentInitialData {
 
 // --- Outgoings Tab Contract ---
 // To be returned by a new `dash_get_outgoings_data()` function.
+export interface OutgoingKpis {
+    totalSpend: number;
+    monthlyCost: number;
+}
+
+export interface ManualOutgoing {
+    id: string;
+    name: string;
+    description?: string;
+    amount: number;
+    purchase_date: string;
+    category?: string;
+}
+
+export interface Subscription {
+    id: string;
+    name: string;
+    description?: string;
+    amount: number;
+    start_date: string;
+    end_date?: string;
+    category?: string;
+    status: 'Active' | 'Inactive';
+}
+
+export interface NewOutgoingData {
+    name: string;
+    description?: string;
+    amount: number;
+    type: 'manual' | 'subscription';
+    start_date: string; // Used as purchase_date for manual types
+    category?: string;
+}
+
 export interface DashOutgoingsData {
-    kpis: {
-        totalSpend: number;
-        monthlyCost: number;
-    };
+    kpis: OutgoingKpis;
     tables: {
-        manualOutgoings: {
-            id: string;
-            name: string;
-            description?: string;
-            amount: number;
-            purchase_date: string;
-            category?: string;
-        }[];
-        subscriptions: {
-            id: string;
-            name: string;
-            description?: string;
-            amount: number;
-            start_date: string;
-            end_date?: string;
-            category?: string;
-            status: 'Active' | 'Inactive';
-        }[];
+        manualOutgoings: ManualOutgoing[];
+        subscriptions: Subscription[];
     };
 }

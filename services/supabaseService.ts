@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
+// FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
-import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData } from './dashContracts';
+// FIX: `NewOutgoingData` is now imported from here as it's part of the dash contract.
+import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData, NewOutgoingData } from './dashContracts';
 
 
 // --- SUPABASE CLIENT SETUP ---
@@ -290,6 +292,36 @@ export const dash_getOutgoingsData = async (): Promise<DashOutgoingsData> => {
         return data as DashOutgoingsData;
     } catch (error) {
         handleSupabaseError(error, 'Outgoings Data');
+        throw error;
+    }
+};
+
+export const dash_addOutgoing = async (outgoingData: NewOutgoingData): Promise<void> => {
+    try {
+        const { error } = await supabase.rpc('dash_add_outgoing', {
+            name_in: outgoingData.name,
+            description_in: outgoingData.description || null,
+            amount_in: outgoingData.amount,
+            type_in: outgoingData.type,
+            start_date_in: outgoingData.start_date,
+            category_in: outgoingData.category || null
+        });
+        if (error) throw error;
+    } catch (error) {
+        handleSupabaseError(error, 'Add Outgoing');
+        throw error;
+    }
+};
+
+export const dash_endSubscription = async (subscriptionId: string, endDate: string): Promise<void> => {
+    try {
+        const { error } = await supabase.rpc('dash_end_subscription', {
+            subscription_id_in: subscriptionId,
+            end_date_in: endDate
+        });
+        if (error) throw error;
+    } catch (error) {
+        handleSupabaseError(error, 'End Subscription');
         throw error;
     }
 };

@@ -1,30 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { dash_getOutgoingsData } from '../../services/supabaseService';
-import type { DashOutgoingsData } from '../../services/dashContracts';
+import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription } from '../../services/supabaseService';
+import type { DashOutgoingsData, NewOutgoingData, Subscription } from '../../services/dashContracts';
 import StatCard from '../StatCard';
-import { DollarSignIcon, TrendingDownIcon } from '../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon } from '../icons/Icons';
 
 const Outgoings: React.FC = () => {
     const [data, setData] = useState<DashOutgoingsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Modal State
+    const [isAddModalOpen, setAddModalOpen] = useState(false);
+    const [isEndModalOpen, setEndModalOpen] = useState(false);
+    const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await dash_getOutgoingsData();
+            setData(result);
+        } catch (err) {
+            setError('Failed to fetch outgoings data. Please ensure you have run the latest SQL script to deploy the database function.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const result = await dash_getOutgoingsData();
-                setData(result);
-            } catch (err) {
-                setError('Failed to fetch outgoings data. Please ensure the database function is deployed.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, []);
+
+    const handleAddSuccess = () => {
+        setAddModalOpen(false);
+        fetchData(); // Refresh data
+    };
+
+    const handleEndSuccess = () => {
+        setEndModalOpen(false);
+        setSelectedSubscription(null);
+        fetchData(); // Refresh data
+    };
+    
+    const handleOpenEndModal = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setEndModalOpen(true);
+    };
 
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'N/A';
@@ -34,6 +56,26 @@ const Outgoings: React.FC = () => {
             day: 'numeric',
         });
     };
+    
+    const SkeletonTable: React.FC = () => (
+        <div className="bg-surface rounded-xl shadow-lg">
+            <div className="p-4 border-b border-border">
+                <div className="h-6 bg-border rounded w-1/3"></div>
+            </div>
+            <div className="p-6">
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                            <div className="h-4 bg-border rounded w-1/4"></div>
+                            <div className="h-4 bg-border rounded hidden md:block w-1/4"></div>
+                            <div className="h-4 bg-border rounded hidden lg:block w-1/4"></div>
+                            <div className="h-4 bg-border rounded w-1/6"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
     const renderLoading = () => (
         <div className="animate-pulse space-y-8">
@@ -41,8 +83,10 @@ const Outgoings: React.FC = () => {
                 <div className="bg-surface rounded-xl h-28"></div>
                 <div className="bg-surface rounded-xl h-28"></div>
             </div>
-            <div className="bg-surface rounded-xl h-96"></div>
-            <div className="bg-surface rounded-xl h-96"></div>
+            <div className="space-y-8">
+                <SkeletonTable />
+                <SkeletonTable />
+            </div>
         </div>
     );
 
@@ -52,7 +96,16 @@ const Outgoings: React.FC = () => {
 
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-6">Project Outgoings</h2>
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <h2 className="text-2xl font-bold">Project Outgoings</h2>
+                <button 
+                    onClick={() => setAddModalOpen(true)}
+                    className="flex items-center space-x-2 bg-primary text-background font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                    <PlusIcon />
+                    <span>Add Outgoing</span>
+                </button>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <StatCard 
@@ -82,6 +135,7 @@ const Outgoings: React.FC = () => {
                                     <th scope="col" className="px-6 py-3 hidden lg:table-cell">Start Date</th>
                                     <th scope="col" className="px-6 py-3">Status</th>
                                     <th scope="col" className="px-6 py-3 text-right">Monthly Cost</th>
+                                    <th scope="col" className="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -96,6 +150,15 @@ const Outgoings: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-warning-red text-right font-mono">- £{sub.amount.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-center">
+                                            {sub.status === 'Active' ? (
+                                                <button onClick={() => handleOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
+                                                    <StopCircleIcon />
+                                                </button>
+                                            ) : (
+                                                <span>-</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -130,8 +193,158 @@ const Outgoings: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleAddSuccess} />}
+            {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleEndSuccess} />}
+
         </section>
     );
 };
+
+// --- MODAL COMPONENTS ---
+
+const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> = ({ onClose, onSave }) => {
+    const [formData, setFormData] = useState<NewOutgoingData>({
+        name: '',
+        type: 'manual',
+        amount: 0,
+        start_date: new Date().toISOString().split('T')[0],
+        description: '',
+        category: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) : value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.name || formData.amount <= 0 || !formData.start_date) {
+            setError('Please fill in all required fields.');
+            return;
+        }
+        setError('');
+        setIsSubmitting(true);
+        try {
+            await dash_addOutgoing(formData);
+            onSave();
+        } catch (err) {
+            setError('Failed to save outgoing. Please try again.');
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="p-6 border-b border-border">
+                        <h3 className="text-lg font-bold">Add New Outgoing</h3>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        {error && <p className="text-warning-red text-sm">{error}</p>}
+                        
+                        <div>
+                            <label className="text-sm font-medium text-text-secondary">Type</label>
+                            <div className="flex space-x-2 bg-background p-1 rounded-lg mt-1">
+                                <button type="button" onClick={() => setFormData(f => ({...f, type: 'manual'}))} className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${formData.type === 'manual' ? 'bg-primary text-background' : 'text-text-secondary'}`}>Manual Purchase</button>
+                                <button type="button" onClick={() => setFormData(f => ({...f, type: 'subscription'}))} className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${formData.type === 'subscription' ? 'bg-primary text-background' : 'text-text-secondary'}`}>Subscription</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="name" className="text-sm font-medium text-text-secondary">Name*</label>
+                            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="amount" className="text-sm font-medium text-text-secondary">Amount (£)*</label>
+                                <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required min="0.01" step="0.01" className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                            </div>
+                            <div>
+                                <label htmlFor="start_date" className="text-sm font-medium text-text-secondary">{formData.type === 'manual' ? 'Purchase Date*' : 'Start Date*'}</label>
+                                <input type="date" id="start_date" name="start_date" value={formData.start_date} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="category" className="text-sm font-medium text-text-secondary">Category</label>
+                            <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} placeholder="e.g., Hosting, SaaS" className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+
+                        <div>
+                            <label htmlFor="description" className="text-sm font-medium text-text-secondary">Description</label>
+                            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={2} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+                    </div>
+                    <div className="p-4 bg-background/50 rounded-b-xl flex justify-end space-x-3">
+                        <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-border text-text-primary hover:bg-border/80 transition-colors">Cancel</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-primary text-background font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                            {isSubmitting ? 'Saving...' : 'Save Outgoing'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const EndSubscriptionModal: React.FC<{ subscription: Subscription, onClose: () => void; onSave: () => void; }> = ({ subscription, onClose, onSave }) => {
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!endDate) {
+            setError('Please select an end date.');
+            return;
+        }
+        setIsSubmitting(true);
+        setError('');
+        try {
+            await dash_endSubscription(subscription.id, endDate);
+            onSave();
+        } catch (err) {
+            setError('Failed to end subscription. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="p-6 border-b border-border">
+                        <h3 className="text-lg font-bold">End Subscription</h3>
+                        <p className="text-sm text-text-secondary">Set a cancellation date for <span className="font-semibold text-text-primary">{subscription.name}</span>.</p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                         {error && <p className="text-warning-red text-sm">{error}</p>}
+                        <div>
+                            <label htmlFor="endDate" className="text-sm font-medium text-text-secondary">End Date*</label>
+                            <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+                        <p className="text-xs text-text-secondary">The subscription will no longer be included in the monthly cost calculation after this date.</p>
+                    </div>
+                    <div className="p-4 bg-background/50 rounded-b-xl flex justify-end space-x-3">
+                        <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-border text-text-primary hover:bg-border/80 transition-colors">Cancel</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-warning-red text-white font-semibold hover:bg-warning-red/90 transition-colors disabled:opacity-50">
+                            {isSubmitting ? 'Ending...' : 'End Subscription'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 
 export default Outgoings;
