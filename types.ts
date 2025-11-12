@@ -147,6 +147,41 @@ export interface FinancialsData {
     recentDonations: Donation[];
 }
 
+// --- Outgoings Tab ---
+export interface OutgoingKpis {
+    totalSpend: number;
+    monthlyCost: number;
+}
+
+export interface ManualOutgoing {
+    id: string;
+    name: string;
+    description?: string;
+    amount: number;
+    purchase_date: string;
+    category?: string;
+}
+
+export interface Subscription {
+    id: string;
+    name: string;
+    description?: string;
+    amount: number;
+    start_date: string;
+    end_date?: string;
+    category?: string;
+    status: 'Active' | 'Inactive';
+}
+
+export interface OutgoingsData {
+    kpis: OutgoingKpis;
+    tables: {
+        manualOutgoings: ManualOutgoing[];
+        subscriptions: Subscription[];
+    };
+}
+
+
 // --- GA4 Tab ---
 // Add missing GA4ReportItem type
 export interface GA4ReportItem {

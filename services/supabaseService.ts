@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
-import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData } from './dashContracts';
+import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData } from './dashContracts';
 
 
 // --- SUPABASE CLIENT SETUP ---
@@ -277,6 +277,19 @@ export const dash_getStripeFinancials = async (timeframe: string): Promise<Finan
         return data;
     } catch (error) {
         handleSupabaseError(error, 'Stripe Financials Data');
+        throw error;
+    }
+};
+
+// --- OUTGOINGS TAB ---
+export const dash_getOutgoingsData = async (): Promise<DashOutgoingsData> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_outgoings_data').single();
+        if (error) throw error;
+        if (!data) throw new Error("No data received from dash_get_outgoings_data");
+        return data as DashOutgoingsData;
+    } catch (error) {
+        handleSupabaseError(error, 'Outgoings Data');
         throw error;
     }
 };

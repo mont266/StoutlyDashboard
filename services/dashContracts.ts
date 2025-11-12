@@ -73,3 +73,32 @@ export interface DashContentInitialData {
     comments: Comment[];
     images: UploadedImage[];
 }
+
+// --- Outgoings Tab Contract ---
+// To be returned by a new `dash_get_outgoings_data()` function.
+export interface DashOutgoingsData {
+    kpis: {
+        totalSpend: number;
+        monthlyCost: number;
+    };
+    tables: {
+        manualOutgoings: {
+            id: string;
+            name: string;
+            description?: string;
+            amount: number;
+            purchase_date: string;
+            category?: string;
+        }[];
+        subscriptions: {
+            id: string;
+            name: string;
+            description?: string;
+            amount: number;
+            start_date: string;
+            end_date?: string;
+            category?: string;
+            status: 'Active' | 'Inactive';
+        }[];
+    };
+}
