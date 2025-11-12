@@ -5,6 +5,8 @@ import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon } fro
 
 type SubTab = 'ratings' | 'comments' | 'images';
 
+const PLACEHOLDER_AVATAR = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
+
 const Content: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('ratings');
     
@@ -210,8 +212,8 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
                         <img 
                             src={getAvatarUrl(rating.user.avatarId)} 
                             alt={rating.user.name} 
-                            className="w-10 h-10 rounded-full bg-border flex-shrink-0"
-                            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                            className="w-10 h-10 rounded-full bg-border flex-shrink-0 object-cover"
+                            onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                         />
                         <div className="flex-grow">
                             <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
@@ -275,7 +277,12 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
             )}
             {comments.map(comment => (
                 <div key={comment.id} className="bg-background p-4 rounded-lg flex items-start space-x-4 border border-border transition-colors duration-200 hover:border-primary/30">
-                    <img src={getAvatarUrl(comment.user.avatarId)} alt={comment.user.name} className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0" />
+                    <img 
+                        src={getAvatarUrl(comment.user.avatarId)} 
+                        alt={comment.user.name} 
+                        className="w-10 h-10 rounded-full bg-border mt-1 flex-shrink-0 object-cover" 
+                        onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
+                    />
                     <div className="flex-grow">
                         <div className="flex items-baseline space-x-2">
                             <span className="font-semibold text-text-primary">{comment.user.name}</span>

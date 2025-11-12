@@ -10,6 +10,8 @@ import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon } from '../icons/Ico
 
 type SubTab = 'all' | 'today' | 'utm';
 
+const PLACEHOLDER_AVATAR = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
+
 const Users: React.FC = () => {
     const [subTab, setSubTab] = useState<SubTab>('all');
     const [data, setData] = useState<DashUsersData | null>(null);
@@ -185,8 +187,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                             src={getAvatarUrl(user.avatarId)} 
                                             alt={`${user.name}'s avatar`}
                                             className="w-10 h-10 rounded-full bg-border object-cover"
-                                            // Provide a fallback SVG icon if the image fails to load
-                                            onError={(e) => { e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=` }}
+                                            onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                                         />
                                         <div>
                                             <div className="flex items-center">
@@ -225,7 +226,12 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {users.map(user => (
             <div key={user.id} className="bg-background p-4 rounded-lg flex items-center space-x-3 border border-border">
-                 <img src={getAvatarUrl(user.avatarId)} alt={user.name} className="w-12 h-12 rounded-full" />
+                 <img 
+                    src={getAvatarUrl(user.avatarId)} 
+                    alt={user.name} 
+                    className="w-12 h-12 rounded-full bg-border object-cover"
+                    onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
+                 />
                 <div>
                     <p className="font-semibold text-text-primary">{user.name}</p>
                     <p className="text-xs text-text-secondary">{new Date(user.lastActive).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
