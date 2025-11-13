@@ -13,9 +13,10 @@ const Login: React.FC = () => {
         setError(null);
         setLoading(true);
         try {
-            // FIX: Changed `signInWithPassword` to `signIn` to support older versions of the Supabase client library.
-            // The error "signInWithPassword does not exist" indicates a version mismatch where the code uses a v2 method with a v1-like library installed.
-            const { error } = await supabase.auth.signIn({
+            // FIX: Reverted to `signInWithPassword` which is the correct method for Supabase JS v2.
+            // The previous use of `signIn` is for v1 and can lead to inconsistent session handling
+            // when mixed with v2 methods like `onAuthStateChange`.
+            const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });

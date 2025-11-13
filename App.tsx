@@ -13,31 +13,59 @@ const App: React.FC = () => {
     const [refreshKey, setRefreshKey] = useState(Date.now());
 
     useEffect(() => {
-        // onAuthStateChange handles the initial session check and all subsequent auth events.
-        // FIX: The error indicating 'onAuthStateChange' does not exist is likely due to a library version mismatch. This is the correct method name for both v1 and v2 of supabase-js.
+        let ignore = false;
+
+        async function initializeSession() {
+            // Use getSession() to fetch the current session.
+            // This is more reliable for the initial load, especially on mobile
+            // where onAuthStateChange might have timing issues or not fire immediately.
+            const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+
+            if (error) {
+                console.error("Error fetching session:", error.message);
+            }
+
+            // Check for the ignore flag to prevent state updates if the component unmounts
+            // before the async operation completes.
+            if (!ignore) {
+                setSession(currentSession);
+                if (currentSession) {
+                    const authorized = await checkUserAuthorization(currentSession.user.id);
+                    setIsAuthorized(authorized);
+                } else {
+                    setIsAuthorized(false);
+                }
+                setAuthLoading(false);
+            }
+        }
+
+        initializeSession();
+
+        // onAuthStateChange handles all subsequent auth events after the initial check.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            if (_event === 'TOKEN_REFRESHED') {
-                setRefreshKey(Date.now());
+            if (!ignore) {
+                setSession(session);
+                if (_event === 'TOKEN_REFRESHED') {
+                    setRefreshKey(Date.now());
+                }
+                if (session) {
+                    const authorized = await checkUserAuthorization(session.user.id);
+                    setIsAuthorized(authorized);
+                } else {
+                    setIsAuthorized(false);
+                }
+                // Also set loading to false here to handle sign-in/sign-out transitions.
+                setAuthLoading(false);
             }
-            if (session) {
-                const authorized = await checkUserAuthorization(session.user.id);
-                setIsAuthorized(authorized);
-            } else {
-                setIsAuthorized(false);
-            }
-            // The first time this callback runs, the initial authentication check is complete.
-            // Subsequent runs (e.g., for token refreshes) will just re-set this state to false,
-            // preventing the main loading screen from reappearing.
-            setAuthLoading(false);
         });
 
-        // FIX: Removed window focus handler that uses `getSession`. The `getSession` method does not exist in older Supabase client versions.
-        // The onAuthStateChange listener is sufficient as it handles session state changes, including those triggered by tab focus.
+        // The cleanup function will run when the component unmounts.
         return () => {
+            ignore = true;
             subscription.unsubscribe();
         };
     }, []);
+
 
     const handleLogout = async () => {
         // FIX: The error indicating 'signOut' does not exist is likely due to a library version mismatch. This is the correct method name.
