@@ -5,12 +5,12 @@ import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, f
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
-import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon } from '../icons/Icons';
+// FIX: Import ArrowUpRightIcon and ArrowDownRightIcon.
+import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon } from '../icons/Icons';
 
 interface FinancialSummary {
     totalSpendAllTime: number;
     totalDonationsAllTime: number;
-
     profit: number;
     currentMonthlySpend: number;
 }
@@ -74,29 +74,44 @@ const Home: React.FC = () => {
     }, []);
 
     const renderMainLoading = () => (
-        <div className="animate-pulse space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {[...Array(3)].map((_, i) => (
-                    <div key={i} className="space-y-4">
-                        <div className="h-6 bg-surface rounded w-1/2"></div>
-                        <div className="grid grid-cols-2 gap-6">
-                           <div className="bg-surface rounded-xl h-28"></div>
-                           <div className="bg-surface rounded-xl h-28"></div>
-                           <div className="bg-surface rounded-xl h-28"></div>
-                           <div className="bg-surface rounded-xl h-28"></div>
-                        </div>
-                    </div>
-                ))}
+        <div className="animate-pulse space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <div className="bg-surface rounded-xl h-80"></div>
-                 <div className="bg-surface rounded-xl h-80"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-surface rounded-xl h-80"></div>
+                    <div className="bg-surface rounded-xl h-80"></div>
+                </div>
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-surface rounded-xl h-96"></div>
+                    <div className="bg-surface rounded-xl h-96"></div>
+                </div>
             </div>
-            <div className="bg-surface rounded-xl h-96"></div>
         </div>
     );
     
     const formatGbp = (value: number) => `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const SecondaryStatItem: React.FC<{ label: string; value: string; change?: number; isChurn?: boolean }> = ({ label, value, change, isChurn }) => {
+        const isPositive = change !== undefined && change >= 0;
+        const changeColor = (isChurn ? !isPositive : isPositive) ? 'text-value-green' : 'text-warning-red';
+
+        return (
+            <li className="flex justify-between items-center py-2 border-b border-border last:border-none">
+                <span className="text-text-secondary">{label}</span>
+                <div className="flex items-center space-x-2">
+                    {change !== undefined && (
+                        <span className={`flex items-center text-xs font-semibold ${changeColor}`}>
+                            {change.toFixed(1)}%
+                            {isPositive ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
+                        </span>
+                    )}
+                    <span className="font-semibold text-text-primary">{value}</span>
+                </div>
+            </li>
+        );
+    }
 
     return (
         <section>
@@ -131,95 +146,85 @@ const Home: React.FC = () => {
             
             {loading ? renderMainLoading() : data && (
                 <div className="space-y-8">
-                    {/* --- KPI Sections --- */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Financials Column */}
-                        <div>
-                            <h3 className="text-xl font-semibold text-text-primary">Financials</h3>
-                            <p className="text-sm text-text-secondary mb-4">All-time performance</p>
-                            <div className="grid grid-cols-2 gap-6">
-                                {financialLoading ? (
-                                    [...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28 animate-pulse"></div>)
-                                ) : financialSummary && (
-                                    <>
-                                        <StatCard title="Total Donations" value={formatGbp(financialSummary.totalDonationsAllTime)} icon={<GiftIcon />} />
-                                        <StatCard title="Total Spent" value={formatGbp(financialSummary.totalSpendAllTime)} icon={<DollarSignIcon />} isChurn />
-                                        <StatCard title="Profit" value={formatGbp(financialSummary.profit)} icon={<TrendingUpIcon />} change={financialSummary.profit} />
-                                        <StatCard title="Monthly Spend" value={formatGbp(financialSummary.currentMonthlySpend)} icon={<TrendingDownIcon />} isChurn />
-                                    </>
-                                )}
+                    {/* --- Top Level KPIs --- */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
+                        <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<ActivityIcon />} />
+                        <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
+                         {financialLoading ? (
+                            <div className="bg-surface p-5 rounded-xl shadow-lg flex flex-col justify-center animate-pulse">
+                                <div className="h-4 bg-border rounded w-1/2"></div>
+                                <div className="h-8 bg-border rounded w-3/4 mt-2"></div>
                             </div>
-                        </div>
-
-                        {/* User Growth Column */}
-                        <div>
-                            <h3 className="text-xl font-semibold text-text-primary">User Growth</h3>
-                             <p className="text-sm text-text-secondary mb-4">vs last {timeframes[timeframe as keyof typeof timeframes]}</p>
-                            <div className="grid grid-cols-2 gap-6">
-                                <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
-                                <StatCard title="New Users" value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} icon={<ActivityIcon />} />
-                                <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<UsersIcon />} />
-                                <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                            </div>
-                        </div>
-
-                        {/* Platform Engagement Column */}
-                        <div>
-                             <h3 className="text-xl font-semibold text-text-primary">Platform Engagement</h3>
-                             <p className="text-sm text-text-secondary mb-4">vs last {timeframes[timeframe as keyof typeof timeframes]}</p>
-                            <div className="grid grid-cols-2 gap-6">
-                                <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
-                                <StatCard title="New Ratings" value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} icon={<StarIcon />} />
-                                <StatCard title="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} icon={<ImageIcon />} />
-                                <StatCard title="Total Comments" value={data.kpis.totalComments.toLocaleString()} icon={<MessageSquareIcon />} />
-                            </div>
-                        </div>
+                        ) : financialSummary && (
+                            <StatCard title="All-Time Profit" value={formatGbp(financialSummary.profit)} icon={financialSummary.profit >= 0 ? <TrendingUpIcon /> : <TrendingDownIcon />} change={financialSummary.profit > 0 ? 100 : -100} />
+                        )}
                     </div>
 
-                    {/* --- Charts Section --- */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-surface p-6 rounded-xl shadow-lg">
-                            <h3 className="text-lg font-semibold text-text-primary mb-4">New Users</h3>
-                            <div className="h-80">
-                                <SimpleLineChart data={data.charts.newUsersOverTime} color="#3B82F6" />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* --- Main Column --- */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-surface p-6 rounded-xl shadow-lg">
+                                <h3 className="text-lg font-semibold text-text-primary mb-4">New Users ({timeframes[timeframe as keyof typeof timeframes]})</h3>
+                                <div className="h-80">
+                                    <SimpleLineChart data={data.charts.newUsersOverTime} color="#3B82F6" />
+                                </div>
+                            </div>
+                            <div className="bg-surface p-6 rounded-xl shadow-lg">
+                                <h3 className="text-lg font-semibold text-text-primary mb-4">New Ratings ({timeframes[timeframe as keyof typeof timeframes]})</h3>
+                                <div className="h-80">
+                                    <SimpleLineChart data={data.charts.newRatingsOverTime} color="#F59E0B" />
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-surface p-6 rounded-xl shadow-lg">
-                            <h3 className="text-lg font-semibold text-text-primary mb-4">New Ratings</h3>
-                            <div className="h-80">
-                                <SimpleLineChart data={data.charts.newRatingsOverTime} color="#F59E0B" />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* --- Table Section --- */}
-                    <div className="bg-surface rounded-xl shadow-lg">
-                        <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price by Country</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-text-secondary">
-                                 <thead className="text-xs text-text-secondary uppercase bg-background">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3">Country</th>
-                                        <th scope="col" className="px-6 py-3 text-center">Ratings</th>
-                                        <th scope="col" className="px-6 py-3 text-right">Avg. Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.tables.avgPintPriceByCountry.map(item => (
-                                        <tr key={item.country} className="border-b border-border last:border-b-0 hover:bg-border/50">
-                                            <td className="px-6 py-3 font-medium text-text-primary">
-                                                {item.country}
-                                            </td>
-                                            <td className="px-6 py-3 text-text-primary text-center">
-                                                {item.ratingsCount.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-3 text-text-primary text-right font-mono">
-                                                {formatCurrency(item.price, item.countryCode)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        {/* --- Sidebar Column --- */}
+                        <div className="lg:col-span-1 space-y-6">
+                             <div className="bg-surface rounded-xl shadow-lg">
+                                <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price</h3>
+                                <div className="overflow-x-auto max-h-96">
+                                    <table className="w-full text-sm text-left text-text-secondary">
+                                        <thead className="text-xs text-text-secondary uppercase bg-background sticky top-0">
+                                            <tr>
+                                                <th scope="col" className="px-4 py-3">Country</th>
+                                                <th scope="col" className="px-4 py-3 text-right">Avg. Price</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.tables.avgPintPriceByCountry.map(item => (
+                                                <tr key={item.country} className="border-b border-border last:border-b-0 hover:bg-border/50">
+                                                    <td className="px-4 py-3 font-medium text-text-primary">
+                                                        {item.country}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-text-primary text-right font-mono">
+                                                        {formatCurrency(item.price, item.countryCode)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                             <div className="bg-surface rounded-xl shadow-lg p-4">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2">More Stats</h3>
+                                <ul className="text-sm">
+                                    <SecondaryStatItem label={`New Users (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} />
+                                    <SecondaryStatItem label={`New Ratings (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} />
+                                    <SecondaryStatItem label="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} />
+                                    <SecondaryStatItem label="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} />
+                                    <SecondaryStatItem label="Total Comments" value={data.kpis.totalComments.toLocaleString()} />
+                                     {financialLoading ? (
+                                        <li className="h-8 mt-2 bg-border rounded w-full animate-pulse"></li>
+                                    ) : financialSummary && (
+                                        <>
+                                            <SecondaryStatItem label="Total Donations" value={formatGbp(financialSummary.totalDonationsAllTime)} />
+                                            <SecondaryStatItem label="Total Spent" value={formatGbp(financialSummary.totalSpendAllTime)} isChurn />
+                                            <SecondaryStatItem label="Monthly Spend" value={`${formatGbp(financialSummary.currentMonthlySpend)}/mo`} isChurn />
+                                        </>
+                                    )}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
