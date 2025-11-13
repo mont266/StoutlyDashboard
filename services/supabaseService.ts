@@ -327,6 +327,44 @@ export const dash_endSubscription = async (subscriptionId: string, endDate: stri
     }
 };
 
+export interface EditOutgoingData {
+    id: string;
+    name: string;
+    description: string;
+    amount: number;
+    purchase_date: string;
+    category: string;
+    currency: string;
+}
+
+export const dash_editOutgoing = async (outgoingData: EditOutgoingData): Promise<void> => {
+    try {
+        const { error } = await supabase.rpc('dash_edit_outgoing', {
+            id_in: outgoingData.id,
+            name_in: outgoingData.name,
+            description_in: outgoingData.description || null,
+            amount_in: outgoingData.amount,
+            purchase_date_in: outgoingData.purchase_date,
+            category_in: outgoingData.category || null,
+            currency_in: outgoingData.currency
+        });
+        if (error) throw error;
+    } catch (error) {
+        handleSupabaseError(error, 'Edit Outgoing');
+        throw error;
+    }
+};
+
+export const dash_deleteOutgoing = async (outgoingId: string): Promise<void> => {
+    try {
+        const { error } = await supabase.rpc('dash_delete_outgoing', { id_in: outgoingId });
+        if (error) throw error;
+    } catch (error) {
+        handleSupabaseError(error, 'Delete Outgoing');
+        throw error;
+    }
+};
+
 
 // --- DEPRECATED/OLD FUNCTIONS (To be removed after refactor) ---
 

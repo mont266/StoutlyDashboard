@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription } from '../../../services/supabaseService';
-import type { DashOutgoingsData, NewOutgoingData, Subscription } from '../../../services/dashContracts';
+import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
+import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon } from '../../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -22,6 +22,8 @@ const Outgoings: React.FC = () => {
     const [initialModalData, setInitialModalData] = useState<Partial<NewOutgoingData> | null>(null);
     const [isEndModalOpen, setEndModalOpen] = useState(false);
     const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+    const [editingOutgoing, setEditingOutgoing] = useState<ManualOutgoing | null>(null);
+
 
     const fetchData = async () => {
         setLoading(true);
@@ -41,15 +43,12 @@ const Outgoings: React.FC = () => {
         fetchData();
     }, [timeframe]);
 
-    const handleAddSuccess = () => {
+    const handleModalSuccess = () => {
         setAddModalOpen(false);
         setInitialModalData(null);
-        fetchData(); // Refresh data
-    };
-
-    const handleEndSuccess = () => {
         setEndModalOpen(false);
         setSelectedSubscription(null);
+        setEditingOutgoing(null);
         fetchData(); // Refresh data
     };
     
@@ -61,6 +60,10 @@ const Outgoings: React.FC = () => {
     const handleOpenAddModal = () => {
         setInitialModalData(null);
         setAddModalOpen(true);
+    };
+    
+    const handleOpenEditModal = (outgoing: ManualOutgoing) => {
+        setEditingOutgoing(outgoing);
     };
 
     const handleRenewSubscription = (subscription: Subscription) => {
@@ -262,6 +265,7 @@ const Outgoings: React.FC = () => {
                                     <th scope="col" className="px-6 py-3 hidden md:table-cell">Category</th>
                                     <th scope="col" className="px-6 py-3 hidden lg:table-cell">Purchase Date</th>
                                     <th scope="col" className="px-6 py-3 text-right">Amount</th>
+                                    <th scope="col" className="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -273,6 +277,11 @@ const Outgoings: React.FC = () => {
                                         <td className="px-6 py-4 text-right">
                                              {formatMultiCurrency(item.amount, item.currency, item.amount_gbp)}
                                         </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button onClick={() => handleOpenEditModal(item)} className="text-text-secondary hover:text-primary transition-colors" title="Edit Item">
+                                                <PencilIcon />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -281,8 +290,9 @@ const Outgoings: React.FC = () => {
                 </div>
             </div>
 
-            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleAddSuccess} initialData={initialModalData} />}
-            {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleEndSuccess} />}
+            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleModalSuccess} initialData={initialModalData} />}
+            {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleModalSuccess} />}
+            {editingOutgoing && <EditOutgoingModal outgoing={editingOutgoing} onClose={() => setEditingOutgoing(null)} onSave={handleModalSuccess} />}
 
         </section>
     );
@@ -447,6 +457,139 @@ const EndSubscriptionModal: React.FC<{ subscription: Subscription, onClose: () =
                         <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-warning-red text-white font-semibold hover:bg-warning-red/90 transition-colors disabled:opacity-50">
                             {isSubmitting ? 'Ending...' : 'End Subscription'}
                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const EditOutgoingModal: React.FC<{
+    outgoing: ManualOutgoing;
+    onClose: () => void;
+    onSave: () => void;
+}> = ({ outgoing, onClose, onSave }) => {
+    const [formData, setFormData] = useState<Omit<EditOutgoingData, 'id'>>({
+        name: outgoing.name,
+        amount: outgoing.amount,
+        currency: outgoing.currency,
+        purchase_date: outgoing.purchase_date.split('T')[0], // Ensure YYYY-MM-DD format
+        category: outgoing.category || '',
+        description: outgoing.description || '',
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) || 0 : value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.name || formData.amount <= 0 || !formData.purchase_date) {
+            setError('Please fill in all required fields.');
+            return;
+        }
+        setError('');
+        setIsSubmitting(true);
+        try {
+            await dash_editOutgoing({ id: outgoing.id, ...formData });
+            onSave();
+        } catch (err) {
+            setError('Failed to update outgoing. Please try again.');
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (window.confirm('Are you sure you want to permanently delete this item? This action cannot be undone.')) {
+            setError('');
+            setIsDeleting(true);
+            try {
+                await dash_deleteOutgoing(outgoing.id);
+                onSave();
+            } catch (err) {
+                setError('Failed to delete outgoing. Please try again.');
+                console.error(err);
+            } finally {
+                setIsDeleting(false);
+            }
+        }
+    };
+
+    const isProcessing = isSubmitting || isDeleting;
+
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="p-6 border-b border-border">
+                        <h3 className="text-lg font-bold">Edit Manual Outgoing</h3>
+                        <p className="text-sm text-text-secondary">{outgoing.name}</p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        {error && <p className="text-warning-red text-sm">{error}</p>}
+
+                        <div>
+                            <label htmlFor="name" className="text-sm font-medium text-text-secondary">Name*</label>
+                            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+                        
+                        <div className="grid grid-cols-5 gap-4">
+                             <div className="col-span-2">
+                                <label htmlFor="currency" className="text-sm font-medium text-text-secondary">Currency*</label>
+                                <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary">
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                </select>
+                            </div>
+                            <div className="col-span-3">
+                                <label htmlFor="amount" className="text-sm font-medium text-text-secondary">Amount*</label>
+                                 <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <span className="text-text-secondary sm:text-sm">{CURRENCY_SYMBOLS[formData.currency]}</span>
+                                    </div>
+                                    <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required min="0.01" step="0.01" className="w-full bg-background border border-border rounded-lg p-2 pl-7 mt-1 focus:ring-primary focus:border-primary" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="purchase_date" className="text-sm font-medium text-text-secondary">Purchase Date*</label>
+                            <input type="date" id="purchase_date" name="purchase_date" value={formData.purchase_date} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+
+                        <div>
+                            <label htmlFor="category" className="text-sm font-medium text-text-secondary">Category</label>
+                            <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} placeholder="e.g., Hosting, SaaS" className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+
+                        <div>
+                            <label htmlFor="description" className="text-sm font-medium text-text-secondary">Description</label>
+                            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={2} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                        </div>
+                    </div>
+                    <div className="p-4 bg-background/50 rounded-b-xl flex justify-between items-center">
+                        <button 
+                            type="button" 
+                            onClick={handleDelete} 
+                            disabled={isProcessing}
+                            className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-warning-red/10 text-warning-red font-semibold hover:bg-warning-red/20 transition-colors disabled:opacity-50"
+                        >
+                            <TrashIcon />
+                            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                        </button>
+                        <div className="flex space-x-3">
+                            <button type="button" onClick={onClose} disabled={isProcessing} className="px-4 py-2 rounded-lg bg-border text-text-primary hover:bg-border/80 transition-colors">Cancel</button>
+                            <button type="submit" disabled={isProcessing} className="px-4 py-2 rounded-lg bg-primary text-background font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
