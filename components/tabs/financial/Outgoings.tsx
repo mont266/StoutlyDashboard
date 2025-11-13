@@ -19,6 +19,7 @@ const Outgoings: React.FC = () => {
 
     // Modal State
     const [isAddModalOpen, setAddModalOpen] = useState(false);
+    const [initialModalData, setInitialModalData] = useState<Partial<NewOutgoingData> | null>(null);
     const [isEndModalOpen, setEndModalOpen] = useState(false);
     const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
@@ -42,6 +43,7 @@ const Outgoings: React.FC = () => {
 
     const handleAddSuccess = () => {
         setAddModalOpen(false);
+        setInitialModalData(null);
         fetchData(); // Refresh data
     };
 
@@ -54,6 +56,24 @@ const Outgoings: React.FC = () => {
     const handleOpenEndModal = (subscription: Subscription) => {
         setSelectedSubscription(subscription);
         setEndModalOpen(true);
+    };
+
+    const handleOpenAddModal = () => {
+        setInitialModalData(null);
+        setAddModalOpen(true);
+    };
+
+    const handleRenewSubscription = (subscription: Subscription) => {
+        const prefillData: Partial<NewOutgoingData> = {
+            name: subscription.name,
+            description: subscription.description,
+            amount: subscription.amount,
+            currency: subscription.currency as 'GBP' | 'USD' | 'EUR',
+            category: subscription.category,
+            type: 'subscription',
+        };
+        setInitialModalData(prefillData);
+        setAddModalOpen(true);
     };
 
     const formatDate = (dateString: string | null | undefined) => {
@@ -79,6 +99,18 @@ const Outgoings: React.FC = () => {
                 <span className="text-xs text-text-secondary font-mono">(≈ £{gbpAmount.toFixed(2)})</span>
             </div>
         );
+    };
+
+    const getStatusBadgeClasses = (status: Subscription['status']) => {
+        switch (status) {
+            case 'Active':
+                return 'bg-value-green/20 text-value-green';
+            case 'Upcoming':
+                return 'bg-secondary/20 text-secondary';
+            case 'Inactive':
+            default:
+                return 'bg-gray-500/20 text-gray-400';
+        }
     };
     
     const SkeletonTable: React.FC = () => (
@@ -137,7 +169,7 @@ const Outgoings: React.FC = () => {
                         ))}
                     </div>
                     <button 
-                        onClick={() => setAddModalOpen(true)}
+                        onClick={handleOpenAddModal}
                         className="flex items-center space-x-2 bg-primary text-background font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
                     >
                         <PlusIcon />
@@ -171,7 +203,7 @@ const Outgoings: React.FC = () => {
                                 <tr>
                                     <th scope="col" className="px-6 py-3">Service</th>
                                     <th scope="col" className="px-6 py-3 hidden md:table-cell">Category</th>
-                                    <th scope="col" className="px-6 py-3 hidden lg:table-cell">Start Date</th>
+                                    <th scope="col" className="px-6 py-3 hidden lg:table-cell">Date Range</th>
                                     <th scope="col" className="px-6 py-3">Status</th>
                                     <th scope="col" className="px-6 py-3 text-right">Monthly Cost</th>
                                     <th scope="col" className="px-6 py-3 text-center">Actions</th>
@@ -182,9 +214,11 @@ const Outgoings: React.FC = () => {
                                     <tr key={sub.id} className="border-b border-border hover:bg-border/50">
                                         <td className="px-6 py-4 font-medium text-text-primary whitespace-nowrap">{sub.name}</td>
                                         <td className="px-6 py-4 hidden md:table-cell">{sub.category || 'N/A'}</td>
-                                        <td className="px-6 py-4 hidden lg:table-cell">{formatDate(sub.start_date)}</td>
+                                        <td className="px-6 py-4 hidden lg:table-cell text-xs">
+                                            {formatDate(sub.start_date)} - {sub.end_date ? formatDate(sub.end_date) : 'Present'}
+                                        </td>
                                         <td className="px-4 py-4">
-                                            <span className={`px-2 py-0.5 text-xs rounded-full ${sub.status === 'Active' ? 'bg-value-green/20 text-value-green' : 'bg-gray-500/20 text-gray-400'}`}>
+                                            <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadgeClasses(sub.status)}`}>
                                                 {sub.status}
                                             </span>
                                         </td>
@@ -192,12 +226,15 @@ const Outgoings: React.FC = () => {
                                             {formatMultiCurrency(sub.amount, sub.currency, sub.amount_gbp)}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            {sub.status === 'Active' ? (
+                                            {sub.status === 'Active' && (
                                                 <button onClick={() => handleOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
                                                     <StopCircleIcon />
                                                 </button>
-                                            ) : (
-                                                <span>-</span>
+                                            )}
+                                            {sub.status === 'Inactive' && (
+                                                <button onClick={() => handleRenewSubscription(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Renew Subscription">
+                                                    <PlusIcon />
+                                                </button>
                                             )}
                                         </td>
                                     </tr>
@@ -237,7 +274,7 @@ const Outgoings: React.FC = () => {
                 </div>
             </div>
 
-            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleAddSuccess} />}
+            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleAddSuccess} initialData={initialModalData} />}
             {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleEndSuccess} />}
 
         </section>
@@ -246,7 +283,11 @@ const Outgoings: React.FC = () => {
 
 // --- MODAL COMPONENTS ---
 
-const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> = ({ onClose, onSave }) => {
+const AddOutgoingModal: React.FC<{
+    onClose: () => void;
+    onSave: () => void;
+    initialData?: Partial<NewOutgoingData> | null;
+}> = ({ onClose, onSave, initialData }) => {
     const [formData, setFormData] = useState<NewOutgoingData>({
         name: '',
         type: 'manual',
@@ -254,14 +295,15 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
         start_date: new Date().toISOString().split('T')[0],
         description: '',
         category: '',
-        currency: 'GBP'
+        currency: 'GBP',
+        ...initialData,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) : value }));
+        setFormData(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) || 0 : value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -288,7 +330,7 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
             <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b border-border">
-                        <h3 className="text-lg font-bold">Add New Outgoing</h3>
+                        <h3 className="text-lg font-bold">{initialData ? `Renew '${initialData.name}'` : 'Add New Outgoing'}</h3>
                     </div>
                     <div className="p-6 space-y-4">
                         {error && <p className="text-warning-red text-sm">{error}</p>}
@@ -311,7 +353,7 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
                                 <label htmlFor="currency" className="text-sm font-medium text-text-secondary">Currency*</label>
                                 <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary">
                                     <option value="GBP">GBP (£)</option>
-                                    <option value="USD">USD ($$)</option>
+                                    <option value="USD">USD ($)</option>
                                     <option value="EUR">EUR (€)</option>
                                 </select>
                             </div>
@@ -334,12 +376,12 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
 
                         <div>
                             <label htmlFor="category" className="text-sm font-medium text-text-secondary">Category</label>
-                            <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} placeholder="e.g., Hosting, SaaS" className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                            <input type="text" id="category" name="category" value={formData.category || ''} onChange={handleChange} placeholder="e.g., Hosting, SaaS" className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
                         </div>
 
                         <div>
                             <label htmlFor="description" className="text-sm font-medium text-text-secondary">Description</label>
-                            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={2} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
+                            <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} rows={2} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
                         </div>
                     </div>
                     <div className="p-4 bg-background/50 rounded-b-xl flex justify-end space-x-3">

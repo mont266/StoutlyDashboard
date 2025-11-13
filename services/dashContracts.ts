@@ -102,7 +102,7 @@ export interface Subscription {
     start_date: string;
     end_date?: string;
     category?: string;
-    status: 'Active' | 'Inactive';
+    status: 'Active' | 'Inactive' | 'Upcoming';
 }
 
 export interface NewOutgoingData {
