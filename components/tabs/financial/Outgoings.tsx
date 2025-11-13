@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon } from '../../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -25,7 +26,7 @@ const Outgoings: React.FC = () => {
     const [editingOutgoing, setEditingOutgoing] = useState<ManualOutgoing | null>(null);
 
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -37,11 +38,11 @@ const Outgoings: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [timeframe]);
 
     useEffect(() => {
         fetchData();
-    }, [timeframe]);
+    }, [fetchData]);
 
     const handleModalSuccess = () => {
         setAddModalOpen(false);
@@ -158,7 +159,17 @@ const Outgoings: React.FC = () => {
     return (
         <section>
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                <h2 className="text-2xl font-bold">Outgoings</h2>
+                <div className="flex items-center space-x-4">
+                    <h2 className="text-2xl font-bold">Outgoings</h2>
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Refresh data"
+                    >
+                        <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                  <div className="flex items-center space-x-4">
                     <div className="bg-surface p-1 rounded-lg flex space-x-1 flex-wrap">
                         {(Object.keys(timeframes) as (keyof typeof timeframes)[]).map(t => (

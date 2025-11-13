@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getGA4Data } from '../../services/supabaseService';
 import type { GA4Data, GA4ReportItem } from '../../types';
 import StatCard from '../StatCard';
 import GA4UsersChart from '../charts/GA4UsersChart';
 import EngagementDonutChart from '../charts/EngagementDonutChart';
-import { UsersIcon, ActivityIcon, PercentIcon, MousePointerClickIcon, FileTextIcon, GlobeIcon } from '../icons/Icons';
+import { UsersIcon, ActivityIcon, PercentIcon, MousePointerClickIcon, FileTextIcon, GlobeIcon, RefreshCwIcon } from '../icons/Icons';
 import EventTreemapChart from '../charts/EventTreemapChart';
 
 const ReportTable: React.FC<{ title: string; data: GA4ReportItem[], icon: React.ReactNode }> = ({ title, data, icon }) => (
@@ -39,22 +40,23 @@ const GA4: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const result = await dash_getGA4Data(timeframe);
-                setData(result);
-            } catch (err) {
-                setError('Failed to fetch GA4 analytics data.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await dash_getGA4Data(timeframe);
+            setData(result);
+        } catch (err) {
+            setError('Failed to fetch GA4 analytics data.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }, [timeframe]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const renderLoading = () => (
         <div className="space-y-8 animate-pulse">
@@ -77,7 +79,17 @@ const GA4: React.FC = () => {
     return (
         <section>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">GA4 Analytics</h2>
+                 <div className="flex items-center space-x-4">
+                    <h2 className="text-2xl font-bold">GA4 Analytics</h2>
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Refresh data"
+                    >
+                        <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                 <div className="bg-surface p-1 rounded-lg flex space-x-1">
                     {(['7d', '30d', '90d'] as const).map(t => (
                         <button

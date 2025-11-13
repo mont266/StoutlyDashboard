@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
-import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon } from '../icons/Icons';
+import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon, RefreshCwIcon } from '../icons/Icons';
 
 type SubTab = 'ratings' | 'comments' | 'images';
 
@@ -36,35 +37,36 @@ const Content: React.FC = () => {
     const IMAGES_PER_PAGE = 9;
     const ITEMS_PER_PAGE = 15;
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            setInitialLoading(true);
-            try {
-                // Use the new consolidated function for an efficient initial load
-                const initialData = await dash_getContentInitialData();
+    const fetchInitialData = useCallback(async () => {
+        setInitialLoading(true);
+        try {
+            // Use the new consolidated function for an efficient initial load
+            const initialData = await dash_getContentInitialData();
 
-                setRatings(initialData.ratings);
-                setHasMoreRatings(initialData.ratings.length === ITEMS_PER_PAGE);
-                setRatingsPage(2);
+            setRatings(initialData.ratings);
+            setHasMoreRatings(initialData.ratings.length === ITEMS_PER_PAGE);
+            setRatingsPage(2);
 
-                setComments(initialData.comments);
-                setHasMoreComments(initialData.comments.length === ITEMS_PER_PAGE);
-                setCommentsPage(2);
+            setComments(initialData.comments);
+            setHasMoreComments(initialData.comments.length === ITEMS_PER_PAGE);
+            setCommentsPage(2);
 
-                setImages(initialData.images);
-                setHasMoreImages(initialData.images.length === IMAGES_PER_PAGE);
-                setImagesPage(1); // Keep current page at 1, next fetch will be page 2
-            } catch (error) {
-                console.error("Failed to fetch initial content data", error);
-                setHasMoreRatings(false);
-                setHasMoreComments(false);
-                setHasMoreImages(false);
-            } finally {
-                setInitialLoading(false);
-            }
-        };
-        fetchInitialData();
+            setImages(initialData.images);
+            setHasMoreImages(initialData.images.length === IMAGES_PER_PAGE);
+            setImagesPage(1); // Keep current page at 1, next fetch will be page 2
+        } catch (error) {
+            console.error("Failed to fetch initial content data", error);
+            setHasMoreRatings(false);
+            setHasMoreComments(false);
+            setHasMoreImages(false);
+        } finally {
+            setInitialLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchInitialData();
+    }, [fetchInitialData]);
 
     const loadRatings = async () => {
         if (loadingRatings || !hasMoreRatings) return;
@@ -136,7 +138,17 @@ const Content: React.FC = () => {
 
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-6">Content Feeds</h2>
+            <div className="flex items-center space-x-4 mb-6">
+                <h2 className="text-2xl font-bold">Content Feeds</h2>
+                <button
+                    onClick={fetchInitialData}
+                    disabled={initialLoading}
+                    className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Refresh data"
+                >
+                    <RefreshCwIcon className={initialLoading ? 'animate-spin' : ''} />
+                </button>
+            </div>
             
             <div className="flex space-x-2 border-b border-border overflow-x-auto pb-px">
                 {subTabs.map(tab => (

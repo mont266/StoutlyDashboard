@@ -1,10 +1,10 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getStripeFinancials, getAvatarUrl } from '../../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../../types';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon } from '../../icons/Icons';
+import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon, RefreshCwIcon } from '../../icons/Icons';
 
 const PLACEHOLDER_AVATAR = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
 
@@ -15,33 +15,23 @@ const Donations: React.FC = () => {
     const [timeframe, setTimeframe] = useState<string>('30d');
     const timeframes = { '24h': '24 Hours', '7d': '7 Days', '30d': '30 Days', '1y': '1 Year', 'all': 'All Time' };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const result = await dash_getStripeFinancials(timeframe);
-                
-                // --- DEBUG LOGGING ---
-                console.log("Financials data received from server:", result);
-                if (result?.topDonator) {
-                    console.log("Top donator object:", result.topDonator);
-                }
-                if (result?.recentDonations?.length > 0) {
-                    console.log("First donation user object:", result.recentDonations[0].user);
-                }
-                // --- END DEBUG LOGGING ---
-
-                setData(result);
-            } catch (err: any) {
-                setError('An error occurred while fetching financial data. Please check the console.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await dash_getStripeFinancials(timeframe);
+            setData(result);
+        } catch (err: any) {
+            setError('An error occurred while fetching financial data. Please check the console.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }, [timeframe]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const renderSkeleton = () => (
         <div className="space-y-6 animate-pulse">
@@ -62,7 +52,17 @@ const Donations: React.FC = () => {
     return (
         <section>
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                <h2 className="text-2xl font-bold">Donations</h2>
+                <div className="flex items-center space-x-4">
+                    <h2 className="text-2xl font-bold">Donations</h2>
+                     <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Refresh data"
+                    >
+                        <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                 <div className="bg-surface p-1 rounded-lg flex space-x-1 flex-wrap">
                      {(Object.keys(timeframes) as (keyof typeof timeframes)[]).map(t => (
                         <button
@@ -100,11 +100,8 @@ const Donations: React.FC = () => {
 
 const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => {
     const isNA = donator.username === 'N/A';
-
-    // If there's no top donator, use a generic placeholder SVG. Otherwise, generate the URL.
-    const avatarSrc = isNA
-        ? PLACEHOLDER_AVATAR
-        : getAvatarUrl(donator.avatar_id);
+    const avatarUrl = getAvatarUrl(donator.avatar_id);
+    const avatarSrc = isNA ? PLACEHOLDER_AVATAR : (avatarUrl || PLACEHOLDER_AVATAR);
 
     return (
         <div className="bg-surface p-6 rounded-xl text-center shadow-lg h-full flex flex-col justify-center items-center">
@@ -115,14 +112,8 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => {
             <img 
                 src={avatarSrc} 
                 alt={donator.username} 
-                // The border color and username text color change based on whether there's a real top donator.
                 className={`w-20 h-20 rounded-full mx-auto mb-3 border-2 ${isNA ? 'border-border' : 'border-primary'} bg-border object-cover`}
-                onError={(e) => { 
-                    // This fallback is for real users whose avatar URL might be broken.
-                    if (!isNA) {
-                        e.currentTarget.src = PLACEHOLDER_AVATAR;
-                    }
-                }}
+                onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
             />
             <p className={`font-bold text-xl ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</p>
             <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
@@ -143,9 +134,8 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
             <tbody>
                 {donations.map((donation) => {
                     const isAnonymous = donation.user.username === 'Anonymous';
-                    const avatarSrc = isAnonymous
-                        ? PLACEHOLDER_AVATAR
-                        : getAvatarUrl(donation.user.avatar_id);
+                    const avatarUrl = getAvatarUrl(donation.user.avatar_id);
+                    const avatarSrc = isAnonymous ? PLACEHOLDER_AVATAR : (avatarUrl || PLACEHOLDER_AVATAR);
 
                     return (
                         <tr key={donation.id} className="border-b border-border last:border-b-0 hover:bg-border/50">
@@ -155,12 +145,7 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                                         src={avatarSrc} 
                                         alt={donation.user.username} 
                                         className="w-8 h-8 rounded-full bg-border object-cover"
-                                        onError={(e) => { 
-                                            // Only apply fallback for non-anonymous users with broken image links
-                                            if (!isAnonymous) {
-                                                e.currentTarget.src = PLACEHOLDER_AVATAR;
-                                            }
-                                        }}
+                                        onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                                     />
                                     <span>{donation.user.username}</span>
                                 </div>

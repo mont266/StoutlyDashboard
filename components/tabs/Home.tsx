@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, formatCurrency } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
-import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon } from '../icons/Icons';
+import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon } from '../icons/Icons';
 
 interface FinancialSummary {
     totalSpendAllTime: number;
@@ -24,24 +25,24 @@ const Home: React.FC = () => {
 
     const timeframes = { '24h': '24 Hours', '7d': '7 Days', '30d': '30 Days', '6m': '6 Months', '1y': '1 Year', 'All': 'All Time' };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const result = await dash_getHomeData(timeframe);
-                setData(result);
-            } catch (err)
- {
-                setError('Failed to fetch dashboard data. The new dash_ function may not be deployed yet.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await dash_getHomeData(timeframe);
+            setData(result);
+        } catch (err)
+        {
+            setError('Failed to fetch dashboard data. The new dash_ function may not be deployed yet.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }, [timeframe]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     useEffect(() => {
         const fetchFinancials = async () => {
@@ -89,7 +90,17 @@ const Home: React.FC = () => {
     return (
         <section>
              <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                <h2 className="text-2xl font-bold">Dashboard</h2>
+                <div className="flex items-center space-x-4">
+                    <h2 className="text-2xl font-bold">Dashboard</h2>
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Refresh data"
+                    >
+                        <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                 <div className="bg-surface p-1 rounded-lg flex space-x-1 flex-wrap">
                     {(Object.keys(timeframes) as (keyof typeof timeframes)[]).map(t => (
                         <button

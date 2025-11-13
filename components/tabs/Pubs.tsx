@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
 import type { DashPubsData } from '../../services/dashContracts';
-import { StarIcon, BuildingIcon, HashIcon } from '../icons/Icons';
+import { StarIcon, BuildingIcon, HashIcon, RefreshCwIcon } from '../icons/Icons';
 import StatCard from '../StatCard';
 
 const Pubs: React.FC = () => {
     const [data, setData] = useState<DashPubsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // A single, consolidated call
-                const result = await dash_getPubsData();
-                setData(result);
-            } catch (error) {
-                console.error("Failed to fetch pub data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            // A single, consolidated call
+            const result = await dash_getPubsData();
+            setData(result);
+        } catch (error) {
+            console.error("Failed to fetch pub data:", error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean, isScoreOutOf100?: boolean }> = ({ title, data, loading, isScoreOutOf100 = false }) => (
         <div className="bg-surface rounded-xl shadow-lg">
@@ -90,7 +92,17 @@ const Pubs: React.FC = () => {
 
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-6">Pub Analytics</h2>
+            <div className="flex items-center space-x-4 mb-6">
+                <h2 className="text-2xl font-bold">Pub Analytics</h2>
+                 <button
+                    onClick={fetchData}
+                    disabled={loading}
+                    className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Refresh data"
+                >
+                    <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                </button>
+            </div>
             
             <div className="mb-6">
                 {loading || !data ? renderAnalyticsSkeleton() : (

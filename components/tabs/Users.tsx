@@ -1,12 +1,12 @@
 
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dash_getUsersData, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
 import type { DashUsersData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
-import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon } from '../icons/Icons';
+import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon, RefreshCwIcon } from '../icons/Icons';
 
 type SubTab = 'all' | 'today' | 'utm';
 
@@ -17,21 +17,22 @@ const Users: React.FC = () => {
     const [data, setData] = useState<DashUsersData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Single, consolidated API call
-                const result = await dash_getUsersData();
-                setData(result);
-            } catch (error) {
-                console.error("Failed to fetch user data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            // Single, consolidated API call
+            const result = await dash_getUsersData();
+            setData(result);
+        } catch (error) {
+            console.error("Failed to fetch user data:", error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const subTabs: { id: SubTab; label: string }[] = [
         { id: 'all', label: 'All Users' },
@@ -56,7 +57,17 @@ const Users: React.FC = () => {
 
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-6">User Analytics</h2>
+            <div className="flex items-center space-x-4 mb-6">
+                <h2 className="text-2xl font-bold">User Analytics</h2>
+                <button
+                    onClick={fetchData}
+                    disabled={loading}
+                    className="text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Refresh data"
+                >
+                    <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
+                </button>
+            </div>
             <div className="space-y-8">
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                      <StatCard title="Total Users" value={data?.kpis.totalUsers.toLocaleString() ?? '...'} icon={<UsersIcon />} />
