@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon } from '../../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -14,7 +14,7 @@ const Outgoings: React.FC = () => {
     const [data, setData] = useState<DashOutgoingsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [timeframe, setTimeframe] = useState<string>('30d');
+    const [timeframe, setTimeframe] = useState<string>('all');
     const timeframes = { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year', 'all': 'All Time' };
 
     // Modal State
@@ -135,7 +135,8 @@ const Outgoings: React.FC = () => {
 
     const renderLoading = () => (
         <div className="animate-pulse space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-surface rounded-xl h-28"></div>
                 <div className="bg-surface rounded-xl h-28"></div>
                 <div className="bg-surface rounded-xl h-28"></div>
             </div>
@@ -178,7 +179,7 @@ const Outgoings: React.FC = () => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard 
                     title={`Spend (${timeframes[timeframe as keyof typeof timeframes]})`} 
                     value={`£${data.kpis.totalSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
@@ -186,9 +187,15 @@ const Outgoings: React.FC = () => {
                     isChurn 
                 />
                 <StatCard 
-                    title="Current Monthly Cost (GBP)" 
+                    title="Recurring Monthly Cost (GBP)" 
                     value={`£${data.kpis.monthlyCost.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
                     icon={<TrendingDownIcon />} 
+                    isChurn 
+                />
+                <StatCard 
+                    title="Projected Annual Cost (GBP)" 
+                    value={`£${data.kpis.projectedAnnualCost.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    icon={<TrendingUpIcon />} 
                     isChurn 
                 />
             </div>

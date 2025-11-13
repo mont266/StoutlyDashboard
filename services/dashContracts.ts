@@ -79,6 +79,7 @@ export interface DashContentInitialData {
 export interface OutgoingKpis {
     totalSpend: number;
     monthlyCost: number;
+    projectedAnnualCost: number;
 }
 
 export interface ManualOutgoing {
