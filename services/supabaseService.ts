@@ -1,6 +1,7 @@
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
-import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
+import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis, TimeSeriesDataPoint } from '../types';
 // FIX: `NewOutgoingData` is now imported from here as it's part of the dash contract.
 import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData, NewOutgoingData, DashFinancialSummary } from './dashContracts';
 
@@ -166,6 +167,25 @@ const handleSupabaseError = (error: any, context: string) => {
     // for details like HTTP status codes for more specific error handling.
 }
 
+const fillTimeSeriesData = (data: { date: string, value: number }[], startDate: Date, endDate: Date): TimeSeriesDataPoint[] => {
+    if (!data) {
+        data = [];
+    }
+    const dataMap = new Map(data.map(item => [new Date(item.date).toISOString().split('T')[0], item.value]));
+    const filledData: TimeSeriesDataPoint[] = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+        const dateKey = currentDate.toISOString().split('T')[0];
+        filledData.push({
+            date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            value: dataMap.get(dateKey) || 0
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return filledData;
+};
+
 // --- LIVE API CALLS (NEW CONSOLIDATED DASHBOARD FUNCTIONS) ---
 
 // --- HOME TAB ---
@@ -181,21 +201,39 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         // FIX: Handle cases where no data is returned.
         if (!data) throw new Error("No data received from dash_get_home_data");
         
-        // The data should already match the DashHomeData contract perfectly.
-        // We just need to format the date for the chart display.
         // FIX: Cast `data` to `any` to allow property access and spreading, as its type is inferred as `unknown` without generated types.
         const responseData = data as any;
+
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+        let startDate = new Date();
+        
+        if (timeframe === 'All') {
+            const allRawDates = [
+                ...(responseData.charts.newUsersOverTime || []).map((d: any) => new Date(d.date)),
+                ...(responseData.charts.newRatingsOverTime || []).map((d: any) => new Date(d.date))
+            ];
+            startDate = allRawDates.length > 0 ? new Date(Math.min(...allRawDates.map((d: Date) => d.getTime()))) : new Date();
+        } else if (timeframe === '24h') {
+             startDate.setDate(endDate.getDate() - 1);
+        } else {
+            const timeValue = parseInt(timeframe.slice(0, -1));
+            const timeUnit = timeframe.slice(-1);
+            if (timeUnit === 'd') {
+                startDate.setDate(endDate.getDate() - (timeValue - 1));
+            } else if (timeUnit === 'm') {
+                startDate.setMonth(endDate.getMonth() - timeValue);
+            } else if (timeUnit === 'y') {
+                startDate.setFullYear(endDate.getFullYear() - timeValue);
+            }
+        }
+        startDate.setHours(0,0,0,0);
+
         return {
             ...responseData,
             charts: {
-                newUsersOverTime: responseData.charts.newUsersOverTime.map((row: any) => ({
-                    ...row,
-                    date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                })),
-                newRatingsOverTime: responseData.charts.newRatingsOverTime.map((row: any) => ({
-                    ...row,
-                    date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                })),
+                newUsersOverTime: fillTimeSeriesData(responseData.charts.newUsersOverTime, startDate, endDate),
+                newRatingsOverTime: fillTimeSeriesData(responseData.charts.newRatingsOverTime, startDate, endDate),
             }
         };
     } catch (error) {

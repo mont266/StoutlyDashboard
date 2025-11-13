@@ -30,8 +30,9 @@ const formatDate = (dateStr: string | undefined | null): string => {
     const year = dateStr.substring(0, 4);
     const month = dateStr.substring(4, 6);
     const day = dateStr.substring(6, 8);
-    const date = new Date(`${year}-${month}-${day}`);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Use UTC to prevent timezone-related date shifts
+    const date = new Date(`${year}-${month}-${day}T00:00:00Z`);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
 
 // --- AUTHENTICATION HELPER ---
@@ -199,26 +200,52 @@ serve(async (req) => {
         const processReport = (reportIndex: number) => {
             const report = response.reports?.[reportIndex];
             if (!report || !report.rows) return [];
-            return report.rows.map(row => ({
+            return report.rows.map((row: any) => ({
                 name: row.dimensionValues?.[0]?.value ?? 'Unknown',
                 value: parseInt(row.metricValues?.[0]?.value ?? '0'),
-            })).filter(item => item.name !== '(not set)');
+            })).filter((item: any) => item.name !== '(not set)');
         };
 
-        const processTimeSeries = (reportIndex: number, metricIndex: number) => {
+        const processTimeSeries = (reportIndex: number, metricIndex: number, startDateStr: string, numberOfDays: number) => {
             const report = response.reports?.[reportIndex];
-            if (!report || !report.rows) return [];
-            return report.rows.map(row => ({
-                date: formatDate(row.dimensionValues?.[0]?.value),
-                value: parseInt(row.metricValues?.[metricIndex]?.value ?? '0'),
-            }));
+            const dataMap = new Map();
+            if (report && report.rows) {
+                report.rows.forEach((row: any) => {
+                    const dateStrValue = row.dimensionValues?.[0]?.value; // YYYYMMDD
+                    if (dateStrValue) {
+                        dataMap.set(dateStrValue, parseInt(row.metricValues?.[metricIndex]?.value ?? '0'));
+                    }
+                });
+            }
+
+            const filledData = [];
+            const loopStartDate = new Date(startDateStr);
+            // Adjust to UTC to avoid timezone issues with date calculations
+            loopStartDate.setUTCHours(0, 0, 0, 0);
+
+            for (let i = 0; i < numberOfDays; i++) {
+                let currentDate = new Date(loopStartDate);
+                currentDate.setUTCDate(loopStartDate.getUTCDate() + i);
+                
+                const year = currentDate.getUTCFullYear();
+                const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(currentDate.getUTCDate()).padStart(2, '0');
+                const key = `${year}${month}${day}`;
+
+                filledData.push({
+                    date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+                    value: dataMap.get(key) || 0
+                });
+            }
+
+            return filledData;
         };
         
         const finalData = {
             kpis,
             charts: {
-                usersOverTime: processTimeSeries(1, 0),
-                sessionsOverTime: processTimeSeries(1, 1),
+                usersOverTime: processTimeSeries(1, 0, startDateCurrent, days),
+                sessionsOverTime: processTimeSeries(1, 1, startDateCurrent, days),
                 deviceBreakdown: processReport(2),
             },
             tables: {
