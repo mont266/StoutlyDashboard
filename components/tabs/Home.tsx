@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, formatCurrency } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
@@ -74,8 +75,18 @@ const Home: React.FC = () => {
 
     const renderMainLoading = () => (
         <div className="animate-pulse space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                {[...Array(6)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="space-y-4">
+                        <div className="h-6 bg-surface rounded w-1/2"></div>
+                        <div className="grid grid-cols-2 gap-6">
+                           <div className="bg-surface rounded-xl h-28"></div>
+                           <div className="bg-surface rounded-xl h-28"></div>
+                           <div className="bg-surface rounded-xl h-28"></div>
+                           <div className="bg-surface rounded-xl h-28"></div>
+                        </div>
+                    </div>
+                ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                  <div className="bg-surface rounded-xl h-80"></div>
@@ -116,38 +127,56 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-            {financialLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 animate-pulse">
-                    {[...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
-                </div>
-            ) : financialSummary && (
-                <div className="mb-8">
-                    <h3 className="text-xl font-semibold mb-4 text-text-primary">Financial Overview</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <StatCard title="Total Donations (All Time)" value={formatGbp(financialSummary.totalDonationsAllTime)} icon={<GiftIcon />} />
-                        <StatCard title="Total Spent (All Time)" value={formatGbp(financialSummary.totalSpendAllTime)} icon={<DollarSignIcon />} isChurn />
-                        <StatCard title="Profit (All Time)" value={formatGbp(financialSummary.profit)} icon={<TrendingUpIcon />} change={financialSummary.profit} />
-                        <StatCard title="Current Monthly Spend" value={formatGbp(financialSummary.currentMonthlySpend)} icon={<TrendingDownIcon />} isChurn />
-                    </div>
-                </div>
-            )}
-
             {error && <div className="text-red-500 bg-red-900/20 p-4 rounded-lg">{error}</div>}
             
             {loading ? renderMainLoading() : data && (
-                <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-text-primary">User & Engagement Metrics ({timeframes[timeframe as keyof typeof timeframes]})</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                        <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
-                        <StatCard title="New Users" value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} icon={<ActivityIcon />} />
-                        <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<UsersIcon />} />
-                        <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
-                        <StatCard title="New Ratings" value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} icon={<StarIcon />} />
-                        <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                        <StatCard title="Uploaded Images" value={data.kpis.totalUploadedImages.toLocaleString()} icon={<ImageIcon />} />
-                        <StatCard title="Total Comments" value={data.kpis.totalComments.toLocaleString()} icon={<MessageSquareIcon />} />
+                <div className="space-y-8">
+                    {/* --- KPI Sections --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Financials Column */}
+                        <div>
+                            <h3 className="text-xl font-semibold text-text-primary">Financials</h3>
+                            <p className="text-sm text-text-secondary mb-4">All-time performance</p>
+                            <div className="grid grid-cols-2 gap-6">
+                                {financialLoading ? (
+                                    [...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28 animate-pulse"></div>)
+                                ) : financialSummary && (
+                                    <>
+                                        <StatCard title="Total Donations" value={formatGbp(financialSummary.totalDonationsAllTime)} icon={<GiftIcon />} />
+                                        <StatCard title="Total Spent" value={formatGbp(financialSummary.totalSpendAllTime)} icon={<DollarSignIcon />} isChurn />
+                                        <StatCard title="Profit" value={formatGbp(financialSummary.profit)} icon={<TrendingUpIcon />} change={financialSummary.profit} />
+                                        <StatCard title="Monthly Spend" value={formatGbp(financialSummary.currentMonthlySpend)} icon={<TrendingDownIcon />} isChurn />
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* User Growth Column */}
+                        <div>
+                            <h3 className="text-xl font-semibold text-text-primary">User Growth</h3>
+                             <p className="text-sm text-text-secondary mb-4">vs last {timeframes[timeframe as keyof typeof timeframes]}</p>
+                            <div className="grid grid-cols-2 gap-6">
+                                <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
+                                <StatCard title="New Users" value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} icon={<ActivityIcon />} />
+                                <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<UsersIcon />} />
+                                <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
+                            </div>
+                        </div>
+
+                        {/* Platform Engagement Column */}
+                        <div>
+                             <h3 className="text-xl font-semibold text-text-primary">Platform Engagement</h3>
+                             <p className="text-sm text-text-secondary mb-4">vs last {timeframes[timeframe as keyof typeof timeframes]}</p>
+                            <div className="grid grid-cols-2 gap-6">
+                                <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
+                                <StatCard title="New Ratings" value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} icon={<StarIcon />} />
+                                <StatCard title="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} icon={<ImageIcon />} />
+                                <StatCard title="Total Comments" value={data.kpis.totalComments.toLocaleString()} icon={<MessageSquareIcon />} />
+                            </div>
+                        </div>
                     </div>
 
+                    {/* --- Charts Section --- */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-surface p-6 rounded-xl shadow-lg">
                             <h3 className="text-lg font-semibold text-text-primary mb-4">New Users</h3>
@@ -163,6 +192,7 @@ const Home: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* --- Table Section --- */}
                     <div className="bg-surface rounded-xl shadow-lg">
                         <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price by Country</h3>
                         <div className="overflow-x-auto">

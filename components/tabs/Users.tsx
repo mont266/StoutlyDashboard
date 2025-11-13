@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dash_getUsersData, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat, UserKpis } from '../../types';
@@ -195,7 +196,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                 <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
                                     <div className="flex items-center space-x-3">
                                         <img 
-                                            src={getAvatarUrl(user.avatarId)} 
+                                            src={getAvatarUrl(user.avatarId) || PLACEHOLDER_AVATAR} 
                                             alt={`${user.name}'s avatar`}
                                             className="w-10 h-10 rounded-full bg-border object-cover"
                                             onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
@@ -238,7 +239,7 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
         {users.map(user => (
             <div key={user.id} className="bg-background p-4 rounded-lg flex items-center space-x-3 border border-border">
                  <img 
-                    src={getAvatarUrl(user.avatarId)} 
+                    src={getAvatarUrl(user.avatarId) || PLACEHOLDER_AVATAR} 
                     alt={user.name} 
                     className="w-12 h-12 rounded-full bg-border object-cover"
                     onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
