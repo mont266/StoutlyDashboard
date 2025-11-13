@@ -9,11 +9,15 @@ const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
     const [authLoading, setAuthLoading] = useState<boolean>(true);
+    const [refreshKey, setRefreshKey] = useState(Date.now());
 
     useEffect(() => {
         // onAuthStateChange handles the initial session check and all subsequent auth events.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
+            if (_event === 'TOKEN_REFRESHED') {
+                setRefreshKey(Date.now());
+            }
             if (session) {
                 const authorized = await checkUserAuthorization(session.user.id);
                 setIsAuthorized(authorized);
@@ -69,7 +73,7 @@ const App: React.FC = () => {
         );
     }
 
-    return <Dashboard onLogout={handleLogout} />;
+    return <Dashboard onLogout={handleLogout} refreshKey={refreshKey} />;
 };
 
 export default App;

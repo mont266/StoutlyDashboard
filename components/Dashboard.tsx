@@ -21,6 +21,7 @@ type TabName = keyof typeof TABS;
 
 interface DashboardProps {
     onLogout: () => void;
+    refreshKey: number;
 }
 
 const getStPaddysCountdown = (): { months: number, days: number } => {
@@ -57,7 +58,7 @@ const getStPaddysCountdown = (): { months: number, days: number } => {
 };
 
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
     const [activeTab, setActiveTab] = useState<TabName>('Home');
     const [launchDuration, setLaunchDuration] = useState<{ years: number, months: number, days: number } | null>(null);
     const [stPaddysCountdown, setStPaddysCountdown] = useState<{ months: number, days: number } | null>(null);
@@ -67,7 +68,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setStPaddysCountdown(getStPaddysCountdown());
     }, []);
 
-    const ActiveComponent = TABS[activeTab].component;
+    const ActiveComponent = TABS[activeTab].component as React.ElementType<{ refreshKey: number }>;
 
     const formatDuration = (duration: { years: number, months: number, days: number } | null): string => {
         if (!duration) return '...';
@@ -130,7 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </nav>
 
                     <div>
-                        <ActiveComponent />
+                        <ActiveComponent refreshKey={refreshKey} />
                     </div>
                 </main>
             </div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getGA4Data } from '../../services/supabaseService';
 import type { GA4Data, GA4ReportItem } from '../../types';
@@ -34,7 +35,11 @@ const ReportTable: React.FC<{ title: string; data: GA4ReportItem[], icon: React.
 );
 
 
-const GA4: React.FC = () => {
+interface GA4Props {
+    refreshKey: number;
+}
+
+const GA4: React.FC<GA4Props> = ({ refreshKey }) => {
     const [data, setData] = useState<GA4Data | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -56,7 +61,7 @@ const GA4: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     const renderLoading = () => (
         <div className="space-y-8 animate-pulse">

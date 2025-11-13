@@ -13,7 +13,11 @@ type SubTab = 'all' | 'today' | 'utm';
 
 const PLACEHOLDER_AVATAR = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
 
-const Users: React.FC = () => {
+interface UsersProps {
+    refreshKey: number;
+}
+
+const Users: React.FC<UsersProps> = ({ refreshKey }) => {
     const [subTab, setSubTab] = useState<SubTab>('all');
     const [data, setData] = useState<DashUsersData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -33,7 +37,7 @@ const Users: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     const subTabs: { id: SubTab; label: string }[] = [
         { id: 'all', label: 'All Users' },

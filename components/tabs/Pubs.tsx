@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
@@ -6,7 +7,11 @@ import type { DashPubsData } from '../../services/dashContracts';
 import { StarIcon, BuildingIcon, HashIcon, RefreshCwIcon } from '../icons/Icons';
 import StatCard from '../StatCard';
 
-const Pubs: React.FC = () => {
+interface PubsProps {
+    refreshKey: number;
+}
+
+const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
     const [data, setData] = useState<DashPubsData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -25,7 +30,7 @@ const Pubs: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     const PubTable: React.FC<{ title: string, data: Pub[], loading: boolean, isScoreOutOf100?: boolean }> = ({ title, data, loading, isScoreOutOf100 = false }) => (
         <div className="bg-surface rounded-xl shadow-lg">

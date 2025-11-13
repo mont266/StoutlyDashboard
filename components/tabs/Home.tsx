@@ -15,7 +15,11 @@ interface FinancialSummary {
     currentMonthlySpend: number;
 }
 
-const Home: React.FC = () => {
+interface HomeProps {
+    refreshKey: number;
+}
+
+const Home: React.FC<HomeProps> = ({ refreshKey }) => {
     const [data, setData] = useState<DashHomeData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -43,7 +47,7 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     useEffect(() => {
         const fetchFinancials = async () => {

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
@@ -12,7 +13,11 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
     'EUR': '€',
 };
 
-const Outgoings: React.FC = () => {
+interface OutgoingsProps {
+    refreshKey: number;
+}
+
+const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
     const [data, setData] = useState<DashOutgoingsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -43,7 +48,7 @@ const Outgoings: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     const handleModalSuccess = () => {
         setAddModalOpen(false);

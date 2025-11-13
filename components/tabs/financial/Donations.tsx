@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getStripeFinancials, getAvatarUrl } from '../../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../../types';
@@ -8,7 +9,11 @@ import { DollarSignIcon, GiftIcon, ReceiptIcon, TrophyIcon, RefreshCwIcon } from
 
 const PLACEHOLDER_AVATAR = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgMjF2LTJhNCA0IDAgMCAwLTQtNEg2YTQgNCAwIDAgMC00IDR2MiI+PC9wYXRoPjxjaXJjbGUgY3g9IjkiIGN5PSI3IiByPSI0Ij48L2NpcmNsZT48L3N2Zz4=`;
 
-const Donations: React.FC = () => {
+interface DonationsProps {
+    refreshKey: number;
+}
+
+const Donations: React.FC<DonationsProps> = ({ refreshKey }) => {
     const [data, setData] = useState<FinancialsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -31,7 +36,7 @@ const Donations: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, refreshKey]);
 
     const renderSkeleton = () => (
         <div className="space-y-6 animate-pulse">

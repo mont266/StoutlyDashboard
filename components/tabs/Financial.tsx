@@ -9,10 +9,14 @@ const SUB_TABS = {
 };
 type SubTabName = keyof typeof SUB_TABS;
 
-const Financial: React.FC = () => {
+interface FinancialProps {
+    refreshKey: number;
+}
+
+const Financial: React.FC<FinancialProps> = ({ refreshKey }) => {
     const [activeSubTab, setActiveSubTab] = useState<SubTabName>('Donations');
 
-    const ActiveComponent = SUB_TABS[activeSubTab].component;
+    const ActiveComponent = SUB_TABS[activeSubTab].component as React.ElementType<{ refreshKey: number }>;
 
     return (
         <section>
@@ -37,7 +41,7 @@ const Financial: React.FC = () => {
             </nav>
 
             <div>
-                <ActiveComponent />
+                <ActiveComponent refreshKey={refreshKey} />
             </div>
         </section>
     );
