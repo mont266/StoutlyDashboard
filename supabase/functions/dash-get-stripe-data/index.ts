@@ -106,14 +106,9 @@ serve(async (req) => {
     let stripeFees = 0;
     const donationsByUser = new Map();
     const recentDonations: any[] = [];
+    let successfulDonationsCount = 0;
 
     for (const charge of successfulCharges) {
-        const amount = charge.amount / 100;
-        const fee = (charge.balance_transaction as Stripe.BalanceTransaction)?.fee / 100 || 0;
-      
-        grossDonations += amount;
-        stripeFees += fee;
-
         const userId = charge.metadata.supabase_user_id;
         const userEmail = charge.receipt_email?.toLowerCase();
 
@@ -124,6 +119,19 @@ serve(async (req) => {
         }
 
         const username = profile ? profile.username : 'Anonymous';
+        
+        // Exclude "Mont266" from all financial calculations
+        if (username === 'Mont266') {
+            continue; // Skip this charge entirely
+        }
+        
+        const amount = charge.amount / 100;
+        const fee = (charge.balance_transaction as Stripe.BalanceTransaction)?.fee / 100 || 0;
+      
+        grossDonations += amount;
+        stripeFees += fee;
+        successfulDonationsCount++;
+
         const avatar_id = profile ? profile.avatar_id : '';
       
         // Use a consistent key for aggregation: profile ID, then email, then a unique charge ID for anonymous.
@@ -160,7 +168,7 @@ serve(async (req) => {
       grossDonations,
       stripeFees,
       netDonations: grossDonations - stripeFees,
-      totalDonations: successfulCharges.length,
+      totalDonations: successfulDonationsCount,
       topDonator,
       recentDonations,
     };

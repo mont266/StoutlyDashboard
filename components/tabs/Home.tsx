@@ -112,6 +112,8 @@ const Home: React.FC = () => {
             </li>
         );
     }
+    
+    const ratingsPerUser = data && data.kpis.totalUsers > 0 ? (data.kpis.totalRatings / data.kpis.totalUsers) : 0;
 
     return (
         <section>
@@ -180,7 +182,27 @@ const Home: React.FC = () => {
 
                         {/* --- Sidebar Column --- */}
                         <div className="lg:col-span-1 space-y-6">
-                             <div className="bg-surface rounded-xl shadow-lg">
+                             <div className="bg-surface rounded-xl shadow-lg p-4">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2">More Stats</h3>
+                                <ul className="text-sm">
+                                    <SecondaryStatItem label={`New Users (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} />
+                                    <SecondaryStatItem label={`New Ratings (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} />
+                                    <SecondaryStatItem label="Ratings per User" value={ratingsPerUser.toFixed(1)} />
+                                    <SecondaryStatItem label="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} />
+                                    <SecondaryStatItem label="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} />
+                                    <SecondaryStatItem label="Total Comments" value={data.kpis.totalComments.toLocaleString()} />
+                                     {financialLoading ? (
+                                        <li className="h-8 mt-2 bg-border rounded w-full animate-pulse"></li>
+                                    ) : financialSummary && (
+                                        <>
+                                            <SecondaryStatItem label="Total Donations" value={formatGbp(financialSummary.totalDonationsAllTime)} />
+                                            <SecondaryStatItem label="Total Spent" value={formatGbp(financialSummary.totalSpendAllTime)} isChurn />
+                                            <SecondaryStatItem label="Monthly Spend" value={`${formatGbp(financialSummary.currentMonthlySpend)}/mo`} isChurn />
+                                        </>
+                                    )}
+                                </ul>
+                            </div>
+                            <div className="bg-surface rounded-xl shadow-lg">
                                 <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price</h3>
                                 <div className="overflow-x-auto max-h-96">
                                     <table className="w-full text-sm text-left text-text-secondary">
@@ -204,26 +226,6 @@ const Home: React.FC = () => {
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-
-                             <div className="bg-surface rounded-xl shadow-lg p-4">
-                                <h3 className="text-lg font-semibold text-text-primary mb-2">More Stats</h3>
-                                <ul className="text-sm">
-                                    <SecondaryStatItem label={`New Users (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} />
-                                    <SecondaryStatItem label={`New Ratings (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} />
-                                    <SecondaryStatItem label="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} />
-                                    <SecondaryStatItem label="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} />
-                                    <SecondaryStatItem label="Total Comments" value={data.kpis.totalComments.toLocaleString()} />
-                                     {financialLoading ? (
-                                        <li className="h-8 mt-2 bg-border rounded w-full animate-pulse"></li>
-                                    ) : financialSummary && (
-                                        <>
-                                            <SecondaryStatItem label="Total Donations" value={formatGbp(financialSummary.totalDonationsAllTime)} />
-                                            <SecondaryStatItem label="Total Spent" value={formatGbp(financialSummary.totalSpendAllTime)} isChurn />
-                                            <SecondaryStatItem label="Monthly Spend" value={`${formatGbp(financialSummary.currentMonthlySpend)}/mo`} isChurn />
-                                        </>
-                                    )}
-                                </ul>
                             </div>
                         </div>
                     </div>
