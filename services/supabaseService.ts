@@ -304,7 +304,8 @@ export const dash_addOutgoing = async (outgoingData: NewOutgoingData): Promise<v
             amount_in: outgoingData.amount,
             type_in: outgoingData.type,
             start_date_in: outgoingData.start_date,
-            category_in: outgoingData.category || null
+            category_in: outgoingData.category || null,
+            currency_in: outgoingData.currency
         });
         if (error) throw error;
     } catch (error) {

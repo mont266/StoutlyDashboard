@@ -86,6 +86,8 @@ export interface ManualOutgoing {
     name: string;
     description?: string;
     amount: number;
+    currency: string;
+    amount_gbp: number;
     purchase_date: string;
     category?: string;
 }
@@ -95,6 +97,8 @@ export interface Subscription {
     name: string;
     description?: string;
     amount: number;
+    currency: string;
+    amount_gbp: number;
     start_date: string;
     end_date?: string;
     category?: string;
@@ -108,6 +112,7 @@ export interface NewOutgoingData {
     type: 'manual' | 'subscription';
     start_date: string; // Used as purchase_date for manual types
     category?: string;
+    currency: 'GBP' | 'USD' | 'EUR';
 }
 
 export interface DashOutgoingsData {
