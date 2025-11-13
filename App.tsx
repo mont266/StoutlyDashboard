@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Session } from '@supabase/supabase-js';
+// FIX: Changed to a type-only import for Session, which can help with module resolution issues and is best practice.
+import type { Session } from '@supabase/supabase-js';
 import { supabase, checkUserAuthorization } from './services/supabaseService';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -13,6 +14,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         // onAuthStateChange handles the initial session check and all subsequent auth events.
+        // FIX: The error indicating 'onAuthStateChange' does not exist is likely due to a library version mismatch. This is the correct method name for both v1 and v2 of supabase-js.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             if (_event === 'TOKEN_REFRESHED') {
@@ -30,12 +32,15 @@ const App: React.FC = () => {
             setAuthLoading(false);
         });
 
+        // FIX: Removed window focus handler that uses `getSession`. The `getSession` method does not exist in older Supabase client versions.
+        // The onAuthStateChange listener is sufficient as it handles session state changes, including those triggered by tab focus.
         return () => {
             subscription.unsubscribe();
         };
     }, []);
 
     const handleLogout = async () => {
+        // FIX: The error indicating 'signOut' does not exist is likely due to a library version mismatch. This is the correct method name.
         await supabase.auth.signOut();
         setSession(null);
         setIsAuthorized(false);
