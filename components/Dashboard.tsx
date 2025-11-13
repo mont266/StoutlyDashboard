@@ -23,12 +23,48 @@ interface DashboardProps {
     onLogout: () => void;
 }
 
+const getStPaddysCountdown = (): { months: number, days: number } => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to the start of the day
+
+    const currentYear = today.getFullYear();
+    let stPaddysDay = new Date(currentYear, 2, 17); // March is month 2
+
+    if (today.getTime() >= stPaddysDay.getTime()) {
+        // If today is on or after St. Patrick's Day, target next year's
+        stPaddysDay.setFullYear(currentYear + 1);
+    }
+
+    let months = (stPaddysDay.getFullYear() - today.getFullYear()) * 12;
+    months -= today.getMonth();
+    months += stPaddysDay.getMonth();
+    
+    let days = stPaddysDay.getDate() - today.getDate();
+
+    if (days < 0) {
+        months--;
+        // Get the number of days in the month *before* the target month, which is today's month in this case.
+        const daysInTodaysMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        days = daysInTodaysMonth - today.getDate() + stPaddysDay.getDate();
+    }
+    
+    // In the case where months is negative (e.g., Dec to Jan), it means we crossed a year boundary.
+    if (months < 0) {
+        months += 12;
+    }
+
+    return { months, days };
+};
+
+
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState<TabName>('Home');
     const [launchDuration, setLaunchDuration] = useState<{ years: number, months: number, days: number } | null>(null);
+    const [stPaddysCountdown, setStPaddysCountdown] = useState<{ months: number, days: number } | null>(null);
 
     useEffect(() => {
         setLaunchDuration(getLaunchDuration());
+        setStPaddysCountdown(getStPaddysCountdown());
     }, []);
 
     const ActiveComponent = TABS[activeTab].component;
@@ -99,9 +135,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </main>
             </div>
             <footer className="w-full bg-surface text-center p-4 border-t border-border mt-8">
-                <p className="text-sm text-text-secondary">
-                    Stoutly App Launched <span className="font-bold text-primary">{formatDuration(launchDuration)}</span> ago.
-                </p>
+                <div className="flex flex-col sm:flex-row justify-center items-center sm:gap-x-4 gap-y-1">
+                    <p className="text-sm text-text-secondary">
+                        Stoutly App Launched <span className="font-bold text-primary">{formatDuration(launchDuration)}</span> ago.
+                    </p>
+                    {stPaddysCountdown && (
+                        <p className="text-sm text-text-secondary">
+                            <span className="font-bold text-value-green">
+                                {stPaddysCountdown.months} month{stPaddysCountdown.months !== 1 ? 's' : ''} and {stPaddysCountdown.days} day{stPaddysCountdown.days !== 1 ? 's' : ''}
+                            </span> until St Patrick's Day!
+                        </p>
+                    )}
+                </div>
             </footer>
         </div>
     );
