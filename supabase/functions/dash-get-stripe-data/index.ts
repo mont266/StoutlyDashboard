@@ -121,7 +121,7 @@ serve(async (req) => {
         const username = profile ? profile.username : 'Anonymous';
         
         // Exclude "Mont266" from all financial calculations
-        if (username === 'Mont266') {
+        if (username === 'mont266') {
             continue; // Skip this charge entirely
         }
         

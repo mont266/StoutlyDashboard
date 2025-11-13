@@ -17,7 +17,30 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase client failed to initialize. Missing environment variables.");
 }
 
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+export const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+
+// --- AUTHORIZATION CHECK ---
+export const checkUserAuthorization = async (userId: string): Promise<boolean> => {
+    if (!userId) return false;
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_team_member, is_developer')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('Authorization check error:', error);
+            return false;
+        }
+
+        return data?.is_team_member || data?.is_developer || false;
+    } catch (error) {
+        console.error('Error in checkUserAuthorization:', error);
+        return false;
+    }
+};
+
 
 // --- AVATAR URL HELPER ---
 export const getAvatarUrl = (avatarData: string): string => {
