@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
@@ -329,7 +330,7 @@ const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ i
             </div>
             <button 
                 onClick={onClose} 
-                className="absolute top-[-10px] right-[-10px] text-text-primary bg-surface rounded-full h-8 w-8 flex items-center justify-center text-xl font-bold border-2 border-border hover:bg-warning-red hover:text-white transition-colors"
+                className="absolute top-2 right-2 text-text-primary bg-surface rounded-full h-9 w-9 flex items-center justify-center text-2xl font-bold border-2 border-border hover:bg-warning-red hover:text-white transition-colors"
                 aria-label="Close image view"
             >
                 &times;

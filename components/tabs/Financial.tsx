@@ -17,12 +17,12 @@ const Financial: React.FC = () => {
     return (
         <section>
             <nav className="mb-6">
-                <div className="flex space-x-2 border-b border-border pb-px">
+                <div className="flex space-x-1 border-b border-border pb-px">
                     {(Object.keys(SUB_TABS) as SubTabName[]).map((tabName) => (
                         <button
                             key={tabName}
                             onClick={() => setActiveSubTab(tabName)}
-                            className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors duration-200 shrink-0 ${
+                            className={`flex items-center space-x-2 px-3 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm font-medium border-b-2 transition-colors duration-200 shrink-0 ${
                                 activeSubTab === tabName
                                     ? 'border-primary text-primary'
                                     : 'border-transparent text-text-secondary hover:text-text-primary'

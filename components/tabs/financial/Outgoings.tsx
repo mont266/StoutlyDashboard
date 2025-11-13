@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
@@ -393,8 +394,8 @@ const AddOutgoingModal: React.FC<{
                             <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
                         </div>
                         
-                        <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                            <div className="sm:col-span-2">
                                 <label htmlFor="currency" className="text-sm font-medium text-text-secondary">Currency*</label>
                                 <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary">
                                     <option value="GBP">GBP (£)</option>
@@ -402,7 +403,7 @@ const AddOutgoingModal: React.FC<{
                                     <option value="EUR">EUR (€)</option>
                                 </select>
                             </div>
-                            <div className="col-span-3">
+                            <div className="sm:col-span-3">
                                 <label htmlFor="amount" className="text-sm font-medium text-text-secondary">
                                     Amount{formData.type === 'subscription' ? (formData.billing_cycle === 'yearly' ? ' (per year)*' : ' (per month)*') : '*'}
                                 </label>
@@ -569,8 +570,8 @@ const EditOutgoingModal: React.FC<{
                             <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
                         </div>
                         
-                        <div className="grid grid-cols-5 gap-4">
-                             <div className="col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                             <div className="sm:col-span-2">
                                 <label htmlFor="currency" className="text-sm font-medium text-text-secondary">Currency*</label>
                                 <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary">
                                     <option value="GBP">GBP (£)</option>
@@ -578,7 +579,7 @@ const EditOutgoingModal: React.FC<{
                                     <option value="EUR">EUR (€)</option>
                                 </select>
                             </div>
-                            <div className="col-span-3">
+                            <div className="sm:col-span-3">
                                 <label htmlFor="amount" className="text-sm font-medium text-text-secondary">Amount*</label>
                                  <div className="relative">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">

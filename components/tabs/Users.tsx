@@ -194,15 +194,15 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                         {paginatedUsers.map(user => (
                             <tr key={user.id} className="border-b border-border hover:bg-border/50">
                                 <td className="px-4 py-4 font-medium text-text-primary whitespace-nowrap">
-                                    <div className="flex items-center space-x-3">
+                                    <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3">
                                         <img 
                                             src={getAvatarUrl(user.avatarId) || PLACEHOLDER_AVATAR} 
                                             alt={`${user.name}'s avatar`}
-                                            className="w-10 h-10 rounded-full bg-border object-cover"
+                                            className="w-10 h-10 rounded-full bg-border object-cover shrink-0"
                                             onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                                         />
                                         <div>
-                                            <div className="flex items-center">
+                                            <div className="flex items-center flex-wrap">
                                                 <span className="font-semibold">{user.name}</span>
                                                 <UserBadges user={user} />
                                             </div>
@@ -225,10 +225,10 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                     </tbody>
                 </table>
             </div>
-             <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 rounded bg-border disabled:opacity-50">Previous</button>
+             <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm gap-2">
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-full sm:w-auto px-3 py-1 rounded bg-border disabled:opacity-50">Previous</button>
                 <span>Page {currentPage} of {totalPages}</span>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 rounded bg-border disabled:opacity-50">Next</button>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-full sm:w-auto px-3 py-1 rounded bg-border disabled:opacity-50">Next</button>
             </div>
         </div>
     )

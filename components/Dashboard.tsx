@@ -56,7 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="min-h-screen bg-background text-text-primary flex flex-col">
             <div className="flex-grow p-4 sm:p-6 lg:p-8">
                 <main className="max-w-7xl mx-auto">
-                    <header className="mb-6 flex justify-between items-center flex-wrap gap-4">
+                    <header className="mb-6 flex flex-col items-center text-center sm:flex-row sm:text-left sm:justify-between sm:items-center flex-wrap gap-4">
                         <div className="flex items-center space-x-4">
                             <StoutlyLogo className="h-12 w-12" />
                             <div>
@@ -74,12 +74,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </header>
 
                     <nav className="mb-8">
-                        <div className="flex space-x-2 border-b border-border overflow-x-auto pb-px">
+                        <div className="flex space-x-1 border-b border-border overflow-x-auto pb-px">
                             {(Object.keys(TABS) as TabName[]).map((tabName) => (
                                 <button
                                     key={tabName}
                                     onClick={() => setActiveTab(tabName)}
-                                    className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors duration-200 shrink-0 ${
+                                    className={`flex items-center space-x-2 px-3 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm font-medium border-b-2 transition-colors duration-200 shrink-0 ${
                                         activeTab === tabName
                                             ? 'border-primary text-primary'
                                             : 'border-transparent text-text-secondary hover:text-text-primary'
