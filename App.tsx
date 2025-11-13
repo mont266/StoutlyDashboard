@@ -8,33 +8,22 @@ import { StoutlyLogo } from './components/icons/Icons';
 const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [authChecked, setAuthChecked] = useState<boolean>(false);
+    const [authLoading, setAuthLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            if (session) {
-                const authorized = await checkUserAuthorization(session.user.id);
-                setIsAuthorized(authorized);
-            }
-            setLoading(false);
-            setAuthChecked(true);
-        };
-
-        checkSession();
-
+        // onAuthStateChange handles the initial session check and all subsequent auth events.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             if (session) {
-                setLoading(true);
                 const authorized = await checkUserAuthorization(session.user.id);
                 setIsAuthorized(authorized);
-                setLoading(false);
             } else {
                 setIsAuthorized(false);
             }
+            // The first time this callback runs, the initial authentication check is complete.
+            // Subsequent runs (e.g., for token refreshes) will just re-set this state to false,
+            // preventing the main loading screen from reappearing.
+            setAuthLoading(false);
         });
 
         return () => {
@@ -48,7 +37,7 @@ const App: React.FC = () => {
         setIsAuthorized(false);
     };
 
-    if (loading || !authChecked) {
+    if (authLoading) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center text-text-primary">
                 <StoutlyLogo className="h-16 w-16 mb-4 animate-pulse" />
