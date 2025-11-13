@@ -74,6 +74,7 @@ const Outgoings: React.FC = () => {
             currency: subscription.currency as 'GBP' | 'USD' | 'EUR',
             category: subscription.category,
             type: 'subscription',
+            billing_cycle: subscription.billing_cycle,
         };
         setInitialModalData(prefillData);
         setAddModalOpen(true);
@@ -93,12 +94,12 @@ const Outgoings: React.FC = () => {
         const originalAmountFormatted = `${symbol}${amount.toFixed(2)}`;
 
         if (currency === 'GBP') {
-            return `£${gbpAmount.toFixed(2)}`;
+            return <span className="text-warning-red font-mono">- £{gbpAmount.toFixed(2)}</span>;
         }
         
         return (
             <div className="flex flex-col items-end">
-                <span className="text-warning-red font-mono">{originalAmountFormatted}</span>
+                <span className="text-warning-red font-mono">- {originalAmountFormatted}</span>
                 <span className="text-xs text-text-secondary font-mono">(≈ £{gbpAmount.toFixed(2)})</span>
             </div>
         );
@@ -206,7 +207,7 @@ const Outgoings: React.FC = () => {
             <div className="space-y-8">
                 {/* Subscriptions Table */}
                 <div className="bg-surface rounded-xl shadow-lg">
-                    <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Monthly Subscriptions</h3>
+                    <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Subscriptions</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-text-secondary">
                             <thead className="text-xs text-text-secondary uppercase bg-background">
@@ -215,7 +216,7 @@ const Outgoings: React.FC = () => {
                                     <th scope="col" className="px-6 py-3 hidden md:table-cell">Category</th>
                                     <th scope="col" className="px-6 py-3 hidden lg:table-cell">Date Range</th>
                                     <th scope="col" className="px-6 py-3">Status</th>
-                                    <th scope="col" className="px-6 py-3 text-right">Monthly Cost</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Cost</th>
                                     <th scope="col" className="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -233,7 +234,12 @@ const Outgoings: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {formatMultiCurrency(sub.amount, sub.currency, sub.amount_gbp)}
+                                            <div className="flex items-baseline justify-end space-x-1">
+                                                {formatMultiCurrency(sub.amount, sub.currency, sub.amount_gbp)}
+                                                <span className="text-xs text-text-secondary">
+                                                    / {sub.billing_cycle === 'yearly' ? 'yr' : 'mo'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {sub.status === 'Active' && (
@@ -313,6 +319,7 @@ const AddOutgoingModal: React.FC<{
         description: '',
         category: '',
         currency: 'GBP',
+        billing_cycle: 'monthly',
         ...initialData,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -360,6 +367,16 @@ const AddOutgoingModal: React.FC<{
                             </div>
                         </div>
 
+                        {formData.type === 'subscription' && (
+                             <div>
+                                <label className="text-sm font-medium text-text-secondary">Billing Cycle</label>
+                                <div className="flex space-x-2 bg-background p-1 rounded-lg mt-1">
+                                    <button type="button" onClick={() => setFormData(f => ({...f, billing_cycle: 'monthly'}))} className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${formData.billing_cycle === 'monthly' ? 'bg-primary text-background' : 'text-text-secondary'}`}>Monthly</button>
+                                    <button type="button" onClick={() => setFormData(f => ({...f, billing_cycle: 'yearly'}))} className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${formData.billing_cycle === 'yearly' ? 'bg-primary text-background' : 'text-text-secondary'}`}>Yearly</button>
+                                </div>
+                            </div>
+                        )}
+
                         <div>
                             <label htmlFor="name" className="text-sm font-medium text-text-secondary">Name*</label>
                             <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary" />
@@ -375,7 +392,9 @@ const AddOutgoingModal: React.FC<{
                                 </select>
                             </div>
                             <div className="col-span-3">
-                                <label htmlFor="amount" className="text-sm font-medium text-text-secondary">Amount*</label>
+                                <label htmlFor="amount" className="text-sm font-medium text-text-secondary">
+                                    Amount{formData.type === 'subscription' ? (formData.billing_cycle === 'yearly' ? ' (per year)*' : ' (per month)*') : '*'}
+                                </label>
                                 <div className="relative">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                         <span className="text-text-secondary sm:text-sm">{CURRENCY_SYMBOLS[formData.currency]}</span>

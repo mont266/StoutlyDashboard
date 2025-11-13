@@ -104,6 +104,7 @@ export interface Subscription {
     end_date?: string;
     category?: string;
     status: 'Active' | 'Inactive' | 'Upcoming';
+    billing_cycle: 'monthly' | 'yearly';
 }
 
 export interface NewOutgoingData {
@@ -114,6 +115,7 @@ export interface NewOutgoingData {
     start_date: string; // Used as purchase_date for manual types
     category?: string;
     currency: 'GBP' | 'USD' | 'EUR';
+    billing_cycle?: 'monthly' | 'yearly';
 }
 
 export interface DashOutgoingsData {
