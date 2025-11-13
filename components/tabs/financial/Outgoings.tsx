@@ -14,6 +14,8 @@ const Outgoings: React.FC = () => {
     const [data, setData] = useState<DashOutgoingsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [timeframe, setTimeframe] = useState<string>('30d');
+    const timeframes = { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year', 'all': 'All Time' };
 
     // Modal State
     const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -24,7 +26,7 @@ const Outgoings: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await dash_getOutgoingsData();
+            const result = await dash_getOutgoingsData(timeframe);
             setData(result);
         } catch (err) {
             setError('Failed to fetch outgoings data. Please ensure you have run the latest SQL script to deploy the database function.');
@@ -36,7 +38,7 @@ const Outgoings: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [timeframe]);
 
     const handleAddSuccess = () => {
         setAddModalOpen(false);
@@ -120,18 +122,33 @@ const Outgoings: React.FC = () => {
         <section>
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <h2 className="text-2xl font-bold">Outgoings</h2>
-                <button 
-                    onClick={() => setAddModalOpen(true)}
-                    className="flex items-center space-x-2 bg-primary text-background font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                    <PlusIcon />
-                    <span>Add Outgoing</span>
-                </button>
+                 <div className="flex items-center space-x-4">
+                    <div className="bg-surface p-1 rounded-lg flex space-x-1 flex-wrap">
+                        {(Object.keys(timeframes) as (keyof typeof timeframes)[]).map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setTimeframe(t)}
+                                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 shrink-0 ${
+                                    timeframe === t ? 'bg-primary text-background' : 'text-text-secondary hover:bg-border'
+                                }`}
+                            >
+                                {timeframes[t]}
+                            </button>
+                        ))}
+                    </div>
+                    <button 
+                        onClick={() => setAddModalOpen(true)}
+                        className="flex items-center space-x-2 bg-primary text-background font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                        <PlusIcon />
+                        <span>Add Outgoing</span>
+                    </button>
+                </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <StatCard 
-                    title="Total Spend To Date (GBP)" 
+                    title={`Spend (${timeframes[timeframe as keyof typeof timeframes]})`} 
                     value={`£${data.kpis.totalSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
                     icon={<DollarSignIcon />} 
                     isChurn 
@@ -294,7 +311,7 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
                                 <label htmlFor="currency" className="text-sm font-medium text-text-secondary">Currency*</label>
                                 <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full bg-background border border-border rounded-lg p-2 mt-1 focus:ring-primary focus:border-primary">
                                     <option value="GBP">GBP (£)</option>
-                                    <option value="USD">USD ($)</option>
+                                    <option value="USD">USD ($$)</option>
                                     <option value="EUR">EUR (€)</option>
                                 </select>
                             </div>

@@ -18,7 +18,10 @@ const Outgoings: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await dash_getOutgoingsData();
+            // FIX: Pass 'all' as the timeframe argument to satisfy the function signature.
+            // This component does not have a timeframe selector, and the "Total Spend To Date"
+            // stat card implies that all-time data is expected.
+            const result = await dash_getOutgoingsData('all');
             setData(result);
         } catch (err) {
             setError('Failed to fetch outgoings data. Please ensure you have run the latest SQL script to deploy the database function.');
@@ -210,7 +213,8 @@ const AddOutgoingModal: React.FC<{ onClose: () => void; onSave: () => void; }> =
         amount: 0,
         start_date: new Date().toISOString().split('T')[0],
         description: '',
-        category: ''
+        category: '',
+        currency: 'GBP',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');

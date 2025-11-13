@@ -67,15 +67,15 @@ interface CurrencyInfo {
 const CURRENCY_MAP: Record<string, CurrencyInfo> = {
     'GB': { symbol: '£', code: 'GBP' },
     'IE': { symbol: '€', code: 'EUR' },
-    'US': { symbol: '$', code: 'USD' },
+    'US': { symbol: '$$', code: 'USD' },
     'DE': { symbol: '€', code: 'EUR' },
     'FR': { symbol: '€', code: 'EUR' },
     'ES': { symbol: '€', code: 'EUR' },
     'NL': { symbol: '€', code: 'EUR' },
-    'AU': { symbol: '$', code: 'AUD' },
+    'AU': { symbol: '$$', code: 'AUD' },
     'PT': { symbol: '€', code: 'EUR' },
     'DK': { symbol: 'kr', code: 'DKK' },
-    'CA': { symbol: '$', code: 'CAD' },
+    'CA': { symbol: '$$', code: 'CAD' },
     'PL': { symbol: 'zł', code: 'PLN' },
     'TR': { symbol: '₺', code: 'TRY' },
     'IT': { symbol: '€', code: 'EUR' },
@@ -284,9 +284,9 @@ export const dash_getStripeFinancials = async (timeframe: string): Promise<Finan
 };
 
 // --- OUTGOINGS TAB ---
-export const dash_getOutgoingsData = async (): Promise<DashOutgoingsData> => {
+export const dash_getOutgoingsData = async (timeframe: string): Promise<DashOutgoingsData> => {
     try {
-        const { data, error } = await supabase.rpc('dash_get_outgoings_data').single();
+        const { data, error } = await supabase.rpc('dash_get_outgoings_data', { time_period: timeframe }).single();
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_outgoings_data");
         return data as DashOutgoingsData;
