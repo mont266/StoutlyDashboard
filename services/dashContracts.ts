@@ -74,6 +74,13 @@ export interface DashContentInitialData {
     images: UploadedImage[];
 }
 
+// --- Financial Summary Contract (NEW) ---
+// For the home page top-level stats
+export interface DashFinancialSummary {
+    totalSpendAllTime: number;
+    currentMonthlySpend: number;
+}
+
 // --- Outgoings Tab Contract ---
 // To be returned by a new `dash_get_outgoings_data()` function.
 export interface OutgoingKpis {

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 // FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis } from '../types';
 // FIX: `NewOutgoingData` is now imported from here as it's part of the dash contract.
-import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData, NewOutgoingData } from './dashContracts';
+import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData, NewOutgoingData, DashFinancialSummary } from './dashContracts';
 
 
 // --- SUPABASE CLIENT SETUP ---
@@ -292,6 +292,18 @@ export const dash_getOutgoingsData = async (timeframe: string): Promise<DashOutg
         return data as DashOutgoingsData;
     } catch (error) {
         handleSupabaseError(error, 'Outgoings Data');
+        throw error;
+    }
+};
+
+export const dash_getFinancialSummary = async (): Promise<DashFinancialSummary> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_financial_summary').single();
+        if (error) throw error;
+        if (!data) throw new Error("No data received from dash_get_financial_summary");
+        return data as DashFinancialSummary;
+    } catch (error) {
+        handleSupabaseError(error, 'Financial Summary Data');
         throw error;
     }
 };

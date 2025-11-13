@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { dash_getHomeData, formatCurrency } from '../../services/supabaseService';
+import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, formatCurrency } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
-import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon } from '../icons/Icons';
+import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon } from '../icons/Icons';
+
+interface FinancialSummary {
+    totalSpendAllTime: number;
+    totalDonationsAllTime: number;
+
+    profit: number;
+    currentMonthlySpend: number;
+}
 
 const Home: React.FC = () => {
     const [data, setData] = useState<DashHomeData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('30d');
+    
+    const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+    const [financialLoading, setFinancialLoading] = useState<boolean>(true);
+
     const timeframes = { '24h': '24 Hours', '7d': '7 Days', '30d': '30 Days', '6m': '6 Months', '1y': '1 Year', 'All': 'All Time' };
 
     useEffect(() => {
@@ -17,7 +29,6 @@ const Home: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                // A single, reliable API call
                 const result = await dash_getHomeData(timeframe);
                 setData(result);
             } catch (err)
@@ -32,7 +43,35 @@ const Home: React.FC = () => {
         fetchData();
     }, [timeframe]);
 
-    const renderLoading = () => (
+    useEffect(() => {
+        const fetchFinancials = async () => {
+            setFinancialLoading(true);
+            try {
+                const [outgoingsSummary, stripeData] = await Promise.all([
+                    dash_getFinancialSummary(),
+                    dash_getStripeFinancials('all')
+                ]);
+                
+                const profit = stripeData.grossDonations - outgoingsSummary.totalSpendAllTime;
+
+                setFinancialSummary({
+                    totalSpendAllTime: outgoingsSummary.totalSpendAllTime,
+                    totalDonationsAllTime: stripeData.grossDonations,
+                    profit: profit,
+                    currentMonthlySpend: outgoingsSummary.currentMonthlySpend
+                });
+
+            } catch (err) {
+                console.error("Failed to fetch financial summary:", err);
+            } finally {
+                setFinancialLoading(false);
+            }
+        };
+
+        fetchFinancials();
+    }, []);
+
+    const renderMainLoading = () => (
         <div className="animate-pulse space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 {[...Array(6)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
@@ -44,6 +83,8 @@ const Home: React.FC = () => {
             <div className="bg-surface rounded-xl h-96"></div>
         </div>
     );
+    
+    const formatGbp = (value: number) => `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     return (
         <section>
@@ -64,10 +105,27 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
+            {financialLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 animate-pulse">
+                    {[...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
+                </div>
+            ) : financialSummary && (
+                <div className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4 text-text-primary">Financial Overview</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <StatCard title="Total Donations (All Time)" value={formatGbp(financialSummary.totalDonationsAllTime)} icon={<GiftIcon />} />
+                        <StatCard title="Total Spent (All Time)" value={formatGbp(financialSummary.totalSpendAllTime)} icon={<DollarSignIcon />} isChurn />
+                        <StatCard title="Profit (All Time)" value={formatGbp(financialSummary.profit)} icon={<TrendingUpIcon />} change={financialSummary.profit} />
+                        <StatCard title="Current Monthly Spend" value={formatGbp(financialSummary.currentMonthlySpend)} icon={<TrendingDownIcon />} isChurn />
+                    </div>
+                </div>
+            )}
+
             {error && <div className="text-red-500 bg-red-900/20 p-4 rounded-lg">{error}</div>}
             
-            {loading ? renderLoading() : data && (
+            {loading ? renderMainLoading() : data && (
                 <div className="space-y-6">
+                    <h3 className="text-xl font-semibold text-text-primary">User & Engagement Metrics ({timeframes[timeframe as keyof typeof timeframes]})</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                         <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
                         <StatCard title="New Users" value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} icon={<ActivityIcon />} />
