@@ -1,4 +1,5 @@
 
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis, TimeSeriesDataPoint } from '../types';
@@ -89,22 +90,39 @@ interface CurrencyInfo {
 }
 
 const CURRENCY_MAP: Record<string, CurrencyInfo> = {
+    // Existing Currencies (symbols corrected)
     'GB': { symbol: '£', code: 'GBP' },
     'IE': { symbol: '€', code: 'EUR' },
-    'US': { symbol: '$$', code: 'USD' },
+    'US': { symbol: '$', code: 'USD' },
     'DE': { symbol: '€', code: 'EUR' },
     'FR': { symbol: '€', code: 'EUR' },
     'ES': { symbol: '€', code: 'EUR' },
     'NL': { symbol: '€', code: 'EUR' },
-    'AU': { symbol: '$$', code: 'AUD' },
+    'AU': { symbol: '$', code: 'AUD' },
     'PT': { symbol: '€', code: 'EUR' },
     'DK': { symbol: 'kr', code: 'DKK' },
-    'CA': { symbol: '$$', code: 'CAD' },
+    'CA': { symbol: '$', code: 'CAD' },
     'PL': { symbol: 'zł', code: 'PLN' },
     'TR': { symbol: '₺', code: 'TRY' },
     'IT': { symbol: '€', code: 'EUR' },
     'IL': { symbol: '₪', code: 'ILS' },
     'AT': { symbol: '€', code: 'EUR' },
+    'BE': { symbol: '€', code: 'EUR' },
+
+    // Added Currencies
+    'PE': { symbol: 'S/', code: 'PEN' },      // Peru - Sol
+    'CZ': { symbol: 'Kč', code: 'CZK' },      // Czech Republic - Koruna
+    'SE': { symbol: 'kr', code: 'SEK' },      // Sweden - Krona
+    'NO': { symbol: 'kr', code: 'NOK' },      // Norway - Krone
+    'CH': { symbol: 'CHF', code: 'CHF' },     // Switzerland - Franc
+    'JP': { symbol: '¥', code: 'JPY' },       // Japan - Yen
+    'NZ': { symbol: '$', code: 'NZD' },       // New Zealand - Dollar
+    'BR': { symbol: 'R$', code: 'BRL' },     // Brazil - Real
+    'IN': { symbol: '₹', code: 'INR' },       // India - Rupee
+    'ZA': { symbol: 'R', code: 'ZAR' },       // South Africa - Rand
+    'MX': { symbol: '$', code: 'MXN' },       // Mexico - Peso
+    'HU': { symbol: 'Ft', code: 'HUF' },      // Hungary - Forint
+    'RO': { symbol: 'lei', code: 'RON' },     // Romania - Leu
 };
 
 // Default to GBP if country code not found
