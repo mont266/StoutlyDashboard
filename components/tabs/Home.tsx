@@ -158,7 +158,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                         <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<ActivityIcon />} />
                         <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
                         <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                        <StatCard title="Countries Rated" value={(data.kpis.ratedCountriesCount ?? 0).toLocaleString()} icon={<GlobeIcon />} />
+                        <StatCard title="Countries Rated" value={(data.tables.avgPintPriceByCountry?.length ?? 0).toLocaleString()} icon={<GlobeIcon />} />
                          {financialLoading ? (
                             <div className="bg-surface p-5 rounded-xl shadow-lg flex flex-col justify-center animate-pulse">
                                 <div className="h-4 bg-border rounded w-1/2"></div>
