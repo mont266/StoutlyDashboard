@@ -5,7 +5,7 @@ import Content from './tabs/Content';
 import Financial from './tabs/Financial';
 import GA4 from './tabs/GA4';
 import Pubs from './tabs/Pubs';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, ChevronDownIcon } from './icons/Icons';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, MoreHorizontalIcon } from './icons/Icons';
 import { getLaunchDuration } from '../services/supabaseService';
 
 const TABS = {
@@ -60,8 +60,8 @@ const getStPaddysCountdown = (): { months: number, days: number } => {
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
     const [activeTab, setActiveTab] = useState<TabName>('Home');
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+    const moreMenuRef = useRef<HTMLDivElement>(null);
     const [launchDuration, setLaunchDuration] = useState<{ years: number, months: number, days: number } | null>(null);
     const [stPaddysCountdown, setStPaddysCountdown] = useState<{ months: number, days: number } | null>(null);
 
@@ -70,11 +70,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
         setStPaddysCountdown(getStPaddysCountdown());
     }, []);
 
-    // Effect to close mobile menu on outside click
+    // Effect to close "More" menu on outside click for mobile
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
-                setIsMobileMenuOpen(false);
+            if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+                setIsMoreMenuOpen(false);
             }
         };
 
@@ -104,10 +104,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
         return dayString;
     };
 
+    const mainMobileTabs: TabName[] = ['Home', 'Users', 'Pubs', 'Content'];
+    const moreTabs: TabName[] = ['Financial', 'GA4'];
+    const isMoreTabActive = moreTabs.includes(activeTab);
 
     return (
         <div className="min-h-screen bg-background text-text-primary flex flex-col">
-            <div className="flex-grow p-4 sm:p-6 lg:p-8">
+            <div className="flex-grow p-4 sm:p-6 lg:p-8 pb-24 sm:pb-8">
                 <main className="max-w-7xl mx-auto">
                     <header className="mb-6 flex flex-col items-center text-center sm:flex-row sm:text-left sm:justify-between sm:items-center flex-wrap gap-4">
                         <div className="flex items-center space-x-4">
@@ -145,48 +148,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Mobile Nav: Hidden from sm breakpoint and up */}
-                        <div className="sm:hidden relative" ref={mobileMenuRef}>
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-left bg-surface border border-border rounded-lg"
-                                aria-haspopup="true"
-                                aria-expanded={isMobileMenuOpen}
-                            >
-                                <div className="flex items-center space-x-2">
-                                    {TABS[activeTab].icon}
-                                    <span className="text-text-primary">{activeTab}</span>
-                                </div>
-                                <ChevronDownIcon />
-                            </button>
-
-                            {isMobileMenuOpen && (
-                                <div className="absolute z-10 w-full mt-2 bg-surface border border-border rounded-lg shadow-lg">
-                                    <ul className="py-1" role="menu">
-                                        {(Object.keys(TABS) as TabName[]).map((tabName) => (
-                                            <li key={tabName}>
-                                                <button
-                                                    onClick={() => {
-                                                        setActiveTab(tabName);
-                                                        setIsMobileMenuOpen(false);
-                                                    }}
-                                                    className={`flex items-center space-x-3 w-full px-4 py-2 text-left text-sm ${
-                                                        activeTab === tabName
-                                                            ? 'text-primary bg-primary/10'
-                                                            : 'text-text-secondary hover:bg-border'
-                                                    }`}
-                                                    role="menuitem"
-                                                >
-                                                    {TABS[tabName].icon}
-                                                    <span>{tabName}</span>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
                     </nav>
 
                     <div>
@@ -194,7 +155,66 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
                     </div>
                 </main>
             </div>
-            <footer className="w-full bg-surface text-center p-4 border-t border-border mt-8">
+
+            {/* --- Mobile Bottom Navigation --- */}
+            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40">
+                <div className="flex justify-around items-center h-16">
+                    {mainMobileTabs.map((tabName) => (
+                        <button
+                            key={tabName}
+                            onClick={() => setActiveTab(tabName)}
+                            className="flex flex-col items-center justify-center w-full h-full p-1 space-y-1 hover:bg-border/50 transition-colors"
+                        >
+                            <div className={activeTab === tabName ? 'text-primary' : 'text-text-secondary'}>
+                                {TABS[tabName].icon}
+                            </div>
+                            <span className={`text-xs truncate ${activeTab === tabName ? 'text-primary font-semibold' : 'text-text-secondary'}`}>
+                                {tabName}
+                            </span>
+                        </button>
+                    ))}
+                    <div className="relative h-full" ref={moreMenuRef}>
+                        {isMoreMenuOpen && (
+                             <div className="absolute bottom-full right-0 mb-2 w-48 bg-border rounded-lg shadow-lg p-1">
+                                <ul role="menu">
+                                    {moreTabs.map((tabName) => (
+                                        <li key={tabName}>
+                                            <button
+                                                onClick={() => {
+                                                    setActiveTab(tabName);
+                                                    setIsMoreMenuOpen(false);
+                                                }}
+                                                className={`flex items-center space-x-3 w-full px-3 py-2 text-left text-sm rounded-md ${
+                                                    activeTab === tabName
+                                                        ? 'text-primary bg-primary/10'
+                                                        : 'text-text-secondary hover:bg-surface'
+                                                }`}
+                                                role="menuitem"
+                                            >
+                                                {TABS[tabName].icon}
+                                                <span>{tabName}</span>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setIsMoreMenuOpen(prev => !prev)}
+                            className="flex flex-col items-center justify-center w-full h-full p-1 space-y-1 hover:bg-border/50 transition-colors min-w-[70px]"
+                        >
+                             <div className={isMoreTabActive ? 'text-primary' : 'text-text-secondary'}>
+                                <MoreHorizontalIcon />
+                            </div>
+                            <span className={`text-xs truncate ${isMoreTabActive ? 'text-primary font-semibold' : 'text-text-secondary'}`}>
+                                More
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <footer className="w-full bg-surface text-center p-4 border-t border-border mt-auto">
                 <div className="flex flex-col sm:flex-row justify-center items-center sm:gap-x-4 gap-y-1">
                     <p className="text-sm text-text-secondary">
                         Stoutly App Launched <span className="font-bold text-primary">{formatDuration(launchDuration)}</span> ago.
