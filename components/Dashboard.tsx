@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Home from './tabs/Home';
 import Users from './tabs/Users';
 import Content from './tabs/Content';
 import Financial from './tabs/Financial';
 import GA4 from './tabs/GA4';
 import Pubs from './tabs/Pubs';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon } from './icons/Icons';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, ChevronDownIcon } from './icons/Icons';
 import { getLaunchDuration } from '../services/supabaseService';
 
 const TABS = {
@@ -60,12 +60,28 @@ const getStPaddysCountdown = (): { months: number, days: number } => {
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
     const [activeTab, setActiveTab] = useState<TabName>('Home');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
     const [launchDuration, setLaunchDuration] = useState<{ years: number, months: number, days: number } | null>(null);
     const [stPaddysCountdown, setStPaddysCountdown] = useState<{ months: number, days: number } | null>(null);
 
     useEffect(() => {
         setLaunchDuration(getLaunchDuration());
         setStPaddysCountdown(getStPaddysCountdown());
+    }, []);
+
+    // Effect to close mobile menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     const ActiveComponent = TABS[activeTab].component as React.ElementType<{ refreshKey: number }>;
@@ -111,7 +127,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
                     </header>
 
                     <nav className="mb-8">
-                        <div className="flex space-x-1 border-b border-border overflow-x-auto pb-px">
+                        {/* Desktop Nav: Visible from sm breakpoint and up */}
+                        <div className="hidden sm:flex space-x-1 border-b border-border overflow-x-auto pb-px">
                             {(Object.keys(TABS) as TabName[]).map((tabName) => (
                                 <button
                                     key={tabName}
@@ -127,6 +144,48 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
                                     <span>{tabName}</span>
                                 </button>
                             ))}
+                        </div>
+
+                        {/* Mobile Nav: Hidden from sm breakpoint and up */}
+                        <div className="sm:hidden relative" ref={mobileMenuRef}>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-left bg-surface border border-border rounded-lg"
+                                aria-haspopup="true"
+                                aria-expanded={isMobileMenuOpen}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    {TABS[activeTab].icon}
+                                    <span className="text-text-primary">{activeTab}</span>
+                                </div>
+                                <ChevronDownIcon />
+                            </button>
+
+                            {isMobileMenuOpen && (
+                                <div className="absolute z-10 w-full mt-2 bg-surface border border-border rounded-lg shadow-lg">
+                                    <ul className="py-1" role="menu">
+                                        {(Object.keys(TABS) as TabName[]).map((tabName) => (
+                                            <li key={tabName}>
+                                                <button
+                                                    onClick={() => {
+                                                        setActiveTab(tabName);
+                                                        setIsMobileMenuOpen(false);
+                                                    }}
+                                                    className={`flex items-center space-x-3 w-full px-4 py-2 text-left text-sm ${
+                                                        activeTab === tabName
+                                                            ? 'text-primary bg-primary/10'
+                                                            : 'text-text-secondary hover:bg-border'
+                                                    }`}
+                                                    role="menuitem"
+                                                >
+                                                    {TABS[tabName].icon}
+                                                    <span>{tabName}</span>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     </nav>
 
