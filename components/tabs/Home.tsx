@@ -6,7 +6,7 @@ import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
 // FIX: Import ArrowUpRightIcon and ArrowDownRightIcon.
-import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon } from '../icons/Icons';
+import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon, GlobeIcon } from '../icons/Icons';
 
 interface FinancialSummary {
     totalSpendAllTime: number;
@@ -79,8 +79,8 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
 
     const renderMainLoading = () => (
         <div className="animate-pulse space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => <div key={i} className="bg-surface rounded-xl h-28"></div>)}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
@@ -153,17 +153,19 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
             {loading ? renderMainLoading() : data && (
                 <div className="space-y-8">
                     {/* --- Top Level KPIs --- */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <StatCard title="Total Users" value={data.kpis.totalUsers.toLocaleString()} icon={<UsersIcon />} />
                         <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<ActivityIcon />} />
                         <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
+                        <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
+                        <StatCard title="Countries Rated" value={data.kpis.ratedCountriesCount.toLocaleString()} icon={<GlobeIcon />} />
                          {financialLoading ? (
                             <div className="bg-surface p-5 rounded-xl shadow-lg flex flex-col justify-center animate-pulse">
                                 <div className="h-4 bg-border rounded w-1/2"></div>
                                 <div className="h-8 bg-border rounded w-3/4 mt-2"></div>
                             </div>
                         ) : financialSummary && (
-                            <StatCard title="All-Time Profit" value={formatGbp(financialSummary.profit)} icon={financialSummary.profit >= 0 ? <TrendingUpIcon /> : <TrendingDownIcon />} change={financialSummary.profit > 0 ? 100 : -100} />
+                            <StatCard title="All-Time Profit" value={formatGbp(financialSummary.profit)} icon={financialSummary.profit >= 0 ? <TrendingUpIcon /> : <TrendingDownIcon />} />
                         )}
                     </div>
 
@@ -192,7 +194,6 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     <SecondaryStatItem label={`New Users (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newUsers.toLocaleString()} change={data.kpis.newUsersChange} />
                                     <SecondaryStatItem label={`New Ratings (${timeframes[timeframe as keyof typeof timeframes]})`} value={data.kpis.newRatings.toLocaleString()} change={data.kpis.newRatingsChange} />
                                     <SecondaryStatItem label="Ratings per User" value={ratingsPerUser.toFixed(1)} />
-                                    <SecondaryStatItem label="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} />
                                     <SecondaryStatItem label="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} />
                                     <SecondaryStatItem label="Total Comments" value={data.kpis.totalComments.toLocaleString()} />
                                      {financialLoading ? (
