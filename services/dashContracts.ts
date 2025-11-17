@@ -125,10 +125,21 @@ export interface NewOutgoingData {
     billing_cycle?: 'monthly' | 'yearly';
 }
 
+export interface ExpectedPayment {
+    id: string;
+    name: string;
+    type: 'Subscription' | 'Manual';
+    amount_gbp: number;
+    currency: string;
+    original_amount: number;
+    due_date: string;
+}
+
 export interface DashOutgoingsData {
     kpis: OutgoingKpis;
     tables: {
         manualOutgoings: ManualOutgoing[];
         subscriptions: Subscription[];
+        expectedPaymentsThisMonth: ExpectedPayment[];
     };
 }

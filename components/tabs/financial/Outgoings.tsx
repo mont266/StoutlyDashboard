@@ -1,11 +1,12 @@
 
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon } from '../../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -124,14 +125,14 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
         }
     };
     
-    const SkeletonTable: React.FC = () => (
+    const SkeletonTable: React.FC<{rows?: number}> = ({rows = 3}) => (
         <div className="bg-surface rounded-xl shadow-lg">
             <div className="p-4 border-b border-border">
                 <div className="h-6 bg-border rounded w-1/3"></div>
             </div>
             <div className="p-6">
                 <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
+                    {[...Array(rows)].map((_, i) => (
                         <div key={i} className="flex justify-between items-center">
                             <div className="h-4 bg-border rounded w-1/4"></div>
                             <div className="h-4 bg-border rounded hidden md:block w-1/4"></div>
@@ -151,6 +152,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 <div className="bg-surface rounded-xl h-28"></div>
                 <div className="bg-surface rounded-xl h-28"></div>
             </div>
+            <SkeletonTable rows={2} />
             <div className="space-y-8">
                 <SkeletonTable />
                 <SkeletonTable />
@@ -200,7 +202,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard 
                     title={`Spend (${timeframes[timeframe as keyof typeof timeframes]})`} 
                     value={`£${data.kpis.totalSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
@@ -221,7 +223,50 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 />
             </div>
 
-            <div className="space-y-8">
+            <div className="bg-surface rounded-xl shadow-lg mt-8">
+                <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border flex items-center space-x-2">
+                    <CalendarIcon />
+                    <span>Expected Payments This Month</span>
+                </h3>
+                <div className="overflow-x-auto">
+                    {data.tables.expectedPaymentsThisMonth && data.tables.expectedPaymentsThisMonth.length > 0 ? (
+                        <table className="w-full text-sm text-left text-text-secondary">
+                            <thead className="text-xs text-text-secondary uppercase bg-background">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Item</th>
+                                    <th scope="col" className="px-6 py-3 hidden sm:table-cell">Type</th>
+                                    <th scope="col" className="px-6 py-3">Due Date</th>
+                                    <th scope="col" className="px-6 py-3 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.tables.expectedPaymentsThisMonth.map(payment => (
+                                    <tr key={`${payment.id}-${payment.due_date}`} className="border-b border-border hover:bg-border/50">
+                                        <td className="px-6 py-4 font-medium text-text-primary whitespace-nowrap">{payment.name}</td>
+                                        <td className="px-6 py-4 hidden sm:table-cell">
+                                            <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                                payment.type === 'Subscription' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                                            }`}>
+                                                {payment.type}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">{formatDate(payment.due_date)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            {formatMultiCurrency(payment.original_amount, payment.currency, payment.amount_gbp)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="p-6 text-center text-text-secondary">
+                            <p>No more payments scheduled for this month.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="space-y-8 mt-8">
                 {/* Subscriptions Table */}
                 <div className="bg-surface rounded-xl shadow-lg">
                     <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Subscriptions</h3>
