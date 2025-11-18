@@ -140,6 +140,5 @@ export interface DashOutgoingsData {
     tables: {
         manualOutgoings: ManualOutgoing[];
         subscriptions: Subscription[];
-        expectedPaymentsThisMonth: ExpectedPayment[];
     };
 }

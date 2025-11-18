@@ -127,17 +127,31 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
     };
 
     const expectedPayments = useMemo(() => {
-        if (!data) return [];
+        if (!data || !data.tables) return [];
 
-        // Trust manual payments from backend, but recalculate subscriptions
-        const manualPayments = data.tables.expectedPaymentsThisMonth.filter(p => p.type === 'Manual');
-        
-        const calculatedSubscriptionPayments: ExpectedPayment[] = [];
         const today = new Date();
         const currentMonth = today.getUTCMonth();
         const currentYear = today.getUTCFullYear();
 
-        const activeSubscriptions = data.tables.subscriptions.filter(sub => sub.status === 'Active');
+        // 1. Process manual outgoings from the main list for the current month
+        const manualPayments: ExpectedPayment[] = (data.tables.manualOutgoings || [])
+            .filter(mo => {
+                const purchaseDate = new Date(mo.purchase_date);
+                return purchaseDate.getUTCMonth() === currentMonth && purchaseDate.getUTCFullYear() === currentYear;
+            })
+            .map(mo => ({
+                id: mo.id,
+                name: mo.name,
+                type: 'Manual',
+                amount_gbp: mo.amount_gbp,
+                currency: mo.currency,
+                original_amount: mo.amount,
+                due_date: mo.purchase_date,
+            }));
+
+        // 2. Calculate subscription payments for the current month
+        const calculatedSubscriptionPayments: ExpectedPayment[] = [];
+        const activeSubscriptions = (data.tables.subscriptions || []).filter(sub => sub.status === 'Active');
 
         for (const sub of activeSubscriptions) {
             const startDate = new Date(sub.start_date);
@@ -147,21 +161,14 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
             let paymentDateForCurrentMonth: Date | null = null;
 
             if (sub.billing_cycle === 'monthly') {
-                const testDate = new Date(Date.UTC(currentYear, currentMonth, paymentDay));
-                if (testDate.getUTCMonth() > currentMonth) {
-                    // Rollover (e.g. day 31 in a 30-day month). Use last day of current month.
-                    paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
-                } else {
-                    paymentDateForCurrentMonth = testDate;
-                }
+                const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+                const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
+                paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
             } else if (sub.billing_cycle === 'yearly') {
                 if (startDate.getUTCMonth() === currentMonth) {
-                    const testDate = new Date(Date.UTC(currentYear, currentMonth, paymentDay));
-                    if (testDate.getUTCMonth() > currentMonth) {
-                        paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
-                    } else {
-                        paymentDateForCurrentMonth = testDate;
-                    }
+                     const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+                     const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
+                     paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
                 }
             }
             
@@ -322,7 +329,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                         </table>
                     ) : (
                         <div className="p-6 text-center text-text-secondary">
-                            <p>No payments scheduled for this month.</p>
+                            <p>No more payments due for this month.</p>
                         </div>
                     )}
                 </div>
