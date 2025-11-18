@@ -1,10 +1,7 @@
 
-
-
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
-import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing } from '../../../services/dashContracts';
+import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing, ExpectedPayment } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
 import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon } from '../../icons/Icons';
 
@@ -90,10 +87,14 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
 
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-GB', {
+        // Use UTC to prevent off-by-one day errors from timezone conversion
+        const date = new Date(dateString);
+        const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        return utcDate.toLocaleDateString('en-GB', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
+            timeZone: 'UTC'
         });
     };
 
@@ -124,6 +125,67 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 return 'bg-gray-500/20 text-gray-400';
         }
     };
+
+    const expectedPayments = useMemo(() => {
+        if (!data) return [];
+
+        // Trust manual payments from backend, but recalculate subscriptions
+        const manualPayments = data.tables.expectedPaymentsThisMonth.filter(p => p.type === 'Manual');
+        
+        const calculatedSubscriptionPayments: ExpectedPayment[] = [];
+        const today = new Date();
+        const currentMonth = today.getUTCMonth();
+        const currentYear = today.getUTCFullYear();
+
+        const activeSubscriptions = data.tables.subscriptions.filter(sub => sub.status === 'Active');
+
+        for (const sub of activeSubscriptions) {
+            const startDate = new Date(sub.start_date);
+            const endDate = sub.end_date ? new Date(sub.end_date) : null;
+            const paymentDay = startDate.getUTCDate();
+            
+            let paymentDateForCurrentMonth: Date | null = null;
+
+            if (sub.billing_cycle === 'monthly') {
+                const testDate = new Date(Date.UTC(currentYear, currentMonth, paymentDay));
+                if (testDate.getUTCMonth() > currentMonth) {
+                    // Rollover (e.g. day 31 in a 30-day month). Use last day of current month.
+                    paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
+                } else {
+                    paymentDateForCurrentMonth = testDate;
+                }
+            } else if (sub.billing_cycle === 'yearly') {
+                if (startDate.getUTCMonth() === currentMonth) {
+                    const testDate = new Date(Date.UTC(currentYear, currentMonth, paymentDay));
+                    if (testDate.getUTCMonth() > currentMonth) {
+                        paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
+                    } else {
+                        paymentDateForCurrentMonth = testDate;
+                    }
+                }
+            }
+            
+            if (paymentDateForCurrentMonth) {
+                // Check if this payment is valid (i.e., it's not before the sub started or after it ended)
+                if (paymentDateForCurrentMonth >= startDate && (!endDate || paymentDateForCurrentMonth < endDate)) {
+                    calculatedSubscriptionPayments.push({
+                        id: sub.id,
+                        name: sub.name,
+                        type: 'Subscription',
+                        amount_gbp: sub.amount_gbp,
+                        currency: sub.currency,
+                        original_amount: sub.amount,
+                        due_date: paymentDateForCurrentMonth.toISOString().split('T')[0],
+                    });
+                }
+            }
+        }
+
+        const allPayments = [...manualPayments, ...calculatedSubscriptionPayments];
+        allPayments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+        
+        return allPayments;
+    }, [data]);
     
     const SkeletonTable: React.FC<{rows?: number}> = ({rows = 3}) => (
         <div className="bg-surface rounded-xl shadow-lg">
@@ -229,7 +291,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                     <span>Expected Payments This Month</span>
                 </h3>
                 <div className="overflow-x-auto">
-                    {data.tables.expectedPaymentsThisMonth && data.tables.expectedPaymentsThisMonth.length > 0 ? (
+                    {expectedPayments.length > 0 ? (
                         <table className="w-full text-sm text-left text-text-secondary">
                             <thead className="text-xs text-text-secondary uppercase bg-background">
                                 <tr>
@@ -240,7 +302,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.tables.expectedPaymentsThisMonth.map(payment => (
+                                {expectedPayments.map(payment => (
                                     <tr key={`${payment.id}-${payment.due_date}`} className="border-b border-border hover:bg-border/50">
                                         <td className="px-6 py-4 font-medium text-text-primary whitespace-nowrap">{payment.name}</td>
                                         <td className="px-6 py-4 hidden sm:table-cell">
@@ -260,7 +322,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                         </table>
                     ) : (
                         <div className="p-6 text-center text-text-secondary">
-                            <p>No more payments scheduled for this month.</p>
+                            <p>No payments scheduled for this month.</p>
                         </div>
                     )}
                 </div>
