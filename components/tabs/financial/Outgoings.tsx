@@ -188,10 +188,20 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
             }
         }
 
-        const allPayments = [...manualPayments, ...calculatedSubscriptionPayments];
-        allPayments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+        const allPaymentsForMonth = [...manualPayments, ...calculatedSubscriptionPayments];
+
+        // Filter to only include payments from today onwards
+        const todayUTCStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        const upcomingPayments = allPaymentsForMonth.filter(payment => {
+            // new Date('YYYY-MM-DD') creates a date at midnight UTC, which is what we want for comparison
+            const dueDate = new Date(payment.due_date);
+            return dueDate >= todayUTCStart;
+        });
         
-        return allPayments;
+        // Sort the final list by date
+        upcomingPayments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+        
+        return upcomingPayments;
     }, [data]);
     
     const SkeletonTable: React.FC<{rows?: number}> = ({rows = 3}) => (
