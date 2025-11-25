@@ -207,7 +207,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                         />
                                         <div>
                                             <div className="flex items-center flex-wrap">
-                                                <span className="font-semibold">{user.name}</span>
+                                                <a href={`https://stoutly.co.uk/?user_id=${user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-primary hover:underline transition-colors">{user.name}</a>
                                                 <UserBadges user={user} />
                                             </div>
                                             <p className="text-xs text-text-secondary">Joined: {formatDate(user.signupDate)}</p>
@@ -249,7 +249,7 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
                     onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                  />
                 <div>
-                    <p className="font-semibold text-text-primary">{user.name}</p>
+                    <a href={`https://stoutly.co.uk/?user_id=${user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{user.name}</a>
                     <p className="text-xs text-text-secondary">{new Date(user.lastActive).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                 </div>
             </div>

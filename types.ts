@@ -91,7 +91,8 @@ export interface Pub {
 
 export interface Rating {
     id:string;
-    user: { name: string; avatarId: string };
+    pubId: string;
+    user: { id: string; name: string; avatarId: string };
     pubName: string;
     score: number;
     quality?: number;
@@ -102,14 +103,14 @@ export interface Rating {
 
 export interface Comment {
     id: string;
-    user: { name: string; avatarId: string };
+    user: { id: string; name: string; avatarId: string };
     text: string;
     timestamp: string;
 }
 
 export interface UploadedImage {
     id: string;
-    user: { name: string; avatarId: string };
+    user: { id: string; name: string; avatarId: string };
     imageUrl: string;
     timestamp: string;
 }
@@ -117,6 +118,7 @@ export interface UploadedImage {
 
 // --- Financials Tab ---
 export interface TopDonator {
+    id?: string;
     username: string;
     avatar_id: string;
     totalAmount: number;
@@ -124,7 +126,7 @@ export interface TopDonator {
 
 export interface Donation {
     id: string;
-    user: { username: string; avatar_id: string };
+    user: { id?: string; username: string; avatar_id: string };
     amount: number;
     date: string;
 }

@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getStripeFinancials, getAvatarUrl } from '../../../services/supabaseService';
 import type { FinancialsData, Donation, TopDonator } from '../../../types';
@@ -120,7 +121,11 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => {
                 className={`w-20 h-20 rounded-full mx-auto mb-3 border-2 ${isNA ? 'border-border' : 'border-primary'} bg-border object-cover`}
                 onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
             />
-            <p className={`font-bold text-xl ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</p>
+            {isNA || !donator.id ? (
+                <p className={`font-bold text-xl ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</p>
+            ) : (
+                <a href={`https://stoutly.co.uk/?user_id=${donator.id}`} target="_blank" rel="noopener noreferrer" className={`font-bold text-xl hover:underline hover:text-primary transition-colors ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</a>
+            )}
             <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
         </div>
     );
@@ -152,7 +157,11 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                                         className="w-8 h-8 rounded-full bg-border object-cover"
                                         onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                                     />
-                                    <span>{donation.user.username}</span>
+                                    {isAnonymous || !donation.user.id ? (
+                                        <span>{donation.user.username}</span>
+                                    ) : (
+                                        <a href={`https://stoutly.co.uk/?user_id=${donation.user.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">{donation.user.username}</a>
+                                    )}
                                 </div>
                             </td>
                             <td className="px-4 py-4 hidden sm:table-cell">{donation.date}</td>

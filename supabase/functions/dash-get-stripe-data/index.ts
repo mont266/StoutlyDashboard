@@ -138,6 +138,7 @@ serve(async (req) => {
         const aggregationKey = profile ? (profile.id || profile.email) : `anonymous-${charge.id}`;
 
         const currentUserDonation = donationsByUser.get(aggregationKey) || {
+            id: profile?.id,
             username,
             avatar_id,
             totalAmount: 0,
@@ -148,7 +149,7 @@ serve(async (req) => {
         if (recentDonations.length < 10) {
             recentDonations.push({
                 id: charge.id,
-                user: { username, avatar_id },
+                user: { id: profile?.id, username, avatar_id },
                 amount: amount,
                 date: new Date(charge.created * 1000).toLocaleDateString('en-GB'),
             });
@@ -156,7 +157,7 @@ serve(async (req) => {
     }
 
     // --- 5. FIND TOP DONATOR ---
-    let topDonator = { username: 'N/A', avatar_id: '', totalAmount: 0 };
+    let topDonator = { id: undefined, username: 'N/A', avatar_id: '', totalAmount: 0 };
     if (donationsByUser.size > 0) {
         topDonator = [...donationsByUser.values()].reduce((top, current) => 
             current.totalAmount > top.totalAmount ? current : top

@@ -308,12 +308,14 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
 
                 return {
                     id: r.id,
+                    pubId: r.pubId,
                     pubName: r.pubName || 'Unknown Pub',
                     score: score,
                     quality: r.quality,
                     price: r.price,
                     timestamp: new Date(r.created_at).toLocaleString(),
                     user: {
+                        id: r.user?.id,
                         name: r.user?.name || 'Anonymous User',
                         avatarId: r.user?.avatarId || '',
                     },
@@ -325,6 +327,7 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
                 text: c.text,
                 timestamp: new Date(c.timestamp).toLocaleString(),
                 user: {
+                    id: c.user?.id,
                     name: c.user?.name || 'Anonymous User',
                     avatarId: c.user?.avatarId || '',
                 }
@@ -334,6 +337,7 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
                 imageUrl: i.imageUrl,
                 timestamp: new Date(i.timestamp).toLocaleString(),
                 user: {
+                    id: i.user?.id,
                     name: i.user?.name || 'Anonymous User',
                     avatarId: i.user?.avatarId || '',
                 }
@@ -475,8 +479,8 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 message,
                 quality,
                 price,
-                pubs ( name ),
-                profiles!ratings_user_id_fkey ( username, avatar_id )
+                pubs ( id, name ),
+                profiles!ratings_user_id_fkey ( id, username, avatar_id )
             `)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -490,12 +494,14 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
 
             return {
                 id: r.id,
+                pubId: r.pubs?.id,
                 pubName: r.pubs?.name || 'Unknown Pub',
                 score: score,
                 quality: r.quality,
                 price: r.price,
                 timestamp: new Date(r.created_at).toLocaleString(),
                 user: {
+                    id: r.profiles?.id,
                     name: r.profiles?.username || 'Anonymous User',
                     avatarId: r.profiles?.avatar_id || '',
                 },
@@ -519,7 +525,7 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
                 id,
                 content,
                 created_at,
-                profiles!comments_user_id_fkey ( username, avatar_id )
+                profiles!comments_user_id_fkey ( id, username, avatar_id )
             `)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -530,6 +536,7 @@ export const getCommentsData = async (pageNumber: number, pageSize: number): Pro
             text: c.content,
             timestamp: new Date(c.created_at).toLocaleString(),
             user: {
+                id: c.profiles?.id,
                 name: c.profiles?.username || 'Anonymous User',
                 avatarId: c.profiles?.avatar_id || '',
             }
@@ -551,7 +558,7 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
                 id,
                 image_url,
                 created_at,
-                profiles!ratings_user_id_fkey ( username, avatar_id )
+                profiles!ratings_user_id_fkey ( id, username, avatar_id )
             `)
             .not('image_url', 'is', null)
             .order('created_at', { ascending: false })
@@ -563,6 +570,7 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
             imageUrl: i.image_url,
             timestamp: new Date(i.created_at).toLocaleString(),
             user: {
+                id: i.profiles?.id,
                 name: i.profiles?.username || 'Anonymous User',
                 avatarId: i.profiles?.avatar_id || '',
             }

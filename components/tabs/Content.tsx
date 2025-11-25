@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
@@ -236,7 +237,19 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
                                 onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                             />
                             <div className="flex-grow">
-                                <p className="text-sm text-text-secondary"><span className="font-semibold text-text-primary">{rating.user.name}</span> rated <span className="font-semibold text-primary">{rating.pubName}</span></p>
+                                <p className="text-sm text-text-secondary">
+                                    {rating.user.id ? (
+                                        <a href={`https://stoutly.co.uk/?user_id=${rating.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{rating.user.name}</a>
+                                    ) : (
+                                        <span className="font-semibold text-text-primary">{rating.user.name}</span>
+                                    )}
+                                    {' '}rated{' '}
+                                    {rating.pubId ? (
+                                        <a href={`https://stoutly.co.uk/?pub_id=${rating.pubId}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline transition-colors">{rating.pubName}</a>
+                                    ) : (
+                                        <span className="font-semibold text-primary">{rating.pubName}</span>
+                                    )}
+                                </p>
                                 <p className="text-xs text-text-secondary">{rating.timestamp}</p>
                                 
                                 {rating.message && (
@@ -308,7 +321,11 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
                         />
                         <div className="flex-grow">
                             <div className="flex items-baseline space-x-2">
-                                <span className="font-semibold text-text-primary">{comment.user.name}</span>
+                                {comment.user.id ? (
+                                    <a href={`https://stoutly.co.uk/?user_id=${comment.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{comment.user.name}</a>
+                                ) : (
+                                    <span className="font-semibold text-text-primary">{comment.user.name}</span>
+                                )}
                                 <span className="text-text-secondary text-xs flex-shrink-0">{comment.timestamp}</span>
                             </div>
                             <p className="text-text-primary mt-2">{comment.text}</p>
@@ -330,7 +347,13 @@ const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ i
         <div className="bg-surface p-4 rounded-lg max-w-4xl max-h-[90vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
             <img src={image.imageUrl} alt={`user upload ${image.id}`} className="max-w-full max-h-[75vh] object-contain rounded-lg mx-auto" />
             <div className="mt-3 text-white">
-                <p>Posted by <span className="font-bold">{image.user.name}</span></p>
+                <p>Posted by{' '}
+                    {image.user.id ? (
+                        <a href={`https://stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline">{image.user.name}</a>
+                    ) : (
+                        <span className="font-bold">{image.user.name}</span>
+                    )}
+                </p>
                 <p className="text-sm text-text-secondary">{image.timestamp}</p>
             </div>
             <button 
@@ -368,7 +391,11 @@ const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (
                             <img src={image.imageUrl} alt={`user upload ${image.id}`} className="w-full h-full object-cover rounded-lg transform group-hover:scale-110 transition-transform duration-300 cursor-pointer" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
                             <div className="absolute bottom-0 left-0 p-3 text-white w-full">
-                                <p className="font-semibold text-sm truncate">{image.user.name}</p>
+                                {image.user.id ? (
+                                    <a href={`https://stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="font-semibold text-sm truncate hover:underline">{image.user.name}</a>
+                                ) : (
+                                    <p className="font-semibold text-sm truncate">{image.user.name}</p>
+                                )}
                                 <p className="text-xs text-text-secondary">{image.timestamp}</p>
                             </div>
                         </div>

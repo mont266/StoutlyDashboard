@@ -61,7 +61,9 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                     <td className="px-4 py-4 text-center font-medium text-text-primary">{index + 1}</td>
                                     <td className="px-6 py-4 font-medium text-text-primary">
                                         <div className="flex flex-col">
-                                            <span>{pub.name}</span>
+                                            <a href={`https://stoutly.co.uk/?pub_id=${pub.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+                                                {pub.name}
+                                            </a>
                                             <span className="text-xs text-text-secondary">{pub.location}</span>
                                         </div>
                                     </td>
