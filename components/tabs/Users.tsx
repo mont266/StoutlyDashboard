@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dash_getUsersData, dash_getUsersByUtm, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat } from '../../types';
@@ -66,10 +64,9 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
         fetchUtmUsers();
     }, [selectedUtm]);
     
-    const handleUtmBarClick = (payload: any) => {
-        if (payload && payload.activePayload && payload.activePayload[0]) {
-            const source = payload.activePayload[0].payload.source;
-            setSelectedUtm(source);
+    const handleUtmBarClick = (data: UTMStat) => {
+        if (data && data.source) {
+            setSelectedUtm(data.source);
         }
     };
 
@@ -310,13 +307,13 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
 
 interface UTMChartProps {
     data: UTMStat[];
-    onBarClick: (payload: any) => void;
+    onBarClick: (data: UTMStat) => void;
 }
 
 const UTMChart: React.FC<UTMChartProps> = ({ data, onBarClick }) => (
     <div className="h-96 p-4">
         <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }} onClick={onBarClick}>
+            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
                 <XAxis type="number" tick={{ fill: '#9CA3AF' }} fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis dataKey="source" type="category" tick={{ fill: '#9CA3AF' }} fontSize={12} tickLine={false} axisLine={false} width={80} />
@@ -324,7 +321,10 @@ const UTMChart: React.FC<UTMChartProps> = ({ data, onBarClick }) => (
                     contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#FDEED4' }}
                     cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                 />
-                <Bar dataKey="count" name="Signups" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={20} style={{ cursor: 'pointer' }}>
+                {/* FIX: The onClick handler from recharts provides a data object that wraps the original
+                    data point in a `payload` property. This change adapts the call to pass the expected
+                    `UTMStat` object to the `onBarClick` handler. */}
+                <Bar dataKey="count" name="Signups" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={20} style={{ cursor: 'pointer' }} onClick={(barProps) => onBarClick(barProps.payload)}>
                     <LabelList dataKey="count" position="right" fill="#FDEED4" fontSize={12} />
                 </Bar>
             </BarChart>
