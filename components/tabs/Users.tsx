@@ -2,12 +2,12 @@
 
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { dash_getUsersData, getAvatarUrl } from '../../services/supabaseService';
-import type { User, UTMStat, UserKpis } from '../../types';
+import { dash_getUsersData, dash_getUsersByUtm, getAvatarUrl } from '../../services/supabaseService';
+import type { User, UTMStat } from '../../types';
 import type { DashUsersData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
-import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, StarIcon, RefreshCwIcon } from '../icons/Icons';
+import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, RefreshCwIcon } from '../icons/Icons';
 
 type SubTab = 'all' | 'today' | 'utm';
 
@@ -22,10 +22,18 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
     const [data, setData] = useState<DashUsersData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // State for UTM drill-down
+    const [selectedUtm, setSelectedUtm] = useState<string | null>(null);
+    const [utmUsers, setUtmUsers] = useState<User[]>([]);
+    const [loadingUtmUsers, setLoadingUtmUsers] = useState(false);
+
+
     const fetchData = useCallback(async () => {
         setLoading(true);
+        // Reset drill-down state on full refresh
+        setSelectedUtm(null);
+        setUtmUsers([]);
         try {
-            // Single, consolidated API call
             const result = await dash_getUsersData();
             setData(result);
         } catch (error) {
@@ -38,6 +46,32 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
     useEffect(() => {
         fetchData();
     }, [fetchData, refreshKey]);
+    
+    // Fetch users when a UTM source is selected
+    useEffect(() => {
+        if (!selectedUtm) return;
+
+        const fetchUtmUsers = async () => {
+            setLoadingUtmUsers(true);
+            try {
+                const users = await dash_getUsersByUtm(selectedUtm);
+                setUtmUsers(users);
+            } catch (error) {
+                console.error(`Failed to fetch users for UTM source ${selectedUtm}:`, error);
+            } finally {
+                setLoadingUtmUsers(false);
+            }
+        };
+
+        fetchUtmUsers();
+    }, [selectedUtm]);
+    
+    const handleUtmBarClick = (payload: any) => {
+        if (payload && payload.activePayload && payload.activePayload[0]) {
+            const source = payload.activePayload[0].payload.source;
+            setSelectedUtm(source);
+        }
+    };
 
     const subTabs: { id: SubTab; label: string }[] = [
         { id: 'all', label: 'All Users' },
@@ -54,7 +88,24 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
             case 'today':
                 return <UserList users={data.todayUsers} />;
             case 'utm':
-                return <UTMChart data={data.utmStats} />;
+                if (selectedUtm) {
+                    return (
+                        <div className="p-4">
+                            <button 
+                                onClick={() => setSelectedUtm(null)}
+                                className="mb-4 px-3 py-1 text-sm rounded bg-border hover:bg-border/80 transition-colors"
+                            >
+                                &larr; Back to UTM Sources
+                            </button>
+                            <h3 className="text-lg font-semibold mb-2">Users from "{selectedUtm}"</h3>
+                            {loadingUtmUsers 
+                                ? <div className="bg-background rounded-xl h-80 animate-pulse"></div>
+                                : <UserTable users={utmUsers} />
+                            }
+                        </div>
+                    );
+                }
+                return <UTMChart data={data.utmStats} onBarClick={handleUtmBarClick} />;
             default:
                 return null;
         }
@@ -257,10 +308,15 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
     </div>
 );
 
-const UTMChart: React.FC<{ data: UTMStat[] }> = ({ data }) => (
+interface UTMChartProps {
+    data: UTMStat[];
+    onBarClick: (payload: any) => void;
+}
+
+const UTMChart: React.FC<UTMChartProps> = ({ data, onBarClick }) => (
     <div className="h-96 p-4">
         <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }} onClick={onBarClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
                 <XAxis type="number" tick={{ fill: '#9CA3AF' }} fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis dataKey="source" type="category" tick={{ fill: '#9CA3AF' }} fontSize={12} tickLine={false} axisLine={false} width={80} />
@@ -268,7 +324,7 @@ const UTMChart: React.FC<{ data: UTMStat[] }> = ({ data }) => (
                     contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#FDEED4' }}
                     cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                 />
-                <Bar dataKey="count" name="Signups" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={20}>
+                <Bar dataKey="count" name="Signups" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={20} style={{ cursor: 'pointer' }}>
                     <LabelList dataKey="count" position="right" fill="#FDEED4" fontSize={12} />
                 </Bar>
             </BarChart>

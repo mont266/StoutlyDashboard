@@ -276,6 +276,18 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
     }
 };
 
+export const dash_getUsersByUtm = async (source: string): Promise<User[]> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_users_by_utm', { utm_source_in: source });
+        if (error) throw error;
+        return (data as User[]) || [];
+    } catch (error) {
+        handleSupabaseError(error, `Users by UTM source: ${source}`);
+        throw error;
+    }
+};
+
+
 // --- PUBS TAB ---
 export const dash_getPubsData = async (): Promise<DashPubsData> => {
     try {
