@@ -1,5 +1,6 @@
 
 
+
 import { createClient } from '@supabase/supabase-js';
 // FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
 import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis, TimeSeriesDataPoint } from '../types';
@@ -275,27 +276,6 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
         throw error;
     }
 };
-
-export const dash_getUsersByUtm = async (source: string): Promise<User[]> => {
-    try {
-        // FIX: The RPC function 'dash_get_users_by_utm' did not exist.
-        // The database error hint suggested using 'dash_get_users_data' instead.
-        // This function is likely overloaded to accept an optional filter.
-        // Also handles the 'Direct' source, which corresponds to a NULL in the database.
-        const utmFilter = source === 'Direct' ? null : source;
-        const { data, error } = await supabase.rpc('dash_get_users_data', { utm_source_in: utmFilter }).single();
-        
-        if (error) throw error;
-        if (!data) return [];
-        
-        // The function returns the same DashUsersData payload, but with the users pre-filtered.
-        return (data as DashUsersData).allUsers || [];
-    } catch (error) {
-        handleSupabaseError(error, `Users by UTM source: ${source}`);
-        throw error;
-    }
-};
-
 
 // --- PUBS TAB ---
 export const dash_getPubsData = async (): Promise<DashPubsData> => {

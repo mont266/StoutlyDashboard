@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { dash_getUsersData, dash_getUsersByUtm, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getUsersData, getAvatarUrl } from '../../services/supabaseService';
 import type { User, UTMStat } from '../../types';
 import type { DashUsersData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
@@ -22,15 +23,11 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
 
     // State for UTM drill-down
     const [selectedUtm, setSelectedUtm] = useState<string | null>(null);
-    const [utmUsers, setUtmUsers] = useState<User[]>([]);
-    const [loadingUtmUsers, setLoadingUtmUsers] = useState(false);
-
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         // Reset drill-down state on full refresh
         setSelectedUtm(null);
-        setUtmUsers([]);
         try {
             const result = await dash_getUsersData();
             setData(result);
@@ -44,25 +41,6 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
     useEffect(() => {
         fetchData();
     }, [fetchData, refreshKey]);
-    
-    // Fetch users when a UTM source is selected
-    useEffect(() => {
-        if (!selectedUtm) return;
-
-        const fetchUtmUsers = async () => {
-            setLoadingUtmUsers(true);
-            try {
-                const users = await dash_getUsersByUtm(selectedUtm);
-                setUtmUsers(users);
-            } catch (error) {
-                console.error(`Failed to fetch users for UTM source ${selectedUtm}:`, error);
-            } finally {
-                setLoadingUtmUsers(false);
-            }
-        };
-
-        fetchUtmUsers();
-    }, [selectedUtm]);
     
     const handleUtmBarClick = (data: UTMStat) => {
         if (data && data.source) {
@@ -86,6 +64,12 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
                 return <UserList users={data.todayUsers} />;
             case 'utm':
                 if (selectedUtm) {
+                    const filteredUtmUsers = data.allUsers.filter(user => {
+                        // Handle null/undefined signupUtmSource as 'Direct'
+                        const userSource = user.signupUtmSource || 'Direct';
+                        return userSource === selectedUtm;
+                    });
+                    
                     return (
                         <div className="p-4">
                             <button 
@@ -95,10 +79,7 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
                                 &larr; Back to UTM Sources
                             </button>
                             <h3 className="text-lg font-semibold mb-2">Users from "{selectedUtm}"</h3>
-                            {loadingUtmUsers 
-                                ? <div className="bg-background rounded-xl h-80 animate-pulse"></div>
-                                : <UserTable users={utmUsers} />
-                            }
+                            <UserTable users={filteredUtmUsers} />
                         </div>
                     );
                 }

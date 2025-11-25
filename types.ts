@@ -60,6 +60,7 @@ export interface User {
   isTeamMember?: boolean;
   hasDonated?: boolean;
   reviewsCount: number;
+  signupUtmSource?: string | null;
 }
 
 export interface UTMStat {
