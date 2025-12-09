@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
@@ -120,9 +121,11 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                             value={
                                 <>
                                     {data.analytics.totalPubs.toLocaleString()}
-                                    <span className="text-base font-normal text-text-secondary ml-2">
-                                        ({data.analytics.totalRatedPubs.toLocaleString()} rated)
-                                    </span>
+                                    {data.analytics.totalRatedPubs !== undefined && (
+                                        <span className="text-base font-normal text-text-secondary ml-2">
+                                            ({data.analytics.totalRatedPubs.toLocaleString()} rated)
+                                        </span>
+                                    )}
                                 </>
                             } 
                             icon={<BuildingIcon />} 
