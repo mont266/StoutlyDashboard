@@ -4,7 +4,7 @@ import { ArrowUpRightIcon, ArrowDownRightIcon } from './icons/Icons';
 
 interface StatCardProps {
     title: string;
-    value: string;
+    value: React.ReactNode;
     change?: number;
     icon: React.ReactNode;
     isChurn?: boolean;
@@ -22,7 +22,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, isChurn
                 <div className="text-text-secondary">{icon}</div>
             </div>
             <div>
-                <p className="text-3xl font-bold text-text-primary mt-2">{value}</p>
+                <p className="text-3xl font-bold text-text-primary mt-2 flex items-baseline">{value}</p>
                 {change !== undefined && (
                     <div className="flex items-center text-sm mt-1">
                         <span className={`flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${bgColor} ${changeColor}`}>

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
@@ -114,7 +115,18 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
             <div className="mb-6">
                 {loading || !data ? renderAnalyticsSkeleton() : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <StatCard title="Total Pubs" value={data.analytics.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
+                        <StatCard 
+                            title="Total Pubs" 
+                            value={
+                                <>
+                                    {data.analytics.totalPubs.toLocaleString()}
+                                    <span className="text-base font-normal text-text-secondary ml-2">
+                                        ({data.analytics.totalRatedPubs.toLocaleString()} rated)
+                                    </span>
+                                </>
+                            } 
+                            icon={<BuildingIcon />} 
+                        />
                         <StatCard title="Average Overall Rating" value={data.analytics.averageOverallRating.toFixed(2)} icon={<StarIcon />} />
                         <StatCard title="Total Ratings Submitted" value={data.analytics.totalRatingsSubmitted.toLocaleString()} icon={<HashIcon />} />
                     </div>

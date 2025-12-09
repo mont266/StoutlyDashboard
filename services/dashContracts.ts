@@ -54,6 +54,7 @@ export interface DashUsersData {
 export interface DashPubsData {
     analytics: {
         totalPubs: number;
+        totalRatedPubs: number;
         averageOverallRating: number;
         totalRatingsSubmitted: number;
         pintPriceByCountry: PintPriceByCountry[];
