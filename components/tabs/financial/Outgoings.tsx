@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing, ExpectedPayment } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon } from '../../icons/Icons';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon, DownloadIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -84,6 +84,82 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
         setInitialModalData(prefillData);
         setAddModalOpen(true);
     };
+
+    const handleExportCsv = useCallback(() => {
+        if (!data) return;
+
+        const { manualOutgoings, subscriptions } = data.tables;
+
+        const escapeCsvField = (field: any): string => {
+            const stringField = String(field ?? '');
+            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                return `"${stringField.replace(/"/g, '""')}"`;
+            }
+            return stringField;
+        };
+
+        const headers = [
+            'id', 'type', 'name', 'description', 'category', 'amount', 
+            'currency', 'amount_gbp', 'start_date', 'end_date', 'status', 
+            'billing_cycle', 'entity_slug'
+        ];
+
+        const combinedData = [
+            ...manualOutgoings.map(item => ({
+                id: item.id,
+                type: 'Manual',
+                name: item.name,
+                description: item.description || '',
+                category: item.category || '',
+                amount: item.amount,
+                currency: item.currency,
+                amount_gbp: item.amount_gbp,
+                start_date: item.purchase_date ? new Date(item.purchase_date).toISOString().split('T')[0] : '',
+                end_date: '',
+                status: 'Completed',
+                billing_cycle: '',
+                entity_slug: 'stoutly'
+            })),
+            ...subscriptions.map(item => ({
+                id: item.id,
+                type: 'Subscription',
+                name: item.name,
+                description: item.description || '',
+                category: item.category || '',
+                amount: item.amount,
+                currency: item.currency,
+                amount_gbp: item.amount_gbp,
+                start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : '',
+                end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : '',
+                status: item.status,
+                billing_cycle: item.billing_cycle,
+                entity_slug: 'stoutly'
+            }))
+        ];
+        
+        combinedData.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+
+        const csvRows = combinedData.map(row => 
+            headers.map(header => {
+                const value = row[header as keyof typeof row];
+                return escapeCsvField(value);
+            }).join(',')
+        );
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'stoutly_outgoings_export.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }, [data]);
 
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'N/A';
@@ -271,6 +347,14 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                             </button>
                         ))}
                     </div>
+                    <button
+                        onClick={handleExportCsv}
+                        disabled={!data || loading}
+                        className="flex items-center space-x-2 bg-surface text-text-secondary font-semibold px-4 py-2 rounded-lg border border-border hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+                    >
+                        <DownloadIcon />
+                        <span>Export CSV</span>
+                    </button>
                     <button 
                         onClick={handleOpenAddModal}
                         className="flex items-center space-x-2 bg-primary text-background font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"

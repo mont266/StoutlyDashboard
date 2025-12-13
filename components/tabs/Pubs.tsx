@@ -77,7 +77,7 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                         ) : (
                                             <span className="flex items-center justify-center">
                                                 <StarIcon />
-                                                <span className="ml-1">{pub.averageScore.toFixed(1)}</span>
+                                                <span className="ml-1">{(pub.averageScore / 10).toFixed(1)}</span>
                                             </span>
                                         )}
                                     </td>
