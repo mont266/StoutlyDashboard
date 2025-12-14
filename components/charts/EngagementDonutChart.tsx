@@ -10,16 +10,15 @@ const COLORS = ['#F59E0B', '#3B82F6', '#10B981', '#A78BFA'];
 
 const EngagementDonutChart: React.FC<EngagementDonutChartProps> = ({ data }) => {
     // Custom formatter for the tooltip to display data as a percentage.
-    const tooltipFormatter = (value: number, name: string, props: any) => {
-        // The 'percent' property is automatically calculated by Recharts for Pie components.
-        // It's a value between 0 and 1.
-        if (props && props.payload && typeof props.payload.percent === 'number') {
-            const percentValue = (props.payload.percent * 100).toFixed(2);
-            return [`${percentValue}%`, name];
+    const tooltipFormatter = (value: number, name: string) => {
+        // Manually calculate the total to ensure percentages are always correct.
+        const total = data.reduce((acc, entry) => acc + (entry.value || 0), 0);
+        if (total === 0) {
+            return ['0.00%', name];
         }
-
-        // Fallback for cases where percent might not be available, displays the raw value.
-        return [value, name];
+        const percent = (value / total) * 100;
+        // Return the formatted percentage string and the name for the tooltip.
+        return [`${percent.toFixed(2)}%`, name];
     };
 
     return (
@@ -45,7 +44,7 @@ const EngagementDonutChart: React.FC<EngagementDonutChartProps> = ({ data }) => 
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
-                        color: '#FDEED4',
+                        color: '#FFFFFF',
                     }}
                 />
                 <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: '14px', color: '#9CA3AF' }} />

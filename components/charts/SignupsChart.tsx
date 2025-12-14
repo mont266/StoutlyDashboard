@@ -17,9 +17,10 @@ const SignupsChart: React.FC<SignupsChartProps> = ({ data }) => {
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
-                        color: '#FDEED4',
+                        color: '#FFFFFF',
                     }}
                     cursor={{fill: 'rgba(59, 130, 246, 0.1)'}}
+                    formatter={(value: number) => [value, 'Signups']}
                 />
                 <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
             </BarChart>

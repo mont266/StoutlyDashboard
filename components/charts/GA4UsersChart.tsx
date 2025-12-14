@@ -33,7 +33,7 @@ const GA4UsersChart: React.FC<GA4UsersChartProps> = ({ usersData, sessionsData }
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
-                        color: '#FDEED4',
+                        color: '#FFFFFF',
                     }}
                     cursor={{fill: 'rgba(59, 130, 246, 0.1)'}}
                 />

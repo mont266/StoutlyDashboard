@@ -16,6 +16,16 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ revenueData, signup
         signups: signupsData[index]?.value || 0,
     }));
 
+    const tooltipFormatter = (value: number, name: string) => {
+        if (name === 'Revenue') {
+            return [`£${value.toFixed(2)}`, name];
+        }
+        if (name === 'Signups') {
+            return [value, name];
+        }
+        return [value, name];
+    };
+
     return (
         <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={combinedData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -33,9 +43,10 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ revenueData, signup
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
-                        color: '#FDEED4',
+                        color: '#FFFFFF',
                     }}
                     cursor={{fill: 'rgba(245, 158, 11, 0.1)'}}
+                    formatter={tooltipFormatter}
                 />
                 <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: '14px', color: '#9CA3AF', paddingTop: '20px' }} />
                 <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#F59E0B" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />

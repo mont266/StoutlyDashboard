@@ -23,9 +23,10 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
-                        color: '#FDEED4',
+                        color: '#FFFFFF',
                     }}
                     cursor={{fill: 'rgba(245, 158, 11, 0.1)'}}
+                    formatter={(value: number) => [`£${value.toFixed(2)}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="value" stroke="#F59E0B" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
             </AreaChart>
