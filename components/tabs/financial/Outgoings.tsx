@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { dash_getOutgoingsData, dash_addOutgoing, dash_endSubscription, dash_editOutgoing, dash_deleteOutgoing, EditOutgoingData } from '../../../services/supabaseService';
 import type { DashOutgoingsData, NewOutgoingData, Subscription, ManualOutgoing, ExpectedPayment } from '../../../services/dashContracts';
 import StatCard from '../../StatCard';
-import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon, DownloadIcon } from '../../icons/Icons';
+import EngagementDonutChart from '../../charts/EngagementDonutChart';
+import { DollarSignIcon, TrendingDownIcon, PlusIcon, StopCircleIcon, TrendingUpIcon, PencilIcon, TrashIcon, RefreshCwIcon, CalendarIcon, DownloadIcon, TableIcon, AnalyticsIcon } from '../../icons/Icons';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     'GBP': '£',
@@ -21,6 +22,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('all');
     const timeframes = { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year', 'all': 'All Time' };
+    const [activeView, setActiveView] = useState<'tables' | 'charts'>('tables');
 
     // Modal State
     const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -160,146 +162,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
             document.body.removeChild(link);
         }
     }, [data]);
-
-    const formatDate = (dateString: string | null | undefined) => {
-        if (!dateString) return 'N/A';
-        // Use UTC to prevent off-by-one day errors from timezone conversion
-        const date = new Date(dateString);
-        const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-        return utcDate.toLocaleDateString('en-GB', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC'
-        });
-    };
-
-    const formatMultiCurrency = (amount: number, currency: string, gbpAmount: number) => {
-        const symbol = CURRENCY_SYMBOLS[currency] || currency;
-        const originalAmountFormatted = `${symbol}${amount.toFixed(2)}`;
-
-        if (currency === 'GBP') {
-            return <span className="text-warning-red font-mono">- £{gbpAmount.toFixed(2)}</span>;
-        }
-        
-        return (
-            <div className="flex flex-col items-end">
-                <span className="text-warning-red font-mono">- {originalAmountFormatted}</span>
-                <span className="text-xs text-text-secondary font-mono">(≈ £{gbpAmount.toFixed(2)})</span>
-            </div>
-        );
-    };
-
-    const getStatusBadgeClasses = (status: Subscription['status']) => {
-        switch (status) {
-            case 'Active':
-                return 'bg-value-green/20 text-value-green';
-            case 'Upcoming':
-                return 'bg-secondary/20 text-secondary';
-            case 'Inactive':
-            default:
-                return 'bg-gray-500/20 text-gray-400';
-        }
-    };
-
-    const expectedPayments = useMemo(() => {
-        if (!data || !data.tables) return [];
-
-        const today = new Date();
-        const currentMonth = today.getUTCMonth();
-        const currentYear = today.getUTCFullYear();
-
-        // 1. Process manual outgoings from the main list for the current month
-        const manualPayments: ExpectedPayment[] = (data.tables.manualOutgoings || [])
-            .filter(mo => {
-                const purchaseDate = new Date(mo.purchase_date);
-                return purchaseDate.getUTCMonth() === currentMonth && purchaseDate.getUTCFullYear() === currentYear;
-            })
-            .map(mo => ({
-                id: mo.id,
-                name: mo.name,
-                type: 'Manual',
-                amount_gbp: mo.amount_gbp,
-                currency: mo.currency,
-                original_amount: mo.amount,
-                due_date: mo.purchase_date,
-            }));
-
-        // 2. Calculate subscription payments for the current month
-        const calculatedSubscriptionPayments: ExpectedPayment[] = [];
-        const activeSubscriptions = (data.tables.subscriptions || []).filter(sub => sub.status === 'Active');
-
-        for (const sub of activeSubscriptions) {
-            const startDate = new Date(sub.start_date);
-            const endDate = sub.end_date ? new Date(sub.end_date) : null;
-            const paymentDay = startDate.getUTCDate();
-            
-            let paymentDateForCurrentMonth: Date | null = null;
-
-            if (sub.billing_cycle === 'monthly') {
-                const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
-                const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
-                paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
-            } else if (sub.billing_cycle === 'yearly') {
-                if (startDate.getUTCMonth() === currentMonth) {
-                     const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
-                     const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
-                     paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
-                }
-            }
-            
-            if (paymentDateForCurrentMonth) {
-                // Check if this payment is valid (i.e., it's not before the sub started or after it ended)
-                if (paymentDateForCurrentMonth >= startDate && (!endDate || paymentDateForCurrentMonth < endDate)) {
-                    calculatedSubscriptionPayments.push({
-                        id: sub.id,
-                        name: sub.name,
-                        type: 'Subscription',
-                        amount_gbp: sub.amount_gbp,
-                        currency: sub.currency,
-                        original_amount: sub.amount,
-                        due_date: paymentDateForCurrentMonth.toISOString().split('T')[0],
-                    });
-                }
-            }
-        }
-
-        const allPaymentsForMonth = [...manualPayments, ...calculatedSubscriptionPayments];
-
-        // Filter to only include payments from today onwards
-        const todayUTCStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-        const upcomingPayments = allPaymentsForMonth.filter(payment => {
-            // new Date('YYYY-MM-DD') creates a date at midnight UTC, which is what we want for comparison
-            const dueDate = new Date(payment.due_date);
-            return dueDate >= todayUTCStart;
-        });
-        
-        // Sort the final list by date
-        upcomingPayments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
-        
-        return upcomingPayments;
-    }, [data]);
     
-    const SkeletonTable: React.FC<{rows?: number}> = ({rows = 3}) => (
-        <div className="bg-surface rounded-xl shadow-lg">
-            <div className="p-4 border-b border-border">
-                <div className="h-6 bg-border rounded w-1/3"></div>
-            </div>
-            <div className="p-6">
-                <div className="space-y-4">
-                    {[...Array(rows)].map((_, i) => (
-                        <div key={i} className="flex justify-between items-center">
-                            <div className="h-4 bg-border rounded w-1/4"></div>
-                            <div className="h-4 bg-border rounded hidden md:block w-1/4"></div>
-                            <div className="h-4 bg-border rounded hidden lg:block w-1/4"></div>
-                            <div className="h-4 bg-border rounded w-1/6"></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-
     const renderLoading = () => (
         <div className="animate-pulse space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -307,17 +170,18 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 <div className="bg-surface rounded-xl h-28"></div>
                 <div className="bg-surface rounded-xl h-28"></div>
             </div>
-            <SkeletonTable rows={2} />
-            <div className="space-y-8">
-                <SkeletonTable />
-                <SkeletonTable />
-            </div>
+            <div className="bg-surface rounded-xl shadow-lg h-96"></div>
         </div>
     );
 
     if (loading) return <section>{renderLoading()}</section>;
     if (error) return <div className="text-warning-red bg-warning-red/10 border border-warning-red/30 p-4 rounded-lg text-center">{error}</div>;
     if (!data) return <p>No outgoings data available.</p>;
+
+    const subTabs = [
+        { id: 'tables', label: 'Tables', icon: <TableIcon /> },
+        { id: 'charts', label: 'Charts', icon: <AnalyticsIcon /> }
+    ];
 
     return (
         <section>
@@ -386,7 +250,230 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                 />
             </div>
 
-            <div className="bg-surface rounded-xl shadow-lg mt-8">
+            <nav className="my-6">
+                <div className="flex space-x-1 border-b border-border pb-px">
+                    {subTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveView(tab.id as 'tables' | 'charts')}
+                            className={`flex items-center space-x-2 px-3 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm font-medium border-b-2 transition-colors duration-200 shrink-0 ${
+                                activeView === tab.id
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-text-secondary hover:text-text-primary'
+                            }`}
+                        >
+                            {tab.icon}
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
+
+            {activeView === 'tables' && (
+                <TablesView 
+                    data={data}
+                    onOpenEndModal={handleOpenEndModal}
+                    onRenewSubscription={handleRenewSubscription}
+                    onOpenEditModal={handleOpenEditModal}
+                />
+            )}
+            {activeView === 'charts' && <ChartsView data={data} />}
+            
+
+            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleModalSuccess} initialData={initialModalData} />}
+            {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleModalSuccess} />}
+            {editingOutgoing && <EditOutgoingModal outgoing={editingOutgoing} onClose={() => setEditingOutgoing(null)} onSave={handleModalSuccess} />}
+
+        </section>
+    );
+};
+
+// --- VIEW COMPONENTS ---
+
+const ChartsView: React.FC<{ data: DashOutgoingsData }> = ({ data }) => {
+    const categoryData = useMemo(() => {
+        if (!data?.tables) return [];
+
+        const spendByCategory = new Map<string, number>();
+
+        data.tables.manualOutgoings.forEach(item => {
+            const category = item.category || 'Uncategorized';
+            spendByCategory.set(category, (spendByCategory.get(category) || 0) + item.amount_gbp);
+        });
+
+        data.tables.subscriptions.forEach(item => {
+            const category = item.category || 'Uncategorized';
+            spendByCategory.set(category, (spendByCategory.get(category) || 0) + item.amount_gbp);
+        });
+        
+        return Array.from(spendByCategory.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+    }, [data]);
+
+    const typeData = useMemo(() => {
+        if (!data?.tables) return [];
+
+        const totalManualSpend = data.tables.manualOutgoings.reduce((sum, item) => sum + item.amount_gbp, 0);
+        const totalSubscriptionSpend = data.tables.subscriptions.reduce((sum, item) => sum + item.amount_gbp, 0);
+
+        return [
+            { name: 'Manual Purchases', value: totalManualSpend },
+            { name: 'Subscriptions', value: totalSubscriptionSpend },
+        ].filter(item => item.value > 0);
+    }, [data]);
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-surface p-6 rounded-xl shadow-lg">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Spend by Category</h3>
+                <div className="h-80">
+                    {categoryData.length > 0 ? (
+                        <EngagementDonutChart data={categoryData} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-text-secondary">No category data to display.</div>
+                    )}
+                </div>
+            </div>
+            <div className="bg-surface p-6 rounded-xl shadow-lg">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Spend by Type</h3>
+                 <div className="h-80">
+                    {typeData.length > 0 ? (
+                        <EngagementDonutChart data={typeData} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-text-secondary">No spending data to display.</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface TablesViewProps {
+    data: DashOutgoingsData;
+    onOpenEndModal: (subscription: Subscription) => void;
+    onRenewSubscription: (subscription: Subscription) => void;
+    onOpenEditModal: (outgoing: ManualOutgoing) => void;
+}
+
+const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSubscription, onOpenEditModal }) => {
+    
+    const formatDate = (dateString: string | null | undefined) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        return utcDate.toLocaleDateString('en-GB', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'UTC'
+        });
+    };
+
+    const formatMultiCurrency = (amount: number, currency: string, gbpAmount: number) => {
+        const symbol = CURRENCY_SYMBOLS[currency] || currency;
+        const originalAmountFormatted = `${symbol}${amount.toFixed(2)}`;
+
+        if (currency === 'GBP') {
+            return <span className="text-warning-red font-mono">- £{gbpAmount.toFixed(2)}</span>;
+        }
+        
+        return (
+            <div className="flex flex-col items-end">
+                <span className="text-warning-red font-mono">- {originalAmountFormatted}</span>
+                <span className="text-xs text-text-secondary font-mono">(≈ £{gbpAmount.toFixed(2)})</span>
+            </div>
+        );
+    };
+
+    const getStatusBadgeClasses = (status: Subscription['status']) => {
+        switch (status) {
+            case 'Active':
+                return 'bg-value-green/20 text-value-green';
+            case 'Upcoming':
+                return 'bg-secondary/20 text-secondary';
+            case 'Inactive':
+            default:
+                return 'bg-gray-500/20 text-gray-400';
+        }
+    };
+
+    const expectedPayments = useMemo(() => {
+        if (!data || !data.tables) return [];
+
+        const today = new Date();
+        const currentMonth = today.getUTCMonth();
+        const currentYear = today.getUTCFullYear();
+
+        const manualPayments: ExpectedPayment[] = (data.tables.manualOutgoings || [])
+            .filter(mo => {
+                const purchaseDate = new Date(mo.purchase_date);
+                return purchaseDate.getUTCMonth() === currentMonth && purchaseDate.getUTCFullYear() === currentYear;
+            })
+            .map(mo => ({
+                id: mo.id,
+                name: mo.name,
+                type: 'Manual',
+                amount_gbp: mo.amount_gbp,
+                currency: mo.currency,
+                original_amount: mo.amount,
+                due_date: mo.purchase_date,
+            }));
+
+        const calculatedSubscriptionPayments: ExpectedPayment[] = [];
+        const activeSubscriptions = (data.tables.subscriptions || []).filter(sub => sub.status === 'Active');
+
+        for (const sub of activeSubscriptions) {
+            const startDate = new Date(sub.start_date);
+            const endDate = sub.end_date ? new Date(sub.end_date) : null;
+            const paymentDay = startDate.getUTCDate();
+            
+            let paymentDateForCurrentMonth: Date | null = null;
+
+            if (sub.billing_cycle === 'monthly') {
+                const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+                const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
+                paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
+            } else if (sub.billing_cycle === 'yearly') {
+                if (startDate.getUTCMonth() === currentMonth) {
+                     const lastDayOfCurrentMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+                     const dayToUse = Math.min(paymentDay, lastDayOfCurrentMonth);
+                     paymentDateForCurrentMonth = new Date(Date.UTC(currentYear, currentMonth, dayToUse));
+                }
+            }
+            
+            if (paymentDateForCurrentMonth) {
+                if (paymentDateForCurrentMonth >= startDate && (!endDate || paymentDateForCurrentMonth < endDate)) {
+                    calculatedSubscriptionPayments.push({
+                        id: sub.id,
+                        name: sub.name,
+                        type: 'Subscription',
+                        amount_gbp: sub.amount_gbp,
+                        currency: sub.currency,
+                        original_amount: sub.amount,
+                        due_date: paymentDateForCurrentMonth.toISOString().split('T')[0],
+                    });
+                }
+            }
+        }
+
+        const allPaymentsForMonth = [...manualPayments, ...calculatedSubscriptionPayments];
+
+        const todayUTCStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        const upcomingPayments = allPaymentsForMonth.filter(payment => {
+            const dueDate = new Date(payment.due_date);
+            return dueDate >= todayUTCStart;
+        });
+        
+        upcomingPayments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+        
+        return upcomingPayments;
+    }, [data]);
+
+    return (
+        <div>
+            <div className="bg-surface rounded-xl shadow-lg">
                 <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border flex items-center space-x-2">
                     <CalendarIcon />
                     <span>Expected Payments This Month</span>
@@ -430,7 +517,6 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
             </div>
 
             <div className="space-y-8 mt-8">
-                {/* Subscriptions Table */}
                 <div className="bg-surface rounded-xl shadow-lg">
                     <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Subscriptions</h3>
                     <div className="overflow-x-auto">
@@ -468,12 +554,12 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {sub.status === 'Active' && (
-                                                <button onClick={() => handleOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
+                                                <button onClick={() => onOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
                                                     <StopCircleIcon />
                                                 </button>
                                             )}
                                             {sub.status === 'Inactive' && (
-                                                <button onClick={() => handleRenewSubscription(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Renew Subscription">
+                                                <button onClick={() => onRenewSubscription(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Renew Subscription">
                                                     <PlusIcon />
                                                 </button>
                                             )}
@@ -485,7 +571,6 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                     </div>
                 </div>
 
-                {/* Manual Outgoings Table */}
                 <div className="bg-surface rounded-xl shadow-lg">
                     <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Manual Outgoings</h3>
                     <div className="overflow-x-auto">
@@ -509,7 +594,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                                              {formatMultiCurrency(item.amount, item.currency, item.amount_gbp)}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <button onClick={() => handleOpenEditModal(item)} className="text-text-secondary hover:text-primary transition-colors" title="Edit Item">
+                                            <button onClick={() => onOpenEditModal(item)} className="text-text-secondary hover:text-primary transition-colors" title="Edit Item">
                                                 <PencilIcon />
                                             </button>
                                         </td>
@@ -520,14 +605,10 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                     </div>
                 </div>
             </div>
-
-            {isAddModalOpen && <AddOutgoingModal onClose={() => setAddModalOpen(false)} onSave={handleModalSuccess} initialData={initialModalData} />}
-            {isEndModalOpen && selectedSubscription && <EndSubscriptionModal subscription={selectedSubscription} onClose={() => setEndModalOpen(false)} onSave={handleModalSuccess} />}
-            {editingOutgoing && <EditOutgoingModal outgoing={editingOutgoing} onClose={() => setEditingOutgoing(null)} onSave={handleModalSuccess} />}
-
-        </section>
+        </div>
     );
 };
+
 
 // --- MODAL COMPONENTS ---
 

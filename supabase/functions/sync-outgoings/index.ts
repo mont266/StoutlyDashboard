@@ -8,16 +8,12 @@ declare const Deno: any;
 console.log('Initializing sync-outgoings function...');
 
 // --- Environment Variables ---
-// Ensure these are set in the Edge Function's settings in the Supabase Dashboard
 const montfordUrl = Deno.env.get('MONTFORD_URL')
 const montfordKey = Deno.env.get('MONTFORD_SERVICE_ROLE_KEY')
-
-// You need to find the UUID for Stoutly in your Montford DB and hardcode it here
 const STOUTLY_ENTITY_ID = 'b442546e-d162-497b-b3a5-2ecbe9144e04'
 
 if (!montfordUrl || !montfordKey) {
   console.error("Missing required environment variables: MONTFORD_URL or MONTFORD_SERVICE_ROLE_KEY");
-  // Throw an error to ensure the function fails loudly if not configured
   throw new Error("Function is not configured correctly. Missing Montford DB credentials.");
 }
 
@@ -28,42 +24,53 @@ serve(async (req) => {
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
+    return new Response('ok', { headers: { 'Access-control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
   }
 
   try {
     const payload = await req.json()
     console.log('Received payload:', JSON.stringify(payload, null, 2));
 
-    // We only care about INSERT (new expenses) or UPDATE
-    // payload.record contains the new data from Stoutly
-    const record = payload.record;
     const eventType = payload.type;
 
     if (eventType === 'INSERT' || eventType === 'UPDATE') {
-      if (!record) {
-        console.error("Payload is missing 'record' property.");
-        return new Response(JSON.stringify({ error: "Payload missing 'record' property." }), { status: 400 });
+      const record = payload.record;
+      if (!record || !record.id) {
+        console.error("Payload is missing 'record' or 'record.id' for INSERT/UPDATE.");
+        return new Response(JSON.stringify({ error: "Payload missing 'record' or 'record.id'." }), { status: 400 });
       }
 
-      // Map Stoutly fields to Montford fields
+      // Map `billing_cycle` to align with MontfordDigital's expected values.
+      let mappedBillingCycle: string | null = null;
+      if (record.type === 'subscription' && record.billing_cycle) {
+          if (record.billing_cycle.toLowerCase() === 'yearly') {
+              mappedBillingCycle = 'annually';
+          } else {
+              mappedBillingCycle = record.billing_cycle.toLowerCase();
+          }
+      }
+
+      // Map Stoutly fields, now including the stoutly_outgoing_id for reliable sync
       const expenseData = {
-        description: `${record.name} - ${record.description || ''}`,
+        stoutly_outgoing_id: record.id, // The new, stable identifier
+        name: record.name,
+        description: record.description || null,
         amount: record.amount,
-        category: record.category,
-        expense_date: record.start_date, // Mapping start_date to expense_date
-        expense_type: record.type === 'subscription' ? 'subscription' : 'one-time',
-        billing_cycle: record.billing_cycle === 'monthly' ? 'monthly' : 'annually', // Ensure enums match
-        is_active: record.end_date === null, // If no end date, it's active
-        entity_id: STOUTLY_ENTITY_ID
-      }
+        type: record.type,
+        start_date: record.start_date,
+        end_date: record.end_date || null, // This will now update correctly
+        category: record.category || null,
+        currency: record.currency,
+        billing_cycle: mappedBillingCycle,
+        entity_id: STOUTLY_ENTITY_ID,
+      };
       
-      console.log('Attempting to upsert the following data into Montford:', JSON.stringify(expenseData, null, 2));
+      console.log('Attempting to upsert using stoutly_outgoing_id:', JSON.stringify(expenseData, null, 2));
 
-      // Insert into Montford
+      // Upsert using the NEW, reliable onConflict key. This fixes the update issue.
       const { data, error } = await montfordClient
         .from('expenses')
-        .upsert(expenseData, { onConflict: 'description, expense_date, amount' }) // simple dedup strategy
+        .upsert(expenseData, { onConflict: 'stoutly_outgoing_id' });
       
       if (error) {
         console.error('Supabase upsert error:', error);
@@ -71,6 +78,30 @@ serve(async (req) => {
       }
 
       console.log('Successfully upserted data to Montford.', data);
+
+    } else if (eventType === 'DELETE') {
+      const old_record = payload.old_record;
+       if (!old_record || !old_record.id) {
+        console.error("Payload is missing 'old_record' or 'old_record.id' for DELETE.");
+        return new Response(JSON.stringify({ error: "Payload missing 'old_record' or 'old_record.id'." }), { status: 400 });
+      }
+
+      const { id } = old_record;
+      
+      console.log(`Attempting to delete record from Montford with stoutly_outgoing_id: ${id}`);
+
+      // Delete using the NEW, reliable ID. This fixes the deletion issue.
+      const { error } = await montfordClient
+        .from('expenses')
+        .delete()
+        .eq('stoutly_outgoing_id', id);
+
+      if (error) {
+        console.error('Supabase delete error:', error);
+        return new Response(JSON.stringify({ error: 'Failed to delete data from Montford.', details: error }), { status: 500 });
+      }
+      
+      console.log('Successfully deleted record from Montford.');
 
     } else {
       console.log(`Ignoring event type: ${eventType}`);
