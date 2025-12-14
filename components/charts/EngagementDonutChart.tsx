@@ -9,6 +9,19 @@ interface EngagementDonutChartProps {
 const COLORS = ['#F59E0B', '#3B82F6', '#10B981', '#A78BFA'];
 
 const EngagementDonutChart: React.FC<EngagementDonutChartProps> = ({ data }) => {
+    // Custom formatter for the tooltip to display data as a percentage.
+    const tooltipFormatter = (value: number, name: string, props: any) => {
+        // The 'percent' property is automatically calculated by Recharts for Pie components.
+        // It's a value between 0 and 1.
+        if (props && props.payload && typeof props.payload.percent === 'number') {
+            const percentValue = (props.payload.percent * 100).toFixed(2);
+            return [`${percentValue}%`, name];
+        }
+
+        // Fallback for cases where percent might not be available, displays the raw value.
+        return [value, name];
+    };
+
     return (
         <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -28,6 +41,7 @@ const EngagementDonutChart: React.FC<EngagementDonutChartProps> = ({ data }) => 
                     ))}
                 </Pie>
                 <Tooltip
+                    formatter={tooltipFormatter}
                     contentStyle={{
                         backgroundColor: '#1F2937',
                         borderColor: '#374151',
