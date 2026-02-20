@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import { StoutlyLogo } from './components/icons/Icons';
 
+// This is the root component of the application.
 const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [isAuthorized, setIsAuthorized] = useState<boolean>(false);

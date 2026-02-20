@@ -29,7 +29,8 @@ export interface HomeKpis {
 export interface PintPriceByCountry {
     country: string;
     price: number;
-    ratingsCount: number;
+    pubsCount: number;
+    priceRatingsCount: number;
     countryCode: string;
 }
 

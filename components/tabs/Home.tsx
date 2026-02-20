@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
+import CountriesRatedModal from '../CountriesRatedModal';
 import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, formatCurrency } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
@@ -24,6 +25,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('30d');
+    const [isCountriesModalOpen, setCountriesModalOpen] = useState(false);
     
     const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
     const [financialLoading, setFinancialLoading] = useState<boolean>(true);
@@ -121,6 +123,11 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
 
     return (
         <section>
+            <CountriesRatedModal 
+                isOpen={isCountriesModalOpen} 
+                onClose={() => setCountriesModalOpen(false)} 
+                data={data?.tables.avgPintPriceByCountry ?? []} 
+            />
              <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <div className="flex items-center space-x-4">
                     <h2 className="text-2xl font-bold">Dashboard</h2>
@@ -158,7 +165,9 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                         <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<ActivityIcon />} />
                         <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
                         <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
-                        <StatCard title="Countries Rated" value={(data.tables.avgPintPriceByCountry?.length ?? 0).toLocaleString()} icon={<GlobeIcon />} />
+                        <div onClick={() => setCountriesModalOpen(true)} className="cursor-pointer">
+                            <StatCard title="Countries Rated" value={(data.tables.avgPintPriceByCountry?.length ?? 0).toLocaleString()} icon={<GlobeIcon />} />
+                        </div>
                          {financialLoading ? (
                             <div className="bg-surface p-5 rounded-xl shadow-lg flex flex-col justify-center animate-pulse">
                                 <div className="h-4 bg-border rounded w-1/2"></div>

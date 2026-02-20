@@ -91,6 +91,10 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
         </div>
     );
 
+    const totalRatings = !loading && data?.analytics.pintPriceByCountry
+        ? data.analytics.pintPriceByCountry.reduce((acc, item) => acc + item.priceRatingsCount, 0)
+        : 0;
+
     const renderAnalyticsSkeleton = () => (
          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
             <div className="h-32 bg-surface rounded-xl"></div>
@@ -148,7 +152,8 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                          <thead className="text-xs text-text-secondary uppercase bg-background">
                             <tr>
                                 <th scope="col" className="px-6 py-3">Country</th>
-                                <th scope="col" className="px-6 py-3 text-center">Ratings</th>
+                                <th scope="col" className="px-6 py-3 text-center">Pubs</th>
+                                <th scope="col" className="px-6 py-3 text-center">Price Ratings</th>
                                 <th scope="col" className="px-6 py-3 text-right">Avg. Price</th>
                             </tr>
                         </thead>
@@ -168,7 +173,10 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                             {item.country}
                                         </td>
                                         <td className="px-6 py-3 text-text-primary text-center">
-                                            {item.ratingsCount.toLocaleString()}
+                                            {item.pubsCount.toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-3 text-text-primary text-center">
+                                            {item.priceRatingsCount.toLocaleString()}
                                         </td>
                                         <td className="px-6 py-3 text-text-primary text-right font-mono">
                                             {formatCurrency(item.price, item.countryCode)}
@@ -177,6 +185,16 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                 ))
                             )}
                         </tbody>
+                        {!loading && totalRatings > 0 && (
+                           <tfoot className="bg-background">
+                               <tr className="font-semibold text-text-primary">
+                                   <td scope="row" className="px-6 py-3 text-base">Total</td>
+                                   <td></td>
+                                   <td className="px-6 py-3 text-center">{totalRatings.toLocaleString()}</td>
+                                   <td className="px-6 py-3 text-right"></td>
+                               </tr>
+                           </tfoot>
+                       )}
                     </table>
                 </div>
             </div>
