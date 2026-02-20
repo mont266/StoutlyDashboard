@@ -124,7 +124,7 @@ const TopDonatorCard: React.FC<{ donator: TopDonator }> = ({ donator }) => {
             {isNA || !donator.id ? (
                 <p className={`font-bold text-xl ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</p>
             ) : (
-                <a href={`https://stoutly.co.uk/?user_id=${donator.id}`} target="_blank" rel="noopener noreferrer" className={`font-bold text-xl hover:underline hover:text-primary transition-colors ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</a>
+                <a href={`https://app.stoutly.co.uk/?user_id=${donator.id}`} target="_blank" rel="noopener noreferrer" className={`font-bold text-xl hover:underline hover:text-primary transition-colors ${isNA ? 'text-text-secondary' : 'text-text-primary'}`}>{donator.username}</a>
             )}
             <p className="text-lg text-value-green font-semibold">£{donator.totalAmount.toLocaleString()}</p>
         </div>
@@ -160,7 +160,7 @@ const RecentDonationsTable: React.FC<{ donations: Donation[] }> = ({ donations }
                                     {isAnonymous || !donation.user.id ? (
                                         <span>{donation.user.username}</span>
                                     ) : (
-                                        <a href={`https://stoutly.co.uk/?user_id=${donation.user.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">{donation.user.username}</a>
+                                        <a href={`https://app.stoutly.co.uk/?user_id=${donation.user.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">{donation.user.username}</a>
                                     )}
                                 </div>
                             </td>

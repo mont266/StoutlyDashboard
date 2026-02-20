@@ -334,6 +334,77 @@ export const TableIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M4 9h18"></path><path d="M10 9v12"></path></svg>
 );
 
+export const QuoteIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v6c0 7 4 8 8 8Z"/><path d="M21 21c-3 0-7-1-7-8V5c0-1.25.75-2 2-2h4c1.25 0 2 .75 2 2v6c0 7-4 8-8 8Z"/></svg>
+);
+
 export const XIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+);
+
+export const EuroIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M4 10h12"/>
+        <path d="M4 14h9"/>
+        <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+    </svg>
+);
+
+export const PoundSterlingIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M18 7c0-5.333-8-5.333-8 0"/>
+        <path d="M10 7v14"/>
+        <path d="M6 21h12"/>
+        <path d="M6 13h10"/>
+    </svg>
+);
+
+export const JapaneseYenIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M12 9.5V21m0-11.5L6 3m6 6.5L18 3"/>
+        <path d="M6 15h12"/>
+        <path d="M6 11h12"/>
+    </svg>
+);
+
+export const IndianRupeeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M6 3h12"/>
+        <path d="M6 8h12"/>
+        <path d="m6 13 8.5 8"/>
+        <path d="M6 13h3"/>
+        <path d="M9 13c6.667 0 6.667-10 0-10"/>
+    </svg>
+);
+
+export const TurkishLiraIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M15 6.5h-5v15"/>
+        <path d="M10 11.5h5"/>
+        <path d="M10 6.5c-4.5 0-4.5 9 0 9"/>
+    </svg>
+);
+
+export const ShekelIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M12 18v-6a4 4 0 0 1 4-4h4"/>
+        <path d="M16 18v-6a4 4 0 0 0-4-4h-4"/>
+        <path d="M8 6v12"/>
+    </svg>
+);
+
+export const RussianRubleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M6 11h8a4 4 0 0 0 0-8H9v18"/>
+        <path d="M6 15h8"/>
+    </svg>
+);
+
+export const CoinsIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <circle cx="8" cy="8" r="6"/>
+        <path d="M18.09 10.37A6 6 0 1 1 10.34 18"/>
+        <path d="M7 6h1v4"/>
+        <path d="m16.71 13.88.7.71-2.82 2.82"/>
+    </svg>
 );

@@ -73,6 +73,7 @@ export interface DashContentInitialData {
     ratings: Rating[];
     comments: Comment[];
     images: UploadedImage[];
+    totalImages: number;
 }
 
 // --- Financial Summary Contract (NEW) ---

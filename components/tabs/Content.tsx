@@ -3,9 +3,9 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl } from '../../services/supabaseService';
+import { dash_getContentInitialData, getRatingsData, getCommentsData, getImagesData, getAvatarUrl, formatCurrency, CURRENCY_MAP } from '../../services/supabaseService';
 import type { Rating, Comment, UploadedImage } from '../../types';
-import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon, RefreshCwIcon } from '../icons/Icons';
+import { StarIcon, MessageSquareIcon, CameraIcon, BeerIcon, DollarSignIcon, RefreshCwIcon, DownloadIcon, QuoteIcon, EuroIcon, PoundSterlingIcon, JapaneseYenIcon, IndianRupeeIcon, TurkishLiraIcon, ShekelIcon, RussianRubleIcon, CoinsIcon } from '../icons/Icons';
 
 type SubTab = 'ratings' | 'comments' | 'images';
 
@@ -38,29 +38,34 @@ const Content: React.FC<ContentProps> = ({ refreshKey }) => {
     const [imagesPage, setImagesPage] = useState(1);
     const [hasMoreImages, setHasMoreImages] = useState(true);
     const [loadingImages, setLoadingImages] = useState(false);
+    const [totalImages, setTotalImages] = useState(0);
+    const [imagesPerPage, setImagesPerPage] = useState(9);
     
     const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
-
-    const IMAGES_PER_PAGE = 9;
     const ITEMS_PER_PAGE = 15;
 
     const fetchInitialData = useCallback(async () => {
         setInitialLoading(true);
         try {
             // Use the new consolidated function for an efficient initial load
-            const initialData = await dash_getContentInitialData();
+            const [initialRatings, initialComments, initialImagesData] = await Promise.all([
+                getRatingsData(1, ITEMS_PER_PAGE),
+                getCommentsData(1, ITEMS_PER_PAGE),
+                dash_getContentInitialData() // Still use this for images count and initial images
+            ]);
 
-            setRatings(initialData.ratings);
-            setHasMoreRatings(initialData.ratings.length === ITEMS_PER_PAGE);
+            setRatings(initialRatings);
+            setHasMoreRatings(initialRatings.length === ITEMS_PER_PAGE);
             setRatingsPage(2);
 
-            setComments(initialData.comments);
-            setHasMoreComments(initialData.comments.length === ITEMS_PER_PAGE);
+            setComments(initialComments);
+            setHasMoreComments(initialComments.length === ITEMS_PER_PAGE);
             setCommentsPage(2);
 
-            setImages(initialData.images);
-            setHasMoreImages(initialData.images.length === IMAGES_PER_PAGE);
-            setImagesPage(1); // Keep current page at 1, next fetch will be page 2
+            setImages(initialImagesData.images);
+            setTotalImages(initialImagesData.totalImages);
+            setHasMoreImages(initialImagesData.images.length === imagesPerPage);
+            setImagesPage(1);
         } catch (error) {
             console.error("Failed to fetch initial content data", error);
             setHasMoreRatings(false);
@@ -74,6 +79,12 @@ const Content: React.FC<ContentProps> = ({ refreshKey }) => {
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData, refreshKey]);
+
+    useEffect(() => {
+        if (!initialLoading) { // Avoid running on initial mount
+            fetchImageData(1);
+        }
+    }, [imagesPerPage]);
 
     const loadRatings = async () => {
         if (loadingRatings || !hasMoreRatings) return;
@@ -113,10 +124,10 @@ const Content: React.FC<ContentProps> = ({ refreshKey }) => {
         if (page < 1) return;
         setLoadingImages(true);
         try {
-            const newImages = await getImagesData(page, IMAGES_PER_PAGE);
+            const newImages = await getImagesData(page, imagesPerPage);
             setImages(newImages);
             setImagesPage(page);
-            setHasMoreImages(newImages.length === IMAGES_PER_PAGE);
+            setHasMoreImages(newImages.length === imagesPerPage);
         } catch (error) {
             console.error(`Failed to fetch images for page ${page}`, error);
         } finally {
@@ -137,7 +148,7 @@ const Content: React.FC<ContentProps> = ({ refreshKey }) => {
             case 'comments':
                 return <CommentsFeed comments={comments} onLoadMore={loadComments} hasMore={hasMoreComments} isLoadingMore={loadingComments} initialLoading={initialLoading} />;
             case 'images':
-                return <ImageGallery images={images} page={imagesPage} setPage={fetchImageData} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} initialLoading={initialLoading} />;
+                return <ImageGallery images={images} page={imagesPage} setPage={fetchImageData} hasMore={hasMoreImages} isLoading={loadingImages} onImageClick={setSelectedImage} initialLoading={initialLoading} totalImages={totalImages} imagesPerPage={imagesPerPage} setImagesPerPage={setImagesPerPage} />;
             default:
                 return null;
         }
@@ -195,6 +206,30 @@ const RatingDetail: React.FC<{ score?: number, icon: React.ReactNode, name: stri
     );
 };
 
+const getCurrencyIcon = (countryCode?: string) => {
+    if (!countryCode) return <DollarSignIcon />;
+    
+    const currency = CURRENCY_MAP[countryCode.toUpperCase()];
+    if (!currency) return <DollarSignIcon />;
+
+    switch (currency.code) {
+        case 'EUR': return <EuroIcon />;
+        case 'GBP': return <PoundSterlingIcon />;
+        case 'USD': 
+        case 'AUD': 
+        case 'CAD': 
+        case 'NZD': 
+        case 'MXN': 
+            return <DollarSignIcon />;
+        case 'JPY': return <JapaneseYenIcon />;
+        case 'INR': return <IndianRupeeIcon />;
+        case 'TRY': return <TurkishLiraIcon />;
+        case 'ILS': return <ShekelIcon />;
+        case 'RUB': return <RussianRubleIcon />;
+        default: return <CoinsIcon />;
+    }
+};
+
 const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore: boolean, isLoadingMore: boolean, initialLoading: boolean }> = ({ ratings, onLoadMore, hasMore, isLoadingMore, initialLoading }) => {
     if (initialLoading) {
         return (
@@ -228,8 +263,8 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
             {ratings.map(rating => {
                 const avatarUrl = getAvatarUrl(rating.user.avatarId);
                 return (
-                    <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30">
-                        <div className="flex space-x-4">
+                    <div key={rating.id} className="bg-background p-4 rounded-lg border border-border transition-colors duration-200 hover:border-primary/30 flex flex-col">
+                        <div className="flex space-x-4 flex-grow">
                             <img 
                                 src={avatarUrl || PLACEHOLDER_AVATAR} 
                                 alt={rating.user.name} 
@@ -239,29 +274,47 @@ const RatingsFeed: React.FC<{ ratings: Rating[], onLoadMore: () => void, hasMore
                             <div className="flex-grow">
                                 <p className="text-sm text-text-secondary">
                                     {rating.user.id ? (
-                                        <a href={`https://stoutly.co.uk/?user_id=${rating.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{rating.user.name}</a>
+                                        <a href={`https://app.stoutly.co.uk/?user_id=${rating.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{rating.user.name}</a>
                                     ) : (
                                         <span className="font-semibold text-text-primary">{rating.user.name}</span>
                                     )}
                                     {' '}rated{' '}
                                     {rating.pubId ? (
-                                        <a href={`https://stoutly.co.uk/?pub_id=${rating.pubId}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline transition-colors">{rating.pubName}</a>
+                                        <>
+                                            <a href={`https://app.stoutly.co.uk/?pub_id=${rating.pubId}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline transition-colors">{rating.pubName}</a>
+                                            {rating.pubCountryName && <span className="text-xs text-text-secondary ml-2">({rating.pubCountryName}, {rating.pubCountryCode})</span>}
+                                        </>
                                     ) : (
-                                        <span className="font-semibold text-primary">{rating.pubName}</span>
+                                        <>
+                                            <span className="font-semibold text-primary">{rating.pubName}</span>
+                                            {rating.pubCountryName && <span className="text-xs text-text-secondary ml-2">({rating.pubCountryName}, {rating.pubCountryCode})</span>}
+                                        </>
                                     )}
                                 </p>
                                 <p className="text-xs text-text-secondary">{rating.timestamp}</p>
                                 
                                 {rating.message && (
-                                    <blockquote className="text-sm text-text-primary mt-3 italic border-l-2 border-border/50 pl-3 py-1">
-                                        "{rating.message}"
-                                    </blockquote>
+                                    <div className="relative text-sm text-text-primary mt-3 pl-8 py-1">
+                                        <div className="absolute top-0 left-0 text-amber-500 opacity-50">
+                                            <QuoteIcon />
+                                        </div>
+                                        <blockquote className="italic">
+                                            {rating.message}
+                                        </blockquote>
+                                    </div>
+                                )}
+
+                                {rating.imageUrl && (
+                                    <div className="mt-3">
+                                        <img src={rating.imageUrl} alt={`pint from ${rating.pubName}`} className="rounded-lg max-h-60 w-auto" />
+                                    </div>
                                 )}
 
                                 {(rating.quality !== undefined || rating.price !== undefined) && (
-                                    <div className="flex items-center justify-start gap-x-6 mt-3 pt-3 border-t border-border">
+                                    <div className="flex items-center justify-end gap-x-6 mt-3 pt-3 border-t border-border">
                                         <RatingDetail score={rating.quality} icon={<BeerIcon />} name="Quality" />
-                                        <RatingDetail score={rating.price} icon={<DollarSignIcon />} name="Price" />
+                                        <RatingDetail score={rating.price} icon={getCurrencyIcon(rating.pubCountryCode)} name="Price" />
+                                        {rating.exactPrice && <span className="text-xs text-text-secondary">({formatCurrency(rating.exactPrice, rating.pubCountryCode || rating.user.countryCode)})</span>}
                                     </div>
                                 )}
                             </div>
@@ -322,7 +375,7 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
                         <div className="flex-grow">
                             <div className="flex items-baseline space-x-2">
                                 {comment.user.id ? (
-                                    <a href={`https://stoutly.co.uk/?user_id=${comment.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{comment.user.name}</a>
+                                    <a href={`https://app.stoutly.co.uk/?user_id=${comment.user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{comment.user.name}</a>
                                 ) : (
                                     <span className="font-semibold text-text-primary">{comment.user.name}</span>
                                 )}
@@ -342,32 +395,60 @@ const CommentsFeed: React.FC<{ comments: Comment[], onLoadMore: () => void, hasM
     );
 };
 
-const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ image, onClose }) => (
+const ImageModal: React.FC<{ image: UploadedImage, onClose: () => void }> = ({ image, onClose }) => {
+    const handleDownload = async () => {
+        try {
+            const response = await fetch(image.imageUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stoutly_image_${image.id}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to download image:", error);
+        }
+    };
+
+    return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
         <div className="bg-surface p-4 rounded-lg max-w-4xl max-h-[90vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
             <img src={image.imageUrl} alt={`user upload ${image.id}`} className="max-w-full max-h-[75vh] object-contain rounded-lg mx-auto" />
             <div className="mt-3 text-white">
                 <p>Posted by{' '}
                     {image.user.id ? (
-                        <a href={`https://stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline">{image.user.name}</a>
+                        <a href={`https://app.stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline">{image.user.name}</a>
                     ) : (
                         <span className="font-bold">{image.user.name}</span>
                     )}
                 </p>
                 <p className="text-sm text-text-secondary">{image.timestamp}</p>
             </div>
-            <button 
-                onClick={onClose} 
-                className="absolute top-2 right-2 text-text-primary bg-surface rounded-full h-9 w-9 flex items-center justify-center text-2xl font-bold border-2 border-border hover:bg-warning-red hover:text-white transition-colors"
-                aria-label="Close image view"
-            >
-                &times;
-            </button>
+            <div className="absolute top-2 right-2 flex space-x-2">
+                <button 
+                    onClick={handleDownload}
+                    className="text-text-primary bg-surface rounded-full h-9 w-9 flex items-center justify-center border-2 border-border hover:bg-primary hover:text-white transition-colors"
+                    aria-label="Download image"
+                >
+                    <DownloadIcon />
+                </button>
+                <button 
+                    onClick={onClose} 
+                    className="text-text-primary bg-surface rounded-full h-9 w-9 flex items-center justify-center text-2xl font-bold border-2 border-border hover:bg-warning-red hover:text-white transition-colors"
+                    aria-label="Close image view"
+                >
+                    &times;
+                </button>
+            </div>
         </div>
     </div>
-);
+    );
+};
 
-const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean, onImageClick: (image: UploadedImage) => void, initialLoading: boolean }> = ({ images, page, setPage, hasMore, isLoading, onImageClick, initialLoading }) => {
+const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (page: number) => void, hasMore: boolean, isLoading: boolean, onImageClick: (image: UploadedImage) => void, initialLoading: boolean, totalImages: number, imagesPerPage: number, setImagesPerPage: (value: number) => void }> = ({ images, page, setPage, hasMore, isLoading, onImageClick, initialLoading, totalImages, imagesPerPage, setImagesPerPage }) => {
     const showSkeleton = initialLoading || (isLoading && images.length === 0);
 
     const showEmptyState = !initialLoading && !isLoading && images.length === 0;
@@ -392,7 +473,7 @@ const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
                             <div className="absolute bottom-0 left-0 p-3 text-white w-full">
                                 {image.user.id ? (
-                                    <a href={`https://stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="font-semibold text-sm truncate hover:underline">{image.user.name}</a>
+                                    <a href={`https://app.stoutly.co.uk/?user_id=${image.user.id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="font-semibold text-sm truncate hover:underline">{image.user.name}</a>
                                 ) : (
                                     <p className="font-semibold text-sm truncate">{image.user.name}</p>
                                 )}
@@ -404,11 +485,27 @@ const ImageGallery: React.FC<{ images: UploadedImage[], page: number, setPage: (
             )}
             
             {!showEmptyState && (
-                <div className="flex justify-between items-center mt-4 text-sm">
+                <div className="flex justify-between items-center mt-4 text-sm flex-wrap gap-2">
+                <div className="flex items-center space-x-2">
+                    <span className="text-text-secondary">Images per page:</span>
+                    <select 
+                        value={imagesPerPage}
+                        onChange={(e) => setImagesPerPage(Number(e.target.value))}
+                        className="bg-border text-text-primary rounded-md px-2 py-1 border-none focus:ring-2 focus:ring-primary transition-colors"
+                        disabled={isLoading || initialLoading}
+                    >
+                        <option value={9}>9</option>
+                        <option value={18}>18</option>
+                        <option value={27}>27</option>
+                    </select>
+                    <span className="text-text-secondary">| Total Images: {totalImages.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2">
                     <button onClick={() => setPage(page - 1)} disabled={page === 1 || isLoading || initialLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Previous</button>
-                    <span>Page {page}</span>
+                    <span>Page {page} of {Math.ceil(totalImages / imagesPerPage)}</span>
                     <button onClick={() => setPage(page + 1)} disabled={!hasMore || isLoading || initialLoading} className="px-4 py-2 rounded-lg bg-border disabled:opacity-50 hover:bg-primary hover:text-background transition-colors">Next</button>
                 </div>
+            </div>
             )}
         </div>
     )

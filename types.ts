@@ -94,13 +94,17 @@ export interface Pub {
 export interface Rating {
     id:string;
     pubId: string;
-    user: { id: string; name: string; avatarId: string };
+    user: { id: string; name: string; avatarId: string; countryCode?: string };
     pubName: string;
+    pubCountryName?: string;
+    pubCountryCode?: string;
     score: number;
     quality?: number;
     price?: number;
     timestamp: string;
     message?: string;
+    imageUrl?: string;
+    exactPrice?: number;
 }
 
 export interface Comment {

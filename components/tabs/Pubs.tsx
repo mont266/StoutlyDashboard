@@ -63,7 +63,7 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                     <td className="px-4 py-4 text-center font-medium text-text-primary">{index + 1}</td>
                                     <td className="px-6 py-4 font-medium text-text-primary">
                                         <div className="flex flex-col">
-                                            <a href={`https://stoutly.co.uk/?pub_id=${pub.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+                                            <a href={`https://app.stoutly.co.uk/?pub_id=${pub.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
                                                 {pub.name}
                                             </a>
                                             <span className="text-xs text-text-secondary">{pub.location}</span>
@@ -92,7 +92,7 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
     );
 
     const totalRatings = !loading && data?.analytics.pintPriceByCountry
-        ? data.analytics.pintPriceByCountry.reduce((acc, item) => acc + item.priceRatingsCount, 0)
+        ? data.analytics.pintPriceByCountry.reduce((acc, item) => acc + item.ratingsCount, 0)
         : 0;
 
     const renderAnalyticsSkeleton = () => (
@@ -152,8 +152,7 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                          <thead className="text-xs text-text-secondary uppercase bg-background">
                             <tr>
                                 <th scope="col" className="px-6 py-3">Country</th>
-                                <th scope="col" className="px-6 py-3 text-center">Pubs</th>
-                                <th scope="col" className="px-6 py-3 text-center">Price Ratings</th>
+                                <th scope="col" className="px-6 py-3 text-center">Ratings</th>
                                 <th scope="col" className="px-6 py-3 text-right">Avg. Price</th>
                             </tr>
                         </thead>
@@ -173,10 +172,7 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                                             {item.country}
                                         </td>
                                         <td className="px-6 py-3 text-text-primary text-center">
-                                            {item.pubsCount.toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-3 text-text-primary text-center">
-                                            {item.priceRatingsCount.toLocaleString()}
+                                            {item.ratingsCount.toLocaleString()}
                                         </td>
                                         <td className="px-6 py-3 text-text-primary text-right font-mono">
                                             {formatCurrency(item.price, item.countryCode)}
@@ -189,7 +185,6 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                            <tfoot className="bg-background">
                                <tr className="font-semibold text-text-primary">
                                    <td scope="row" className="px-6 py-3 text-base">Total</td>
-                                   <td></td>
                                    <td className="px-6 py-3 text-center">{totalRatings.toLocaleString()}</td>
                                    <td className="px-6 py-3 text-right"></td>
                                </tr>

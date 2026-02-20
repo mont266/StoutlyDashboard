@@ -85,12 +85,12 @@ export const getAvatarUrl = (avatarData: string): string => {
 };
 
 // --- CURRENCY FORMATTING HELPER ---
-interface CurrencyInfo {
+export interface CurrencyInfo {
     symbol: string;
     code: string;
 }
 
-const CURRENCY_MAP: Record<string, CurrencyInfo> = {
+export const CURRENCY_MAP: Record<string, CurrencyInfo> = {
     // Existing Currencies (symbols corrected)
     'GB': { symbol: '£', code: 'GBP' },
     'IE': { symbol: '€', code: 'EUR' },
@@ -109,6 +109,7 @@ const CURRENCY_MAP: Record<string, CurrencyInfo> = {
     'IL': { symbol: '₪', code: 'ILS' },
     'AT': { symbol: '€', code: 'EUR' },
     'BE': { symbol: '€', code: 'EUR' },
+    'LU': { symbol: '€', code: 'EUR' },
 
     // Added Currencies
     'PE': { symbol: 'S/', code: 'PEN' },      // Peru - Sol
@@ -294,9 +295,24 @@ export const dash_getPubsData = async (): Promise<DashPubsData> => {
 };
 
 // --- CONTENT TAB (NEW) ---
+export const dash_getImagesCount = async (): Promise<number> => {
+    try {
+        const { data, error } = await supabase.rpc('dash_get_images_count');
+        if (error) throw error;
+        return data as number;
+    } catch (error) {
+        handleSupabaseError(error, 'Get Images Count');
+        throw error;
+    }
+};
+
 export const dash_getContentInitialData = async (): Promise<DashContentInitialData> => {
     try {
-        const { data, error } = await supabase.rpc('dash_get_content_initial_feeds').single();
+        const [{ data, error }, totalImages] = await Promise.all([
+            supabase.rpc('dash_get_content_initial_feeds').single(),
+            dash_getImagesCount()
+        ]);
+
         if (error) throw error;
         if (!data) throw new Error("No data received from dash_get_content_initial_feeds");
         
@@ -321,6 +337,7 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
                         avatarId: r.user?.avatarId || '',
                     },
                     message: r.message,
+                    imageUrl: r.image_url,
                 };
             }),
             comments: (rawData.comments || []).map((c: any) => ({
@@ -342,7 +359,8 @@ export const dash_getContentInitialData = async (): Promise<DashContentInitialDa
                     name: i.user?.name || 'Anonymous User',
                     avatarId: i.user?.avatarId || '',
                 }
-            }))
+            })),
+            totalImages
         };
     } catch (error) {
         handleSupabaseError(error, 'Initial Content Feeds (New)');
@@ -480,8 +498,10 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 message,
                 quality,
                 price,
-                pubs ( id, name ),
-                profiles!ratings_user_id_fkey ( id, username, avatar_id )
+                exact_price,
+                image_url,
+                pubs ( id, name, country_name, country_code ),
+                profiles!ratings_user_id_fkey ( id, username, avatar_id, country_code )
             `)
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -497,6 +517,8 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                 id: r.id,
                 pubId: r.pubs?.id,
                 pubName: r.pubs?.name || 'Unknown Pub',
+                pubCountryName: r.pubs?.country_name,
+                pubCountryCode: r.pubs?.country_code,
                 score: score,
                 quality: r.quality,
                 price: r.price,
@@ -505,8 +527,11 @@ export const getRatingsData = async (pageNumber: number, pageSize: number): Prom
                     id: r.profiles?.id,
                     name: r.profiles?.username || 'Anonymous User',
                     avatarId: r.profiles?.avatar_id || '',
+                    countryCode: r.profiles?.country_code,
                 },
                 message: r.message,
+                imageUrl: r.image_url,
+                exactPrice: r.exact_price,
             };
         });
     } catch (error) {
