@@ -5,7 +5,8 @@ import Content from './tabs/Content';
 import Financial from './tabs/Financial';
 import GA4 from './tabs/GA4';
 import Pubs from './tabs/Pubs';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, MoreHorizontalIcon } from './icons/Icons';
+import Goals from './tabs/Goals';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, MoreHorizontalIcon, TrophyIcon } from './icons/Icons';
 import { getLaunchDuration } from '../services/supabaseService';
 
 const TABS = {
@@ -15,6 +16,7 @@ const TABS = {
     Content: { component: Content, icon: <FileTextIcon /> },
     Financial: { component: Financial, icon: <CreditCardIcon /> },
     GA4: { component: GA4, icon: <AnalyticsIcon /> },
+    Goals: { component: Goals, icon: <TrophyIcon /> },
 };
 
 type TabName = keyof typeof TABS;
@@ -105,7 +107,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
     };
 
     const mainMobileTabs: TabName[] = ['Home', 'Users', 'Pubs', 'Content'];
-    const moreTabs: TabName[] = ['Financial', 'GA4'];
+    const moreTabs: TabName[] = ['Financial', 'GA4', 'Goals'];
     const isMoreTabActive = moreTabs.includes(activeTab);
 
     return (

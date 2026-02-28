@@ -24,6 +24,7 @@ export interface HomeKpis {
     totalPubs: number;
     totalUploadedImages: number;
     totalComments: number;
+    totalPubCrawls: number;
 }
 
 export interface PintPriceByCountry {

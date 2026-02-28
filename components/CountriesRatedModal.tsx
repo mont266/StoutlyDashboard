@@ -29,10 +29,10 @@ const CountriesRatedModal: React.FC<CountriesRatedModalProps> = ({ isOpen, onClo
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {data.sort((a, b) => b.ratingsCount - a.ratingsCount).map(item => (
+                            {data.sort((a, b) => b.priceRatingsCount - a.priceRatingsCount).map(item => (
                                 <tr key={item.countryCode} className="hover:bg-border/50">
-                                    <td className="px-4 py-3 font-medium text-text-primary">{item.country}</td>
-                                    <td className="px-4 py-3 text-text-primary text-right font-mono">{item.ratingsCount.toLocaleString()}</td>
+                                    <td className="px-4 py-3 font-medium text-text-primary">{item.country || 'Unknown'}</td>
+                                    <td className="px-4 py-3 text-text-primary text-right font-mono">{item.priceRatingsCount.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>

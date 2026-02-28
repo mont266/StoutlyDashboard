@@ -7,7 +7,7 @@ import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
 // FIX: Import ArrowUpRightIcon and ArrowDownRightIcon.
-import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon, GlobeIcon } from '../icons/Icons';
+import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon, GlobeIcon, MapIcon } from '../icons/Icons';
 
 interface FinancialSummary {
     totalSpendAllTime: number;
@@ -165,6 +165,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                         <StatCard title="Active Users" value={data.kpis.activeUsers.toLocaleString()} change={data.kpis.activeUsersChange} icon={<ActivityIcon />} />
                         <StatCard title="Total Ratings" value={data.kpis.totalRatings.toLocaleString()} icon={<StarIcon />} />
                         <StatCard title="Total Pubs" value={data.kpis.totalPubs.toLocaleString()} icon={<BuildingIcon />} />
+                        <StatCard title="Pub Crawls" value={data.kpis.totalPubCrawls?.toLocaleString() || '0'} icon={<MapIcon />} />
                         <div onClick={() => setCountriesModalOpen(true)} className="cursor-pointer">
                             <StatCard title="Countries Rated" value={(data.tables.avgPintPriceByCountry?.length ?? 0).toLocaleString()} icon={<GlobeIcon />} />
                         </div>
@@ -228,9 +229,9 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                         </thead>
                                         <tbody>
                                             {data.tables.avgPintPriceByCountry.map(item => (
-                                                <tr key={item.country} className="border-b border-border last:border-b-0 hover:bg-border/50">
+                                                <tr key={item.countryCode} className="border-b border-border last:border-b-0 hover:bg-border/50">
                                                     <td className="px-4 py-3 font-medium text-text-primary">
-                                                        {item.country}
+                                                        {item.country || 'Unknown'}
                                                     </td>
                                                     <td className="px-4 py-3 text-text-primary text-right font-mono">
                                                         {formatCurrency(item.price, item.countryCode)}

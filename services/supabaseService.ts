@@ -263,7 +263,7 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
 };
 
 // --- USERS TAB ---
-export const dash_getUsersData = async (): Promise<DashUsersData> => {
+export const dash_get_users_data = async (): Promise<DashUsersData> => {
     try {
         // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
         const { data, error } = await supabase.rpc('dash_get_users_data').single();
@@ -279,7 +279,7 @@ export const dash_getUsersData = async (): Promise<DashUsersData> => {
 };
 
 // --- PUBS TAB ---
-export const dash_getPubsData = async (): Promise<DashPubsData> => {
+export const dash_get_pubs_data = async (): Promise<DashPubsData> => {
     try {
         // FIX: Removed incorrect generic type from rpc() call. This allows 'data' to be inferred as 'any' and fixes the type error.
         const { data, error } = await supabase.rpc('dash_get_pubs_data').single();
@@ -609,6 +609,26 @@ export const getImagesData = async (pageNumber: number, pageSize: number): Promi
 
 // --- GA4 TAB ---
 // This also uses a single endpoint. Renaming for consistency.
+export const getGoalsProgressData = async (): Promise<{ totalUsers: number; totalRatings: number; totalPubs: number; allTimeProfit: number }> => {
+    try {
+        const [usersData, pubsData, financialsData] = await Promise.all([
+            dash_get_users_data(),
+            dash_get_pubs_data(),
+            dash_getFinancialSummary(),
+        ]);
+
+        return {
+            totalUsers: usersData.kpis.total_users,
+            totalRatings: (pubsData as any).analytics.totalRatingsSubmitted,
+            totalPubs: (pubsData as any).analytics.totalPubs,
+            allTimeProfit: financialsData.all_time_profit,
+        };
+    } catch (error) {
+        handleSupabaseError(error, 'Goals Progress Data');
+        throw error;
+    }
+};
+
 export const dash_getGA4Data = async (timeframe: string): Promise<GA4Data> => {
     try {
         const { data, error } = await supabase.functions.invoke('dash-get-ga4-stats', {
