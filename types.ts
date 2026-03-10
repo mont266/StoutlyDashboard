@@ -22,6 +22,8 @@ export interface HomeKpis {
     newRatings: number;
     newRatingsChange: number;
     totalPubs: number;
+    newPubs: number;
+    newPubsChange: number;
     totalUploadedImages: number;
     totalComments: number;
     totalPubCrawls: number;

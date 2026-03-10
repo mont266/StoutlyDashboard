@@ -1,27 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { dash_getHomeData } from '../../services/supabaseService';
+import { dash_getHomeData, LAUNCH_DATE, getGoalsProgressData } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
+import { CheckCircleIcon, CalendarIcon, TrendingUpIcon, AlertTriangleIcon } from '../icons/Icons';
 
 const goalsByYear = [
     {
         year: 1,
+        deadline: new Date(LAUNCH_DATE.getFullYear() + 1, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
         goals: [
-            { name: 'Users', current: 0, target: 10000 },
-            { name: 'Ratings', current: 0, target: 50000 },
-            { name: 'Pubs', current: 0, target: 5000 },
+            { name: 'Users', target: 10000 },
+            { name: 'Ratings', target: 50000 },
+            { name: 'Pubs', target: 5000 },
         ],
     },
     {
         year: 2,
+        deadline: new Date(LAUNCH_DATE.getFullYear() + 2, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
         goals: [
-            { name: 'Users', current: 0, target: 50000 },
-            { name: 'All-Time Profit', current: 0, target: 0, format: 'currency' },
-            { name: 'Ratings', current: 0, target: 250000 },
-            { name: 'Pubs', current: 0, target: 25000 },
+            { name: 'Users', target: 50000 },
+            { name: 'All-Time Profit', target: 0, format: 'currency' },
+            { name: 'Ratings', target: 250000 },
+            { name: 'Pubs', target: 25000 },
         ],
     },
     {
         year: 3,
+        deadline: new Date(LAUNCH_DATE.getFullYear() + 3, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
         goals: [
             { name: 'Users', current: 0, target: 150000 },
             { name: 'Ratings', current: 0, target: 750000 },
@@ -30,6 +34,7 @@ const goalsByYear = [
     },
     {
         year: 4,
+        deadline: new Date(LAUNCH_DATE.getFullYear() + 4, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
         goals: [
             { name: 'Users', current: 0, target: 450000 },
             { name: 'Ratings', current: 0, target: 2250000 },
@@ -38,6 +43,7 @@ const goalsByYear = [
     },
     {
         year: 5,
+        deadline: new Date(LAUNCH_DATE.getFullYear() + 5, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
         goals: [
             { name: 'Users', current: 0, target: 750000 },
             { name: 'Ratings', current: 0, target: 5000000 },
@@ -47,11 +53,24 @@ const goalsByYear = [
 ];
 
 const ProgressBar: React.FC<{ current: number; target: number; format?: string }> = ({ current, target, format }) => {
-    const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+    // For breakeven (target 0), achieved if current >= 0
+    const isAchieved = target === 0 ? current >= 0 : current >= target;
+    
+    // Calculate percentage. For breakeven, if negative we show 0%, if positive 100%
+    let percentage = 0;
+    if (target === 0) {
+        percentage = current >= 0 ? 100 : 0;
+    } else {
+        percentage = Math.min((current / target) * 100, 100);
+    }
 
     const formatValue = (value: number) => {
         if (format === 'currency') {
-            return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
+            return new Intl.NumberFormat('en-GB', { 
+                style: 'currency', 
+                currency: 'GBP',
+                signDisplay: 'always' // Helpful for profit to see +/-
+            }).format(value);
         }
         return new Intl.NumberFormat('en-GB').format(value);
     };
@@ -60,10 +79,15 @@ const ProgressBar: React.FC<{ current: number; target: number; format?: string }
         <div className="w-full">
             <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium text-text-secondary">{formatValue(current)} / {formatValue(target)}</span>
-                <span className="text-sm font-medium text-text-secondary">{percentage.toFixed(1)}%</span>
+                <span className={`text-sm font-medium ${isAchieved ? 'text-emerald-500' : 'text-text-secondary'}`}>
+                    {percentage.toFixed(1)}%
+                </span>
             </div>
             <div className="w-full bg-border rounded-full h-2.5">
-                <div className="bg-primary h-2.5 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+                <div 
+                    className={`${isAchieved ? 'bg-emerald-500' : 'bg-primary/60'} h-2.5 rounded-full transition-all duration-500`} 
+                    style={{ width: `${percentage}%` }}
+                ></div>
             </div>
         </div>
     );
@@ -71,13 +95,18 @@ const ProgressBar: React.FC<{ current: number; target: number; format?: string }
 
 const Goals: React.FC = () => {
     const [data, setData] = useState<DashHomeData | null>(null);
+    const [progress, setProgress] = useState<{ totalUsers: number; totalRatings: number; totalPubs: number; allTimeProfit: number } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const result = await dash_getHomeData('All');
-                setData(result);
+                const [homeResult, progressResult] = await Promise.all([
+                    dash_getHomeData('30d'),
+                    getGoalsProgressData()
+                ]);
+                setData(homeResult);
+                setProgress(progressResult);
             } catch (error) {
                 console.error("Failed to fetch goal data", error);
             } finally {
@@ -87,14 +116,39 @@ const Goals: React.FC = () => {
         fetchData();
     }, []);
 
-    const getCurrentValue = (name: string) => {
-        if (!data) return 0;
+    const getMetrics = (name: string) => {
+        if (!data || !progress) return { current: 0, growth: 0 };
         switch (name) {
-            case 'Users': return data.kpis.totalUsers;
-            case 'Ratings': return data.kpis.totalRatings;
-            case 'Pubs': return data.kpis.totalPubs;
-            default: return 0;
+            case 'Users': 
+                return { current: progress.totalUsers, growth: data.kpis.newUsers };
+            case 'Ratings': 
+                return { current: progress.totalRatings, growth: data.kpis.newRatings };
+            case 'Pubs': 
+                return { current: progress.totalPubs, growth: data.kpis.newPubs };
+            case 'All-Time Profit':
+                return { current: progress.allTimeProfit, growth: 0 }; // Prediction for profit is complex, keeping simple for now
+            default: 
+                return { current: 0, growth: 0 };
         }
+    };
+
+    const getPrediction = (name: string, target: number, deadline: Date) => {
+        const { current, growth } = getMetrics(name);
+        
+        // Achieved check
+        if (target === 0) {
+            if (current >= 0) return 'achieved';
+        } else {
+            if (current >= target) return 'achieved';
+        }
+
+        if (growth <= 0) return 'behind';
+
+        const daysRemaining = (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+        const dailyGrowth = growth / 30;
+        const projected = current + (dailyGrowth * daysRemaining);
+
+        return projected >= target ? 'on-track' : 'behind';
     };
 
     if (loading) {
@@ -109,15 +163,51 @@ const Goals: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            {goalsByYear.map(({ year, goals }) => (
+            {goalsByYear.map(({ year, deadline, goals }) => (
                 <div key={year} className="bg-surface rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold mb-4">Year {year}</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                        <h3 className="text-xl font-bold">Year {year}</h3>
+                        <div className="flex items-center gap-2 text-text-secondary text-sm bg-border/30 px-3 py-1.5 rounded-lg border border-border">
+                            <CalendarIcon />
+                            <span>Deadline: {deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        </div>
+                    </div>
                     <div className="space-y-6">
                         {goals.map((goal) => {
-                            const currentValue = getCurrentValue(goal.name) || goal.current;
+                            const { current } = getMetrics(goal.name);
+                            const currentValue = current || goal.current;
+                            const status = getPrediction(goal.name, goal.target, deadline);
+                            const isAchieved = status === 'achieved';
+
                             return (
-                                <div key={goal.name}>
-                                    <h4 className="font-semibold mb-2">{goal.name}</h4>
+                                <div key={goal.name} className="relative">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-semibold">{goal.name}</h4>
+                                            {isAchieved ? (
+                                                <div className="flex items-center gap-1 text-emerald-500 text-xs font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded">
+                                                    <CheckCircleIcon />
+                                                    Achieved
+                                                </div>
+                                            ) : (
+                                                <div className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                    status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10'
+                                                }`}>
+                                                    {status === 'on-track' ? (
+                                                        <>
+                                                            <TrendingUpIcon />
+                                                            On Track
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <AlertTriangleIcon />
+                                                            Behind
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                     <ProgressBar current={currentValue} target={goal.target} format={goal.format} />
                                 </div>
                             );

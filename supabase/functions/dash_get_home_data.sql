@@ -58,7 +58,11 @@ BEGIN
         FROM ratings
     ),
     pubs_stats AS (
-        SELECT count(*) as total_pubs FROM pubs
+        SELECT 
+            count(*) as total_pubs,
+            count(*) filter (where created_at >= start_date) as new_pubs,
+            count(*) filter (where created_at >= prev_start_date AND created_at < start_date) as prev_new_pubs
+        FROM pubs
     ),
     comments_stats AS (
         SELECT count(*) as total_comments FROM comments
@@ -76,6 +80,8 @@ BEGIN
         'newRatings', (SELECT new_ratings FROM ratings_stats),
         'newRatingsChange', (SELECT new_ratings FROM ratings_stats) - (SELECT prev_new_ratings FROM ratings_stats),
         'totalPubs', (SELECT total_pubs FROM pubs_stats),
+        'newPubs', (SELECT new_pubs FROM pubs_stats),
+        'newPubsChange', (SELECT new_pubs FROM pubs_stats) - (SELECT prev_new_pubs FROM pubs_stats),
         'totalUploadedImages', (SELECT total_images FROM ratings_stats),
         'totalComments', (SELECT total_comments FROM comments_stats),
         'totalPubCrawls', (SELECT total_pub_crawls FROM pub_crawls_stats)
