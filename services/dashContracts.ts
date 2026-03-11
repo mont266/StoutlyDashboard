@@ -28,6 +28,7 @@ export interface DashHomeData {
     charts: {
         newUsersOverTime: TimeSeriesDataPoint[];
         newRatingsOverTime: TimeSeriesDataPoint[];
+        pubCrawlsOverTime: TimeSeriesDataPoint[];
     };
     tables: {
         avgPintPriceByCountry: PintPriceByCountry[];

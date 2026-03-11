@@ -71,7 +71,7 @@ BEGIN
         SELECT count(*) as total_pub_crawls FROM pub_crawls
     )
     SELECT json_build_object(
-        'totalUsers', (SELECT count(*) FROM auth.users),
+        'totalUsers', (SELECT count(*) FROM profiles),
         'newUsers', (SELECT new_users FROM current_period),
         'newUsersChange', (SELECT new_users FROM current_period) - (SELECT new_users FROM previous_period),
         'activeUsers', (SELECT active_users FROM current_period),
@@ -101,10 +101,18 @@ BEGIN
         WHERE created_at >= start_date
         GROUP BY 1
         ORDER BY 1
+    ),
+    pub_crawls_over_time AS (
+        SELECT date_trunc('day', created_at) as date, count(*) as value
+        FROM pub_crawls
+        WHERE created_at >= start_date
+        GROUP BY 1
+        ORDER BY 1
     )
     SELECT json_build_object(
         'newUsersOverTime', (SELECT json_agg(row_to_json(t)) FROM users_over_time t),
-        'newRatingsOverTime', (SELECT json_agg(row_to_json(t)) FROM ratings_over_time t)
+        'newRatingsOverTime', (SELECT json_agg(row_to_json(t)) FROM ratings_over_time t),
+        'pubCrawlsOverTime', (SELECT json_agg(row_to_json(t)) FROM pub_crawls_over_time t)
     ) INTO charts_data;
 
     -- Tables (Avg Pint Price by Country)

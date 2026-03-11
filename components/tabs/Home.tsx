@@ -218,28 +218,9 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                 </ul>
                             </div>
                             <div className="bg-surface rounded-xl shadow-lg">
-                                <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price</h3>
-                                <div className="overflow-x-auto max-h-96">
-                                    <table className="w-full text-sm text-left text-text-secondary">
-                                        <thead className="text-xs text-text-secondary uppercase bg-background sticky top-0">
-                                            <tr>
-                                                <th scope="col" className="px-4 py-3">Country</th>
-                                                <th scope="col" className="px-4 py-3 text-right">Avg. Price</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.tables.avgPintPriceByCountry.map(item => (
-                                                <tr key={item.countryCode} className="border-b border-border last:border-b-0 hover:bg-border/50">
-                                                    <td className="px-4 py-3 font-medium text-text-primary">
-                                                        {item.country || 'Unknown'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-text-primary text-right font-mono">
-                                                        {formatCurrency(item.price, item.countryCode)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Pub Crawls ({timeframes[timeframe as keyof typeof timeframes]})</h3>
+                                <div className="p-4 h-64">
+                                    <SimpleLineChart data={data.charts.pubCrawlsOverTime} color="#10B981" />
                                 </div>
                             </div>
                         </div>

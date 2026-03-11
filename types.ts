@@ -42,6 +42,7 @@ export interface HomeData {
     charts: {
         newUsersOverTime: TimeSeriesDataPoint[];
         newRatingsOverTime: TimeSeriesDataPoint[];
+        pubCrawlsOverTime: TimeSeriesDataPoint[];
     };
     tables: {
         avgPintPriceByCountry: PintPriceByCountry[];

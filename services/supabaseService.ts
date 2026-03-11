@@ -231,7 +231,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         if (timeframe === 'All') {
             const allRawDates = [
                 ...(responseData.charts.newUsersOverTime || []).map((d: any) => new Date(d.date)),
-                ...(responseData.charts.newRatingsOverTime || []).map((d: any) => new Date(d.date))
+                ...(responseData.charts.newRatingsOverTime || []).map((d: any) => new Date(d.date)),
+                ...(responseData.charts.pubCrawlsOverTime || []).map((d: any) => new Date(d.date))
             ];
             startDate = allRawDates.length > 0 ? new Date(Math.min(...allRawDates.map((d: Date) => d.getTime()))) : new Date();
         } else if (timeframe === '24h') {
@@ -254,6 +255,7 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
             charts: {
                 newUsersOverTime: fillTimeSeriesData(responseData.charts.newUsersOverTime, startDate, endDate),
                 newRatingsOverTime: fillTimeSeriesData(responseData.charts.newRatingsOverTime, startDate, endDate),
+                pubCrawlsOverTime: fillTimeSeriesData(responseData.charts.pubCrawlsOverTime, startDate, endDate),
             }
         };
     } catch (error) {

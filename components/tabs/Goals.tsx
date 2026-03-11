@@ -1,7 +1,59 @@
 import React, { useEffect, useState } from 'react';
 import { dash_getHomeData, LAUNCH_DATE, getGoalsProgressData } from '../../services/supabaseService';
 import type { DashHomeData } from '../../services/dashContracts';
-import { CheckCircleIcon, CalendarIcon, TrendingUpIcon, AlertTriangleIcon } from '../icons/Icons';
+import { CheckCircleIcon, CalendarIcon, TrendingUpIcon, AlertTriangleIcon, ClockIcon } from '../icons/Icons';
+
+const DeadlineCountdown: React.FC<{ deadline: Date }> = ({ deadline }) => {
+    const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const difference = deadline.getTime() - Date.now();
+            
+            if (difference > 0) {
+                setTimeLeft({
+                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((difference / 1000 / 60) % 60),
+                    seconds: Math.floor((difference / 1000) % 60),
+                });
+            } else {
+                setTimeLeft(null);
+            }
+        };
+
+        calculateTimeLeft();
+        const timer = setInterval(calculateTimeLeft, 1000);
+
+        return () => clearInterval(timer);
+    }, [deadline]);
+
+    if (!timeLeft) return <span className="text-warning-red font-bold">Deadline Passed</span>;
+
+    return (
+        <div className="flex items-center gap-1.5 text-xs font-mono">
+            <div className="flex flex-col items-center bg-border/50 px-1.5 py-0.5 rounded min-w-[2.5rem]">
+                <span className="font-bold text-primary">{timeLeft.days}</span>
+                <span className="text-[8px] uppercase opacity-60">Days</span>
+            </div>
+            <span className="opacity-40">:</span>
+            <div className="flex flex-col items-center bg-border/50 px-1.5 py-0.5 rounded min-w-[2rem]">
+                <span className="font-bold text-primary">{timeLeft.hours.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase opacity-60">Hrs</span>
+            </div>
+            <span className="opacity-40">:</span>
+            <div className="flex flex-col items-center bg-border/50 px-1.5 py-0.5 rounded min-w-[2rem]">
+                <span className="font-bold text-primary">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase opacity-60">Min</span>
+            </div>
+            <span className="opacity-40">:</span>
+            <div className="flex flex-col items-center bg-border/50 px-1.5 py-0.5 rounded min-w-[2rem]">
+                <span className="font-bold text-primary text-value-green">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase opacity-60">Sec</span>
+            </div>
+        </div>
+    );
+};
 
 const goalsByYear = [
     {
@@ -167,9 +219,15 @@ const Goals: React.FC = () => {
                 <div key={year} className="bg-surface rounded-xl shadow-lg p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
                         <h3 className="text-xl font-bold">Year {year}</h3>
-                        <div className="flex items-center gap-2 text-text-secondary text-sm bg-border/30 px-3 py-1.5 rounded-lg border border-border">
-                            <CalendarIcon />
-                            <span>Deadline: {deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex items-center gap-2 text-text-secondary text-sm bg-border/30 px-3 py-1.5 rounded-lg border border-border">
+                                <CalendarIcon />
+                                <span>Deadline: {deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-text-secondary text-sm bg-border/30 px-3 py-1.5 rounded-lg border border-border">
+                                <ClockIcon className="w-4 h-4 text-primary" />
+                                <DeadlineCountdown deadline={deadline} />
+                            </div>
                         </div>
                     </div>
                     <div className="space-y-6">
