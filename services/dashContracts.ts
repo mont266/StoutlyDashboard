@@ -8,7 +8,8 @@ import type {
     Pub,
     Rating,
     Comment,
-    UploadedImage
+    UploadedImage,
+    PubCrawl
 } from '../types';
 
 /**
@@ -144,4 +145,9 @@ export interface DashOutgoingsData {
         manualOutgoings: ManualOutgoing[];
         subscriptions: Subscription[];
     };
+}
+
+// --- Crawls Tab Contract ---
+export interface DashCrawlsData {
+    allCrawls: PubCrawl[];
 }

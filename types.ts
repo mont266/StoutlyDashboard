@@ -168,6 +168,27 @@ export interface GA4ReportItem {
     [key: string]: any;
 }
 
+// --- Crawls Tab ---
+export interface PubCrawlStop {
+    id: string;
+    crawlId: string;
+    pubId: string;
+    pubName: string;
+    stopOrder: number;
+}
+
+export interface PubCrawl {
+    id: string;
+    name: string;
+    startLocation?: string;
+    userId: string;
+    userName: string;
+    userAvatarId: string;
+    createdAt: string;
+    stopsCount: number;
+    stops?: PubCrawlStop[];
+}
+
 // Add missing GA4Data type
 export interface GA4Data {
     kpis: {

@@ -232,6 +232,12 @@ export const ChevronDownIcon = () => (
     </svg>
 );
 
+export const ChevronUpIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 transition-transform">
+        <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+);
+
 export const PlusIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -420,6 +426,20 @@ export const MapIcon = () => (
         <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
         <line x1="9" y1="3" x2="9" y2="18"></line>
         <line x1="15" y1="6" x2="15" y2="21"></line>
+    </svg>
+);
+
+export const MapPinIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || "h-5 w-5"}>
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+);
+
+export const UserIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || "h-5 w-5"}>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
     </svg>
 );
 
