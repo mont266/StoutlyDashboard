@@ -13,7 +13,7 @@ BEGIN
         SELECT 
             c.id,
             c.name,
-            c.start_location as "startLocation",
+            c.start_location_text as "startLocation",
             c.user_id as "userId",
             p.username as "userName",
             p.avatar_id as "userAvatarId",
