@@ -154,12 +154,32 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                 >
                     <div className="flex justify-between items-center p-6 border-b border-border/50">
                         <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
-                        <button 
-                            onClick={() => setExpandedChart(null)}
-                            className="p-2 rounded-full hover:bg-border/50 text-text-secondary hover:text-text-primary transition-colors"
-                        >
-                            <XIcon />
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-background p-1.5 rounded-xl shadow-sm border border-border/50 hidden sm:flex space-x-1">
+                                {(Object.keys(timeframes) as (keyof typeof timeframes)[]).map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setTimeframe(t);
+                                        }}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 shrink-0 ${
+                                            timeframe === t 
+                                                ? 'bg-primary text-background shadow-md' 
+                                                : 'text-text-secondary hover:bg-border/50 hover:text-text-primary'
+                                        }`}
+                                    >
+                                        {timeframes[t]}
+                                    </button>
+                                ))}
+                            </div>
+                            <button 
+                                onClick={() => setExpandedChart(null)}
+                                className="p-2 rounded-full hover:bg-border/50 text-text-secondary hover:text-text-primary transition-colors"
+                            >
+                                <XIcon />
+                            </button>
+                        </div>
                     </div>
                     <div className="flex-1 p-6 min-h-0">
                         <SimpleLineChart data={chartData} color={color} />

@@ -184,23 +184,30 @@ const Goals: React.FC = () => {
         }
     };
 
-    const getPrediction = (name: string, target: number, deadline: Date) => {
+    const getPredictionDetails = (name: string, target: number, deadline: Date) => {
         const { current, growth } = getMetrics(name);
         
         // Achieved check
         if (target === 0) {
-            if (current >= 0) return 'achieved';
+            if (current >= 0) return { status: 'achieved', shortfall: 0, projectedPercentage: 100 };
         } else {
-            if (current >= target) return 'achieved';
+            if (current >= target) return { status: 'achieved', shortfall: 0, projectedPercentage: 100 };
         }
 
-        if (growth <= 0) return 'behind';
+        const daysRemaining = Math.max(0, (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        
+        let projected = current;
+        if (daysRemaining > 0 && growth > 0) {
+            const dailyGrowth = growth / 30;
+            projected = current + (dailyGrowth * daysRemaining);
+        }
 
-        const daysRemaining = (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-        const dailyGrowth = growth / 30;
-        const projected = current + (dailyGrowth * daysRemaining);
-
-        return projected >= target ? 'on-track' : 'behind';
+        if (target === 0 ? projected >= 0 : projected >= target) {
+            return { status: 'on-track', shortfall: 0, projectedPercentage: 100 };
+        } else {
+            const pct = target === 0 ? 0 : Math.max(0, (projected / target) * 100);
+            return { status: 'behind', shortfall: Math.ceil(target - projected), projectedPercentage: pct };
+        }
     };
 
     if (loading) {
@@ -234,8 +241,20 @@ const Goals: React.FC = () => {
                         {goals.map((goal) => {
                             const { current } = getMetrics(goal.name);
                             const currentValue = current || goal.current;
-                            const status = getPrediction(goal.name, goal.target, deadline);
+                            const prediction = getPredictionDetails(goal.name, goal.target, deadline);
+                            const status = prediction.status;
                             const isAchieved = status === 'achieved';
+
+                            const formatValue = (value: number, format?: string) => {
+                                if (format === 'currency') {
+                                    return new Intl.NumberFormat('en-GB', { 
+                                        style: 'currency', 
+                                        currency: 'GBP',
+                                        signDisplay: 'always'
+                                    }).format(value);
+                                }
+                                return new Intl.NumberFormat('en-GB').format(value);
+                            };
 
                             return (
                                 <div key={goal.name} className="relative">
@@ -248,9 +267,12 @@ const Goals: React.FC = () => {
                                                     Achieved
                                                 </div>
                                             ) : (
-                                                <div className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                                                    status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10'
-                                                }`}>
+                                                <div 
+                                                    className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                        status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10 cursor-help'
+                                                    }`}
+                                                    title={status === 'behind' ? `Projected to miss target by ${formatValue(prediction.shortfall, goal.format)} (Finish at ${prediction.projectedPercentage?.toFixed(1)}%)` : undefined}
+                                                >
                                                     {status === 'on-track' ? (
                                                         <>
                                                             <TrendingUpIcon />
