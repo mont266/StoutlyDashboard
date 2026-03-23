@@ -11,6 +11,14 @@ export interface NamedValueDataPoint {
     [key: string]: any;
 }
 
+export interface PublicMapUser {
+    id: string;
+    username: string;
+    avatar_id: string;
+    country_code: string;
+    created_at: string;
+}
+
 // --- Home Tab ---
 export interface HomeKpis {
     totalUsers: number;
@@ -27,6 +35,7 @@ export interface HomeKpis {
     totalUploadedImages: number;
     totalComments: number;
     totalPubCrawls: number;
+    publicMapsCount: number;
 }
 
 export interface PintPriceByCountry {
@@ -159,15 +168,6 @@ export interface FinancialsData {
     recentDonations: Donation[];
 }
 
-// --- GA4 Tab ---
-// Add missing GA4ReportItem type
-export interface GA4ReportItem {
-    name: string;
-    value: number;
-    // Add index signature to be compatible with Recharts components.
-    [key: string]: any;
-}
-
 // --- Crawls Tab ---
 export interface PubCrawlStop {
     id: string;
@@ -187,28 +187,4 @@ export interface PubCrawl {
     createdAt: string;
     stopsCount: number;
     stops?: PubCrawlStop[];
-}
-
-// Add missing GA4Data type
-export interface GA4Data {
-    kpis: {
-        users: number;
-        usersChange: number;
-        sessions: number;
-        sessionsChange: number;
-        engagementRate: number;
-        engagementRateChange: number;
-        eventCount: number;
-        eventCountChange: number;
-    };
-    charts: {
-        usersOverTime: TimeSeriesDataPoint[];
-        sessionsOverTime: TimeSeriesDataPoint[];
-        deviceBreakdown: NamedValueDataPoint[];
-    };
-    tables: {
-        topEvents: GA4ReportItem[];
-        topPages: GA4ReportItem[];
-        usersByCountry: GA4ReportItem[];
-    };
 }

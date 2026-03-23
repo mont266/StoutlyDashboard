@@ -3,7 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 // FIX: `NewOutgoingData` is now part of the dash contracts, so it's removed from this import.
-import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, GA4Data, HomeKpis, UserKpis, TimeSeriesDataPoint } from '../types';
+import type { HomeData, User, Pub, ContentAnalytics, FinancialsData, UTMStat, Rating, Comment, UploadedImage, HomeKpis, UserKpis, TimeSeriesDataPoint, PublicMapUser } from '../types';
 // FIX: `NewOutgoingData` is now imported from here as it's part of the dash contract.
 import type { DashHomeData, DashUsersData, DashPubsData, DashContentInitialData, DashOutgoingsData, NewOutgoingData, DashFinancialSummary, DashCrawlsData } from './dashContracts';
 
@@ -223,6 +223,18 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         
         // FIX: Cast `data` to `any` to allow property access and spreading, as its type is inferred as `unknown` without generated types.
         const responseData = data as any;
+
+        // Fetch public maps count
+        const { count: publicMapsCount, error: publicMapsError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_map_public', true);
+            
+        if (publicMapsError) {
+            console.error("Error fetching public maps count:", publicMapsError);
+        }
+        
+        responseData.kpis.publicMapsCount = publicMapsCount || 0;
 
         const endDate = new Date();
         endDate.setHours(23, 59, 59, 999);
@@ -645,16 +657,18 @@ export const getGoalsProgressData = async (): Promise<{ totalUsers: number; tota
     }
 };
 
-export const dash_getGA4Data = async (timeframe: string): Promise<GA4Data> => {
+export const getPublicMapUsers = async (): Promise<PublicMapUser[]> => {
     try {
-        const { data, error } = await supabase.functions.invoke('dash-get-ga4-stats', {
-            body: { time_period: timeframe },
-        });
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_id, country_code, created_at')
+            .eq('is_map_public', true)
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data;
+        return data as PublicMapUser[];
     } catch (error) {
-        handleSupabaseError(error, 'GA4 Analytics Data');
+        handleSupabaseError(error, 'Public Map Users');
         throw error;
     }
 };

@@ -3,11 +3,11 @@ import Home from './tabs/Home';
 import Users from './tabs/Users';
 import Content from './tabs/Content';
 import Financial from './tabs/Financial';
-import GA4 from './tabs/GA4';
+import Maps from './tabs/Maps';
 import Pubs from './tabs/Pubs';
 import Goals from './tabs/Goals';
 import Crawls from './tabs/Crawls';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, AnalyticsIcon, BuildingIcon, LogOutIcon, MoreHorizontalIcon, TrophyIcon, MapIcon } from './icons/Icons';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, BuildingIcon, LogOutIcon, MoreHorizontalIcon, TrophyIcon, MapIcon } from './icons/Icons';
 import { getLaunchDuration } from '../services/supabaseService';
 
 const TABS = {
@@ -17,7 +17,7 @@ const TABS = {
     Crawls: { component: Crawls, icon: <MapIcon /> },
     Content: { component: Content, icon: <FileTextIcon /> },
     Financial: { component: Financial, icon: <CreditCardIcon /> },
-    GA4: { component: GA4, icon: <AnalyticsIcon /> },
+    Maps: { component: Maps, icon: <MapIcon /> },
     Goals: { component: Goals, icon: <TrophyIcon /> },
 };
 
@@ -109,7 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
     };
 
     const mainMobileTabs: TabName[] = ['Home', 'Users', 'Pubs', 'Content'];
-    const moreTabs: TabName[] = ['Crawls', 'Financial', 'GA4', 'Goals'];
+    const moreTabs: TabName[] = ['Crawls', 'Financial', 'Maps', 'Goals'];
     const isMoreTabActive = moreTabs.includes(activeTab);
 
     return (

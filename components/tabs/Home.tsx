@@ -345,6 +345,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     <SecondaryStatItem label="Ratings per User" value={ratingsPerUser.toFixed(1)} />
                                     <SecondaryStatItem label="Images Uploaded" value={data.kpis.totalUploadedImages.toLocaleString()} />
                                     <SecondaryStatItem label="Total Comments" value={data.kpis.totalComments.toLocaleString()} />
+                                    <SecondaryStatItem label="Public Maps" value={data.kpis.publicMapsCount?.toLocaleString() || '0'} />
                                 </ul>
                             </div>
 
