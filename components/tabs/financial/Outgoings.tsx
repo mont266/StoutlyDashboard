@@ -87,6 +87,19 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
         setAddModalOpen(true);
     };
 
+    const handleLogAdditionalCharge = (subscription: Subscription) => {
+        const prefillData: Partial<NewOutgoingData> = {
+            name: `${subscription.name} - Additional Charge`,
+            description: `Additional charge for ${subscription.name}`,
+            amount: 0,
+            currency: subscription.currency as 'GBP' | 'USD' | 'EUR',
+            category: subscription.category,
+            type: 'manual',
+        };
+        setInitialModalData(prefillData);
+        setAddModalOpen(true);
+    };
+
     const handleExportCsv = useCallback(() => {
         if (!data) return;
 
@@ -275,6 +288,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                     onOpenEndModal={handleOpenEndModal}
                     onRenewSubscription={handleRenewSubscription}
                     onOpenEditModal={handleOpenEditModal}
+                    onLogAdditionalCharge={handleLogAdditionalCharge}
                 />
             )}
             {activeView === 'charts' && <ChartsView data={data} />}
@@ -355,9 +369,10 @@ interface TablesViewProps {
     onOpenEndModal: (subscription: Subscription) => void;
     onRenewSubscription: (subscription: Subscription) => void;
     onOpenEditModal: (outgoing: ManualOutgoing) => void;
+    onLogAdditionalCharge: (subscription: Subscription) => void;
 }
 
-const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSubscription, onOpenEditModal }) => {
+const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSubscription, onOpenEditModal, onLogAdditionalCharge }) => {
     
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'N/A';
@@ -553,16 +568,23 @@ const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSu
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            {sub.status === 'Active' && (
-                                                <button onClick={() => onOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
-                                                    <StopCircleIcon />
-                                                </button>
-                                            )}
-                                            {sub.status === 'Inactive' && (
-                                                <button onClick={() => onRenewSubscription(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Renew Subscription">
-                                                    <PlusIcon />
-                                                </button>
-                                            )}
+                                            <div className="flex items-center justify-center space-x-3">
+                                                {sub.status === 'Active' && (
+                                                    <>
+                                                        <button onClick={() => onLogAdditionalCharge(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Log Additional Charge">
+                                                            <PlusIcon />
+                                                        </button>
+                                                        <button onClick={() => onOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
+                                                            <StopCircleIcon />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {sub.status === 'Inactive' && (
+                                                    <button onClick={() => onRenewSubscription(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Renew Subscription">
+                                                        <PlusIcon />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -660,7 +682,11 @@ const AddOutgoingModal: React.FC<{
             <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b border-border">
-                        <h3 className="text-lg font-bold">{initialData ? `Renew '${initialData.name}'` : 'Add New Outgoing'}</h3>
+                        <h3 className="text-lg font-bold">
+                            {initialData 
+                                ? (initialData.type === 'manual' ? `Log Additional Charge` : `Renew '${initialData.name}'`) 
+                                : 'Add New Outgoing'}
+                        </h3>
                     </div>
                     <div className="p-6 space-y-4">
                         {error && <p className="text-warning-red text-sm">{error}</p>}

@@ -497,6 +497,35 @@ export const dash_editOutgoing = async (outgoingData: EditOutgoingData): Promise
     }
 };
 
+export interface EditSubscriptionData {
+    id: string;
+    name: string;
+    description: string;
+    amount: number;
+    category: string;
+    currency: string;
+}
+
+export const dash_editSubscription = async (subscriptionData: EditSubscriptionData): Promise<void> => {
+    try {
+        const { error } = await supabase
+            .from('outgoings')
+            .update({
+                name: subscriptionData.name,
+                description: subscriptionData.description || null,
+                amount: subscriptionData.amount,
+                category: subscriptionData.category || null,
+                currency: subscriptionData.currency
+            })
+            .eq('id', subscriptionData.id);
+            
+        if (error) throw error;
+    } catch (error) {
+        handleSupabaseError(error, 'Edit Subscription');
+        throw error;
+    }
+};
+
 export const dash_deleteOutgoing = async (outgoingId: string): Promise<void> => {
     try {
         const { error } = await supabase.rpc('dash_delete_outgoing', { id_in: outgoingId });

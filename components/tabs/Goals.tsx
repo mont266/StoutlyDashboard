@@ -149,6 +149,11 @@ const Goals: React.FC = () => {
     const [data, setData] = useState<DashHomeData | null>(null);
     const [progress, setProgress] = useState<{ totalUsers: number; totalRatings: number; totalPubs: number; allTimeProfit: number } | null>(null);
     const [loading, setLoading] = useState(true);
+    const [clickedGoal, setClickedGoal] = useState<string | null>(null);
+
+    const toggleClickedGoal = (goalKey: string) => {
+        setClickedGoal(prev => prev === goalKey ? null : goalKey);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -244,6 +249,8 @@ const Goals: React.FC = () => {
                             const prediction = getPredictionDetails(goal.name, goal.target, deadline);
                             const status = prediction.status;
                             const isAchieved = status === 'achieved';
+                            const goalKey = `${year}-${goal.name}`;
+                            const isClicked = clickedGoal === goalKey;
 
                             const formatValue = (value: number, format?: string) => {
                                 if (format === 'currency') {
@@ -269,9 +276,10 @@ const Goals: React.FC = () => {
                                             ) : (
                                                 <div 
                                                     className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                                                        status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10 cursor-help'
+                                                        status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10 cursor-pointer'
                                                     }`}
                                                     title={status === 'behind' ? `Projected to miss target by ${formatValue(prediction.shortfall, goal.format)} (Finish at ${prediction.projectedPercentage?.toFixed(1)}%)` : undefined}
+                                                    onClick={status === 'behind' ? () => toggleClickedGoal(goalKey) : undefined}
                                                 >
                                                     {status === 'on-track' ? (
                                                         <>
@@ -281,7 +289,7 @@ const Goals: React.FC = () => {
                                                     ) : (
                                                         <>
                                                             <AlertTriangleIcon />
-                                                            Behind
+                                                            {isClicked ? `Miss by ${formatValue(prediction.shortfall, goal.format)} (${prediction.projectedPercentage?.toFixed(1)}%)` : 'Behind'}
                                                         </>
                                                     )}
                                                 </div>

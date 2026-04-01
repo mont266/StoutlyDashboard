@@ -218,7 +218,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, refreshKey }) => {
                 </div>
             </nav>
 
-            <footer className="w-full bg-surface text-center p-4 border-t border-border mt-auto">
+            <footer className="w-full bg-surface text-center p-4 border-t border-border mt-auto mb-16 sm:mb-0 z-10 relative">
                 <div className="flex flex-col sm:flex-row justify-center items-center sm:gap-x-4 gap-y-1">
                     <p className="text-sm text-text-secondary">
                         Stoutly App Launched <span className="font-bold text-primary">{formatDuration(launchDuration)}</span> ago.
