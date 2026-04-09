@@ -634,6 +634,13 @@ const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSu
 
 // --- MODAL COMPONENTS ---
 
+const getLocalDateString = (date: Date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const AddOutgoingModal: React.FC<{
     onClose: () => void;
     onSave: () => void;
@@ -643,7 +650,7 @@ const AddOutgoingModal: React.FC<{
         name: '',
         type: 'manual',
         amount: 0,
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: getLocalDateString(),
         description: '',
         category: '',
         currency: 'GBP',
@@ -765,7 +772,7 @@ const AddOutgoingModal: React.FC<{
 };
 
 const EndSubscriptionModal: React.FC<{ subscription: Subscription, onClose: () => void; onSave: () => void; }> = ({ subscription, onClose, onSave }) => {
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(getLocalDateString());
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 

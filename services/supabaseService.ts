@@ -191,12 +191,18 @@ const fillTimeSeriesData = (data: { date: string, value: number }[], startDate: 
     if (!data) {
         data = [];
     }
-    const dataMap = new Map(data.map(item => [new Date(item.date).toISOString().split('T')[0], item.value]));
+    // Extract the date part (YYYY-MM-DD) directly from the database string to avoid timezone shifts
+    const dataMap = new Map(data.map(item => [item.date.split('T')[0], item.value]));
     const filledData: TimeSeriesDataPoint[] = [];
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-        const dateKey = currentDate.toISOString().split('T')[0];
+        // Format local date to YYYY-MM-DD to match the database date string
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateKey = `${year}-${month}-${day}`;
+        
         filledData.push({
             date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             value: dataMap.get(dateKey) || 0
