@@ -125,6 +125,10 @@ export const CURRENCY_MAP: Record<string, CurrencyInfo> = {
     'MX': { symbol: '$', code: 'MXN' },       // Mexico - Peso
     'HU': { symbol: 'Ft', code: 'HUF' },      // Hungary - Forint
     'RO': { symbol: 'lei', code: 'RON' },     // Romania - Leu
+    'ID': { symbol: 'Rp', code: 'IDR' },      // Indonesia - Rupiah
+    'VN': { symbol: '₫', code: 'VND' },       // Vietnam - Dong
+    'TH': { symbol: '฿', code: 'THB' },       // Thailand - Baht
+    'FI': { symbol: '€', code: 'EUR' },       // Finland - Euro
 };
 
 // Default to GBP if country code not found
@@ -133,18 +137,22 @@ const DEFAULT_CURRENCY: CurrencyInfo = { symbol: '£', code: 'GBP' };
 export const formatCurrency = (price: number, countryCode?: string | null): string => {
     const currency = (countryCode && CURRENCY_MAP[countryCode.toUpperCase()]) ? CURRENCY_MAP[countryCode.toUpperCase()] : DEFAULT_CURRENCY;
     
+    // Determine fraction digits based on currency
+    const zeroDecimalCurrencies = ['JPY', 'VND', 'KRW', 'IDR', 'HUF'];
+    const fractionDigits = zeroDecimalCurrencies.includes(currency.code) ? 0 : 2;
+
     try {
         // Use Intl.NumberFormat for proper formatting based on the currency code
         return new Intl.NumberFormat(undefined, {
             style: 'currency',
             currency: currency.code,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits,
         }).format(price);
     } catch (error) {
         // Fallback for unsupported currency codes, using the symbol
         console.warn(`Currency code ${currency.code} might not be supported. Falling back to symbol.`, error);
-        return `${currency.symbol}${price.toFixed(2)}`;
+        return `${currency.symbol}${price.toFixed(fractionDigits)}`;
     }
 };
 
