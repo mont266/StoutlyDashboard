@@ -36,6 +36,10 @@ export interface HomeKpis {
     totalComments: number;
     totalPubCrawls: number;
     publicMapsCount: number;
+    totalCheckins?: number;
+    newCheckins?: number;
+    newCheckinsChange?: number;
+    totalPintsDrank?: number;
 }
 
 export interface PintPriceByCountry {
@@ -185,6 +189,8 @@ export interface PubCrawl {
     userName: string;
     userAvatarId: string;
     createdAt: string;
+    isPublic?: boolean;
+    savesCount?: number;
     stopsCount: number;
     stops?: PubCrawlStop[];
 }

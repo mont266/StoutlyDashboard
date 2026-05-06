@@ -30,6 +30,7 @@ export interface DashHomeData {
         newUsersOverTime: TimeSeriesDataPoint[];
         newRatingsOverTime: TimeSeriesDataPoint[];
         pubCrawlsOverTime: TimeSeriesDataPoint[];
+        pubCheckinsOverTime?: TimeSeriesDataPoint[];
     };
     tables: {
         avgPintPriceByCountry: PintPriceByCountry[];

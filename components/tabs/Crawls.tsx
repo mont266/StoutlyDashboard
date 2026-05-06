@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getCrawlsData } from '../../services/supabaseService';
 import type { DashCrawlsData } from '../../services/dashContracts';
-import { RefreshCwIcon, MapPinIcon, UserIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '../icons/Icons';
+import { RefreshCwIcon, MapPinIcon, UserIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon, BookmarkIcon } from '../icons/Icons';
 
 interface CrawlsProps {
     refreshKey: number;
@@ -40,6 +40,10 @@ const Crawls: React.FC<CrawlsProps> = ({ refreshKey }) => {
         });
     };
 
+    const totalCrawls = data?.allCrawls.length || 0;
+    const publicCrawls = data?.allCrawls.filter(c => c.isPublic).length || 0;
+    const totalSaves = data?.allCrawls.reduce((acc, c) => acc + (c.savesCount || 0), 0) || 0;
+
     return (
         <section>
             <div className="flex items-center space-x-4 mb-6">
@@ -53,6 +57,23 @@ const Crawls: React.FC<CrawlsProps> = ({ refreshKey }) => {
                     <RefreshCwIcon className={loading ? 'animate-spin' : ''} />
                 </button>
             </div>
+
+            {!loading && data && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-surface rounded-xl p-6 shadow-md border border-border/50">
+                        <div className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">Total Crawls</div>
+                        <div className="text-3xl font-bold text-text-primary">{totalCrawls}</div>
+                    </div>
+                    <div className="bg-surface rounded-xl p-6 shadow-md border border-border/50">
+                        <div className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">Public Community Crawls</div>
+                        <div className="text-3xl font-bold text-text-primary">{publicCrawls}</div>
+                    </div>
+                    <div className="bg-surface rounded-xl p-6 shadow-md border border-border/50">
+                        <div className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">Total Community Saves</div>
+                        <div className="text-3xl font-bold text-text-primary">{totalSaves}</div>
+                    </div>
+                </div>
+            )}
 
             <div className="space-y-4">
                 {loading ? (
@@ -76,7 +97,14 @@ const Crawls: React.FC<CrawlsProps> = ({ refreshKey }) => {
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
-                                        <h3 className="text-xl font-bold text-text-primary">{crawl.name || 'Unnamed Crawl'}</h3>
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="text-xl font-bold text-text-primary">{crawl.name || 'Unnamed Crawl'}</h3>
+                                            {crawl.isPublic && (
+                                                <span className="bg-green-900/30 text-green-400 border border-green-500/30 px-2 py-0.5 rounded text-xs font-medium">
+                                                    Public
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center space-x-4 text-sm text-text-secondary">
                                             <div className="flex items-center">
                                                 <UserIcon className="w-4 h-4 mr-1" />
@@ -90,6 +118,12 @@ const Crawls: React.FC<CrawlsProps> = ({ refreshKey }) => {
                                                 <MapPinIcon className="w-4 h-4 mr-1" />
                                                 {crawl.stopsCount} {crawl.stopsCount === 1 ? 'stop' : 'stops'}
                                             </div>
+                                            {crawl.isPublic && (
+                                                <div className="flex items-center" title="Community Saves">
+                                                    <BookmarkIcon className="w-4 h-4 mr-1" />
+                                                    {crawl.savesCount || 0}
+                                                </div>
+                                            )}
                                             {crawl.startLocation && (
                                                 <div className="flex items-center text-primary/80">
                                                     <span className="font-medium mr-1">Start:</span>

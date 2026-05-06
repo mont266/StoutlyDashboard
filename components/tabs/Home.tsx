@@ -26,7 +26,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
     const [error, setError] = useState<string | null>(null);
     const [timeframe, setTimeframe] = useState<string>('30d');
     const [isCountriesModalOpen, setCountriesModalOpen] = useState(false);
-    const [expandedChart, setExpandedChart] = useState<'users' | 'ratings' | 'crawls' | null>(null);
+    const [expandedChart, setExpandedChart] = useState<'users' | 'ratings' | 'crawls' | 'checkins' | null>(null);
     
     const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
     const [financialLoading, setFinancialLoading] = useState<boolean>(true);
@@ -141,6 +141,10 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
             title = `Pub Crawls (${timeframes[timeframe as keyof typeof timeframes]})`;
             chartData = data.charts.pubCrawlsOverTime;
             color = "#10B981";
+        } else if (expandedChart === 'checkins') {
+            title = `Pub Check-ins (${timeframes[timeframe as keyof typeof timeframes]})`;
+            chartData = data.charts.pubCheckinsOverTime || [];
+            color = "#8B5CF6";
         }
 
         return (
@@ -305,10 +309,52 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* Check-ins Chart (Full Width) */}
+                            <div className="bg-surface p-6 rounded-xl shadow-lg border border-border/50">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-text-primary">Pub Check-ins</h3>
+                                        <p className="text-sm text-text-secondary mt-1">Check-ins over {timeframes[timeframe as keyof typeof timeframes].toLowerCase()}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setExpandedChart('checkins')}
+                                        className="p-2 rounded-lg text-text-secondary hover:text-primary hover:bg-border/50 transition-colors"
+                                        title="Full Screen"
+                                    >
+                                        <MaximizeIcon />
+                                    </button>
+                                </div>
+                                <div className="h-64">
+                                    <SimpleLineChart data={data.charts.pubCheckinsOverTime || []} color="#8B5CF6" />
+                                </div>
+                            </div>
                         </div>
 
                         {/* --- Sidebar Column --- */}
                         <div className="lg:col-span-1 space-y-6">
+                             {/* Check-ins & Pints Mini-cards */}
+                             <div className="bg-surface rounded-xl shadow-lg border border-border/50 p-6">
+                                <h3 className="text-lg font-bold text-text-primary mb-5 flex items-center">
+                                    <MapIcon />
+                                    <span className="ml-2">Check-ins & Pints</span>
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center">
+                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.totalCheckins?.toLocaleString() || '0'}</p>
+                                        <p className="text-xs text-text-secondary mt-1">Total Check-ins</p>
+                                    </div>
+                                    <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center">
+                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPintsDrank?.toLocaleString() || '0'}</p>
+                                        <p className="text-xs text-text-secondary mt-1">Check-in Pints</p>
+                                    </div>
+                                    <div className="bg-background rounded-xl p-4 border border-border/50 col-span-2 flex flex-col justify-center items-center text-center">
+                                        <p className="text-2xl font-bold text-text-primary">{((data.kpis.totalPintsDrank || 0) + (data.kpis.totalRatings || 0)).toLocaleString()}</p>
+                                        <p className="text-xs text-text-secondary mt-1">Total Pints Drank (Check-ins + Ratings)</p>
+                                    </div>
+                                </div>
+                            </div>
+
                              {/* Platform Content Mini-cards */}
                              <div className="bg-surface rounded-xl shadow-lg border border-border/50 p-6">
                                 <h3 className="text-lg font-bold text-text-primary mb-5 flex items-center">

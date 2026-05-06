@@ -254,27 +254,84 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         endDate.setHours(23, 59, 59, 999);
         let startDate = new Date();
         
+        let prevStartDateStr = '1970-01-01T00:00:00.000Z';
         if (timeframe === 'All') {
-            const allRawDates = [
-                ...(responseData.charts.newUsersOverTime || []).map((d: any) => new Date(d.date)),
-                ...(responseData.charts.newRatingsOverTime || []).map((d: any) => new Date(d.date)),
-                ...(responseData.charts.pubCrawlsOverTime || []).map((d: any) => new Date(d.date))
-            ];
-            startDate = allRawDates.length > 0 ? new Date(Math.min(...allRawDates.map((d: Date) => d.getTime()))) : new Date();
+             // Let it calculate below based on dates
         } else if (timeframe === '24h') {
              startDate.setDate(endDate.getDate() - 1);
+             const prevStart = new Date(startDate);
+             prevStart.setDate(prevStart.getDate() - 1);
+             prevStartDateStr = prevStart.toISOString();
         } else {
             const timeValue = parseInt(timeframe.slice(0, -1));
             const timeUnit = timeframe.slice(-1);
             if (timeUnit === 'd') {
                 startDate.setDate(endDate.getDate() - (timeValue - 1));
+                const prevStart = new Date(startDate);
+                prevStart.setDate(prevStart.getDate() - (timeValue - 1));
+                prevStartDateStr = prevStart.toISOString();
             } else if (timeUnit === 'm') {
                 startDate.setMonth(endDate.getMonth() - timeValue);
+                const prevStart = new Date(startDate);
+                prevStart.setMonth(prevStart.getMonth() - timeValue);
+                prevStartDateStr = prevStart.toISOString();
             } else if (timeUnit === 'y') {
                 startDate.setFullYear(endDate.getFullYear() - timeValue);
+                const prevStart = new Date(startDate);
+                prevStart.setFullYear(prevStart.getFullYear() - timeValue);
+                prevStartDateStr = prevStart.toISOString();
             }
         }
         startDate.setHours(0,0,0,0);
+        const startDateStr = timeframe === 'All' ? '1970-01-01T00:00:00.000Z' : startDate.toISOString();
+        
+        // Fetch Checkins Data manually since SQL isn't updating automatically
+        const { data: checkinsData, error: checkinsError } = await supabase
+            .from('pub_checkins')
+            .select('created_at, amount_drank');
+            
+        if (!checkinsError && checkinsData) {
+            let totalCheckins = 0;
+            let newCheckins = 0;
+            let prevNewCheckins = 0;
+            let totalPintsDrank = 0;
+            const checkinsOverTimeMap = new Map<string, number>();
+
+            checkinsData.forEach((c: any) => {
+                totalCheckins++;
+                
+                if (c.amount_drank) {
+                    totalPintsDrank += Number(c.amount_drank);
+                }
+                
+                if (c.created_at >= startDateStr) {
+                    newCheckins++;
+                    const dateObj = new Date(c.created_at);
+                    const dateKey = `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}-${String(dateObj.getUTCDate()).padStart(2, '0')}`;
+                    checkinsOverTimeMap.set(dateKey, (checkinsOverTimeMap.get(dateKey) || 0) + 1);
+                } else if (c.created_at >= prevStartDateStr && c.created_at < startDateStr) {
+                    prevNewCheckins++;
+                }
+            });
+            
+            responseData.kpis.totalCheckins = totalCheckins;
+            responseData.kpis.newCheckins = newCheckins;
+            responseData.kpis.newCheckinsChange = newCheckins - prevNewCheckins;
+            responseData.kpis.totalPintsDrank = totalPintsDrank;
+            
+            responseData.charts.pubCheckinsOverTime = Array.from(checkinsOverTimeMap.entries()).map(([date, value]) => ({ date, value }));
+        }
+
+        if (timeframe === 'All') {
+            const allRawDates = [
+                ...(responseData.charts.newUsersOverTime || []).map((d: any) => new Date(d.date)),
+                ...(responseData.charts.newRatingsOverTime || []).map((d: any) => new Date(d.date)),
+                ...(responseData.charts.pubCrawlsOverTime || []).map((d: any) => new Date(d.date)),
+                ...(responseData.charts.pubCheckinsOverTime || []).map((d: any) => new Date(d.date))
+            ];
+            startDate = allRawDates.length > 0 ? new Date(Math.min(...allRawDates.map((d: Date) => d.getTime()))) : new Date();
+            startDate.setHours(0,0,0,0);
+        }
 
         return {
             ...responseData,
@@ -282,6 +339,7 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
                 newUsersOverTime: fillTimeSeriesData(responseData.charts.newUsersOverTime, startDate, endDate),
                 newRatingsOverTime: fillTimeSeriesData(responseData.charts.newRatingsOverTime, startDate, endDate),
                 pubCrawlsOverTime: fillTimeSeriesData(responseData.charts.pubCrawlsOverTime, startDate, endDate),
+                pubCheckinsOverTime: fillTimeSeriesData(responseData.charts.pubCheckinsOverTime, startDate, endDate),
             }
         };
     } catch (error) {
@@ -325,10 +383,44 @@ export const dash_getPubsData = async (): Promise<DashPubsData> => {
 // --- CRAWLS TAB ---
 export const dash_getCrawlsData = async (): Promise<DashCrawlsData> => {
     try {
-        const { data, error } = await supabase.rpc('dash_get_crawls_data').single();
+        const { data, error } = await supabase
+            .from('pub_crawls')
+            .select(`
+                id, name, start_location_text, created_at, user_id, is_public, saves_count,
+                profiles (username, avatar_id),
+                pub_crawl_stops (
+                    id, pub_id, stop_order,
+                    pubs (name)
+                )
+            `)
+            .order('created_at', { ascending: false });
+
         if (error) throw error;
-        if (!data) throw new Error("No data received from dash_get_crawls_data");
-        return data as DashCrawlsData;
+        if (!data) throw new Error("No data received for pub_crawls");
+
+        const allCrawls = data.map((crawl: any) => ({
+            id: crawl.id,
+            name: crawl.name,
+            startLocation: crawl.start_location_text,
+            userId: crawl.user_id,
+            userName: crawl.profiles?.username || 'Unknown',
+            userAvatarId: crawl.profiles?.avatar_id,
+            createdAt: crawl.created_at,
+            isPublic: crawl.is_public || false,
+            savesCount: crawl.saves_count || 0,
+            stopsCount: crawl.pub_crawl_stops?.length || 0,
+            stops: (crawl.pub_crawl_stops || [])
+                .map((s: any) => ({
+                    id: s.id,
+                    crawlId: crawl.id,
+                    pubId: s.pub_id,
+                    pubName: s.pubs?.name || 'Unknown Pub',
+                    stopOrder: s.stop_order
+                }))
+                .sort((a: any, b: any) => a.stopOrder - b.stopOrder)
+        }));
+
+        return { allCrawls };
     } catch (error) {
         handleSupabaseError(error, 'Crawls Data');
         throw error;

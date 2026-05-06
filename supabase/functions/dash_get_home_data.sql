@@ -69,6 +69,14 @@ BEGIN
     ),
     pub_crawls_stats AS (
         SELECT count(*) as total_pub_crawls FROM pub_crawls
+    ),
+    pub_checkins_stats AS (
+        SELECT 
+            count(*) as total_checkins,
+            count(*) filter (where created_at >= start_date) as new_checkins,
+            count(*) filter (where created_at >= prev_start_date AND created_at < start_date) as prev_new_checkins,
+            sum(amount_drank) as total_pints_drank
+        FROM pub_checkins
     )
     SELECT json_build_object(
         'totalUsers', (SELECT count(*) FROM profiles),
@@ -84,7 +92,11 @@ BEGIN
         'newPubsChange', (SELECT new_pubs FROM pubs_stats) - (SELECT prev_new_pubs FROM pubs_stats),
         'totalUploadedImages', (SELECT total_images FROM ratings_stats),
         'totalComments', (SELECT total_comments FROM comments_stats),
-        'totalPubCrawls', (SELECT total_pub_crawls FROM pub_crawls_stats)
+        'totalPubCrawls', (SELECT total_pub_crawls FROM pub_crawls_stats),
+        'totalCheckins', (SELECT total_checkins FROM pub_checkins_stats),
+        'newCheckins', (SELECT new_checkins FROM pub_checkins_stats),
+        'newCheckinsChange', (SELECT new_checkins FROM pub_checkins_stats) - (SELECT prev_new_checkins FROM pub_checkins_stats),
+        'totalPintsDrank', (SELECT total_pints_drank FROM pub_checkins_stats)
     ) INTO kpis_data;
 
     -- Charts
@@ -108,11 +120,19 @@ BEGIN
         WHERE created_at >= start_date
         GROUP BY 1
         ORDER BY 1
+    ),
+    pub_checkins_over_time AS (
+        SELECT date_trunc('day', created_at) as date, count(*) as value
+        FROM pub_checkins
+        WHERE created_at >= start_date
+        GROUP BY 1
+        ORDER BY 1
     )
     SELECT json_build_object(
         'newUsersOverTime', (SELECT json_agg(row_to_json(t)) FROM users_over_time t),
         'newRatingsOverTime', (SELECT json_agg(row_to_json(t)) FROM ratings_over_time t),
-        'pubCrawlsOverTime', (SELECT json_agg(row_to_json(t)) FROM pub_crawls_over_time t)
+        'pubCrawlsOverTime', (SELECT json_agg(row_to_json(t)) FROM pub_crawls_over_time t),
+        'pubCheckinsOverTime', (SELECT json_agg(row_to_json(t)) FROM pub_checkins_over_time t)
     ) INTO charts_data;
 
     -- Tables (Avg Pint Price by Country)

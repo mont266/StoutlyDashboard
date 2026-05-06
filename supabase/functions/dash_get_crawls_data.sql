@@ -18,6 +18,8 @@ BEGIN
             p.username as "userName",
             p.avatar_id as "userAvatarId",
             c.created_at as "createdAt",
+            c.is_public as "isPublic",
+            c.saves_count as "savesCount",
             (SELECT count(*) FROM pub_crawl_stops s WHERE s.crawl_id = c.id) as "stopsCount"
         FROM pub_crawls c
         LEFT JOIN profiles p ON c.user_id = p.id
