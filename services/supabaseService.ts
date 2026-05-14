@@ -383,44 +383,35 @@ export const dash_getPubsData = async (): Promise<DashPubsData> => {
 // --- CRAWLS TAB ---
 export const dash_getCrawlsData = async (): Promise<DashCrawlsData> => {
     try {
-        const { data, error } = await supabase
-            .from('pub_crawls')
-            .select(`
-                id, name, start_location_text, created_at, user_id, is_public, saves_count,
-                profiles (username, avatar_id),
-                pub_crawl_stops (
-                    id, pub_id, stop_order,
-                    pubs (name)
-                )
-            `)
-            .order('created_at', { ascending: false });
+        const [{ data: rpcData, error: rpcError }, { data: publicCrawls, error: publicError }] = await Promise.all([
+            supabase.rpc('dash_get_crawls_data'),
+            supabase.from('pub_crawls').select('id, is_public, saves_count')
+        ]);
 
-        if (error) throw error;
-        if (!data) throw new Error("No data received for pub_crawls");
+        if (rpcError) throw rpcError;
+        if (!rpcData) throw new Error("No data received for pub_crawls");
 
-        const allCrawls = data.map((crawl: any) => ({
-            id: crawl.id,
-            name: crawl.name,
-            startLocation: crawl.start_location_text,
-            userId: crawl.user_id,
-            userName: crawl.profiles?.username || 'Unknown',
-            userAvatarId: crawl.profiles?.avatar_id,
-            createdAt: crawl.created_at,
-            isPublic: crawl.is_public || false,
-            savesCount: crawl.saves_count || 0,
-            stopsCount: crawl.pub_crawl_stops?.length || 0,
-            stops: (crawl.pub_crawl_stops || [])
-                .map((s: any) => ({
-                    id: s.id,
-                    crawlId: crawl.id,
-                    pubId: s.pub_id,
-                    pubName: s.pubs?.name || 'Unknown Pub',
-                    stopOrder: s.stop_order
-                }))
-                .sort((a: any, b: any) => a.stopOrder - b.stopOrder)
-        }));
+        let allCrawlsToReturn = (rpcData as DashCrawlsData).allCrawls || [];
+        
+        if (publicCrawls) {
+            allCrawlsToReturn = allCrawlsToReturn.map(crawl => {
+                const pubCrawl = publicCrawls.find(pc => pc.id === crawl.id);
+                if (pubCrawl) {
+                    return {
+                        ...crawl,
+                        isPublic: pubCrawl.is_public || false,
+                        savesCount: pubCrawl.saves_count || 0
+                    };
+                }
+                return {
+                    ...crawl,
+                    isPublic: false,
+                    savesCount: 0
+                };
+            });
+        }
 
-        return { allCrawls };
+        return { allCrawls: allCrawlsToReturn };
     } catch (error) {
         handleSupabaseError(error, 'Crawls Data');
         throw error;

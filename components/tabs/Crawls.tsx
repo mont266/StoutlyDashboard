@@ -96,43 +96,43 @@ const Crawls: React.FC<CrawlsProps> = ({ refreshKey }) => {
                                 onClick={() => toggleExpand(crawl.id)}
                             >
                                 <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="text-xl font-bold text-text-primary">{crawl.name || 'Unnamed Crawl'}</h3>
+                                    <div className="space-y-2 flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <h3 className="text-xl font-bold text-text-primary truncate" title={crawl.name || 'Unnamed Crawl'}>{crawl.name || 'Unnamed Crawl'}</h3>
                                             {crawl.isPublic && (
                                                 <span className="bg-green-900/30 text-green-400 border border-green-500/30 px-2 py-0.5 rounded text-xs font-medium">
                                                     Public
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center space-x-4 text-sm text-text-secondary">
-                                            <div className="flex items-center">
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
+                                            <div className="flex items-center whitespace-nowrap">
                                                 <UserIcon className="w-4 h-4 mr-1" />
                                                 {crawl.userName || 'Anonymous'}
                                             </div>
-                                            <div className="flex items-center">
+                                            <div className="flex items-center whitespace-nowrap">
                                                 <CalendarIcon className="w-4 h-4 mr-1" />
                                                 {formatDate(crawl.createdAt)}
                                             </div>
-                                            <div className="flex items-center">
+                                            <div className="flex items-center whitespace-nowrap">
                                                 <MapPinIcon className="w-4 h-4 mr-1" />
                                                 {crawl.stopsCount} {crawl.stopsCount === 1 ? 'stop' : 'stops'}
                                             </div>
                                             {crawl.isPublic && (
-                                                <div className="flex items-center" title="Community Saves">
+                                                <div className="flex items-center whitespace-nowrap" title="Community Saves">
                                                     <BookmarkIcon className="w-4 h-4 mr-1" />
                                                     {crawl.savesCount || 0}
                                                 </div>
                                             )}
                                             {crawl.startLocation && (
-                                                <div className="flex items-center text-primary/80">
+                                                <div className="flex items-center text-primary/80 min-w-[min-content] flex-1 basis-full sm:basis-auto">
                                                     <span className="font-medium mr-1">Start:</span>
-                                                    {crawl.startLocation}
+                                                    <span className="truncate" title={crawl.startLocation}>{crawl.startLocation}</span>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-3">
+                                    <div className="flex items-center shrink-0 ml-4">
                                         {expandedCrawlId === crawl.id ? <ChevronUpIcon /> : <ChevronDownIcon />}
                                     </div>
                                 </div>
