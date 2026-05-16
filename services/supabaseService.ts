@@ -250,6 +250,51 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         
         responseData.kpis.publicMapsCount = publicMapsCount || 0;
 
+        // Fetch pints drank calculation
+        let checkinPints = 0;
+        let checkinsHasMore = true;
+        let checkinsStart = 0;
+        const limit = 1000;
+        while (checkinsHasMore) {
+            const { data: checkinData, error: checkinErr } = await supabase.from('pub_checkins').select('amount_drank').range(checkinsStart, checkinsStart + limit - 1);
+            if (checkinErr || !checkinData || checkinData.length === 0) {
+                checkinsHasMore = false;
+            } else {
+                checkinPints += checkinData.reduce((acc, c) => acc + (c.amount_drank || 1), 0);
+                if (checkinData.length < limit) checkinsHasMore = false;
+                else checkinsStart += limit;
+            }
+        }
+
+        let ratingsPints = 0;
+        let ratingsHasMore = true;
+        let ratingsStart = 0;
+        while (ratingsHasMore) {
+            const { data: ratingData, error: ratingErr } = await supabase.from('ratings').select('amount_drank').range(ratingsStart, ratingsStart + limit - 1);
+            if (ratingErr || !ratingData || ratingData.length === 0) {
+                ratingsHasMore = false;
+            } else {
+                ratingsPints += ratingData.reduce((acc, r) => acc + (r.amount_drank || 1), 0);
+                if (ratingData.length < limit) ratingsHasMore = false;
+                else ratingsStart += limit;
+            }
+        }
+
+        responseData.kpis.totalCheckinPints = checkinPints;
+        responseData.kpis.totalRatingsPints = ratingsPints;
+        responseData.kpis.totalPintsDrankSum = checkinPints + ratingsPints;
+
+        const { count: manuallyAddedPubsCount, error: manuallyAddedPubsError } = await supabase
+            .from('pubs')
+            .select('*', { count: 'exact', head: true })
+            .like('id', 'stoutly%');
+            
+        if (manuallyAddedPubsError) {
+            console.error("Error fetching manually added pubs count:", manuallyAddedPubsError);
+        }
+        
+        responseData.kpis.manuallyAddedPubs = manuallyAddedPubsCount || 0;
+
         const endDate = new Date();
         endDate.setHours(23, 59, 59, 999);
         let startDate = new Date();
@@ -300,9 +345,7 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
             checkinsData.forEach((c: any) => {
                 totalCheckins++;
                 
-                if (c.amount_drank) {
-                    totalPintsDrank += Number(c.amount_drank);
-                }
+                totalPintsDrank += (c.amount_drank || 1);
                 
                 if (c.created_at >= startDateStr) {
                     newCheckins++;

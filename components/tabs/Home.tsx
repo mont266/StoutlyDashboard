@@ -345,11 +345,11 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                         <p className="text-xs text-text-secondary mt-1">Total Check-ins</p>
                                     </div>
                                     <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center">
-                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPintsDrank?.toLocaleString() || '0'}</p>
+                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.totalCheckinPints?.toLocaleString() || '0'}</p>
                                         <p className="text-xs text-text-secondary mt-1">Check-in Pints</p>
                                     </div>
                                     <div className="bg-background rounded-xl p-4 border border-border/50 col-span-2 flex flex-col justify-center items-center text-center">
-                                        <p className="text-2xl font-bold text-text-primary">{((data.kpis.totalPintsDrank || 0) + (data.kpis.totalRatings || 0)).toLocaleString()}</p>
+                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPintsDrankSum?.toLocaleString() || '0'}</p>
                                         <p className="text-xs text-text-secondary mt-1">Total Pints Drank (Check-ins + Ratings)</p>
                                     </div>
                                 </div>
@@ -361,17 +361,21 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     <BuildingIcon />
                                     <span className="ml-2">Platform Content</span>
                                 </h3>
-                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                                     <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center">
                                         <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPubs.toLocaleString()}</p>
                                         <p className="text-xs text-text-secondary mt-1">Total Pubs</p>
                                     </div>
                                     <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center">
+                                        <p className="text-2xl font-bold text-text-primary">{data.kpis.manuallyAddedPubs?.toLocaleString() || '0'}</p>
+                                        <p className="text-xs text-text-secondary mt-1">Stoutly Added Pubs</p>
+                                    </div>
+                                    <div className="bg-background rounded-xl p-4 border border-border/50 flex flex-col justify-center items-center text-center col-span-2 lg:col-span-1">
                                         <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPubCrawls?.toLocaleString() || '0'}</p>
                                         <p className="text-xs text-text-secondary mt-1">Pub Crawls</p>
                                     </div>
                                     <div 
-                                        className="bg-background rounded-xl p-4 border border-border/50 col-span-2 flex justify-between items-center cursor-pointer hover:border-primary/50 transition-colors group"
+                                        className="bg-background rounded-xl p-4 border border-border/50 col-span-2 lg:col-span-3 flex justify-between items-center cursor-pointer hover:border-primary/50 transition-colors group"
                                         onClick={() => setCountriesModalOpen(true)}
                                     >
                                         <div>

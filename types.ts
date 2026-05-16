@@ -40,6 +40,10 @@ export interface HomeKpis {
     newCheckins?: number;
     newCheckinsChange?: number;
     totalPintsDrank?: number;
+    totalCheckinPints?: number;
+    totalRatingsPints?: number;
+    totalPintsDrankSum?: number;
+    manuallyAddedPubs?: number;
 }
 
 export interface PintPriceByCountry {
