@@ -251,30 +251,84 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         responseData.kpis.publicMapsCount = publicMapsCount || 0;
 
         // Fetch pints drank calculation
+        
+        let exchangeRates: any = null;
+        try {
+            const ratesResponse = await fetch("https://open.er-api.com/v6/latest/GBP");
+            const data = await ratesResponse.json();
+            exchangeRates = data.rates;
+        } catch (e) {
+            console.error("Failed to fetch exchange rates", e);
+        }
+
+        let pubsHasMore = true;
+        let pubsStart = 0;
+        const pubLimit = 1000;
+        const pubCountryMap: Record<string, string> = {};
+        
+        while (pubsHasMore) {
+            const { data: pubsData, error: pubsErr } = await supabase.from('pubs').select('id, country_code').range(pubsStart, pubsStart + pubLimit - 1);
+            if (pubsErr || !pubsData || pubsData.length === 0) {
+                pubsHasMore = false;
+            } else {
+                pubsData.forEach(p => {
+                    if (p.id) {
+                        pubCountryMap[p.id] = p.country_code;
+                    }
+                });
+                if (pubsData.length < pubLimit) pubsHasMore = false;
+                else pubsStart += pubLimit;
+            }
+        }
+
+        const convertToGbp = (price: number, pubId: string) => {
+            if (!exchangeRates) return price;
+            const countryCode = pubCountryMap[pubId];
+            const currencyInfo = countryCode && CURRENCY_MAP[countryCode.toUpperCase()] ? CURRENCY_MAP[countryCode.toUpperCase()] : null;
+            if (currencyInfo && currencyInfo.code !== 'GBP' && exchangeRates[currencyInfo.code]) {
+                return price / exchangeRates[currencyInfo.code];
+            }
+            return price;
+        };
+
         let checkinPints = 0;
+        let checkinSpend = 0;
         let checkinsHasMore = true;
         let checkinsStart = 0;
         const limit = 1000;
         while (checkinsHasMore) {
-            const { data: checkinData, error: checkinErr } = await supabase.from('pub_checkins').select('amount_drank').range(checkinsStart, checkinsStart + limit - 1);
+            const { data: checkinData, error: checkinErr } = await supabase.from('pub_checkins').select('pub_id, amount_drank, price').range(checkinsStart, checkinsStart + limit - 1);
             if (checkinErr || !checkinData || checkinData.length === 0) {
                 checkinsHasMore = false;
             } else {
-                checkinPints += checkinData.reduce((acc, c) => acc + (c.amount_drank || 1), 0);
+                checkinData.forEach(c => {
+                    const drank = (c.amount_drank !== null && c.amount_drank !== undefined && c.amount_drank > 0) ? c.amount_drank : 1;
+                    checkinPints += drank;
+                    if (c.price) {
+                        checkinSpend += convertToGbp(c.price, c.pub_id) * drank;
+                    }
+                });
                 if (checkinData.length < limit) checkinsHasMore = false;
                 else checkinsStart += limit;
             }
         }
 
         let ratingsPints = 0;
+        let ratingsSpend = 0;
         let ratingsHasMore = true;
         let ratingsStart = 0;
         while (ratingsHasMore) {
-            const { data: ratingData, error: ratingErr } = await supabase.from('ratings').select('amount_drank').range(ratingsStart, ratingsStart + limit - 1);
+            const { data: ratingData, error: ratingErr } = await supabase.from('ratings').select('pub_id, amount_drank, exact_price').range(ratingsStart, ratingsStart + limit - 1);
             if (ratingErr || !ratingData || ratingData.length === 0) {
                 ratingsHasMore = false;
             } else {
-                ratingsPints += ratingData.reduce((acc, r) => acc + (r.amount_drank || 1), 0);
+                ratingData.forEach(r => {
+                    const drank = (r.amount_drank !== null && r.amount_drank !== undefined && r.amount_drank > 0) ? r.amount_drank : 1;
+                    ratingsPints += drank;
+                    if (r.exact_price) {
+                        ratingsSpend += convertToGbp(r.exact_price, r.pub_id) * drank;
+                    }
+                });
                 if (ratingData.length < limit) ratingsHasMore = false;
                 else ratingsStart += limit;
             }
@@ -283,6 +337,7 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         responseData.kpis.totalCheckinPints = checkinPints;
         responseData.kpis.totalRatingsPints = ratingsPints;
         responseData.kpis.totalPintsDrankSum = checkinPints + ratingsPints;
+        responseData.kpis.totalSpentOnPints = checkinSpend + ratingsSpend;
 
         const { count: manuallyAddedPubsCount, error: manuallyAddedPubsError } = await supabase
             .from('pubs')

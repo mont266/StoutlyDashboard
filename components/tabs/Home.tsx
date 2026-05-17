@@ -352,6 +352,10 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                         <p className="text-2xl font-bold text-text-primary">{data.kpis.totalPintsDrankSum?.toLocaleString() || '0'}</p>
                                         <p className="text-xs text-text-secondary mt-1">Total Pints Drank (Check-ins + Ratings)</p>
                                     </div>
+                                    <div className="bg-background rounded-xl p-4 border border-border/50 col-span-2 flex flex-col justify-center items-center text-center">
+                                        <p className="text-2xl font-bold text-text-primary">{formatCurrency(data.kpis.totalSpentOnPints || 0, 'GB')}</p>
+                                        <p className="text-xs text-text-secondary mt-1">Total User Spend on Pints</p>
+                                    </div>
                                 </div>
                             </div>
 
