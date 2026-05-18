@@ -293,6 +293,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
 
         let checkinPints = 0;
         let checkinSpend = 0;
+        let checkinSpendDataPoints = 0;
+        let checkinSpendPints = 0;
         let checkinsHasMore = true;
         let checkinsStart = 0;
         const limit = 1000;
@@ -306,6 +308,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
                     checkinPints += drank;
                     if (c.price) {
                         checkinSpend += convertToGbp(c.price, c.pub_id) * drank;
+                        checkinSpendDataPoints++;
+                        checkinSpendPints += drank;
                     }
                 });
                 if (checkinData.length < limit) checkinsHasMore = false;
@@ -315,6 +319,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
 
         let ratingsPints = 0;
         let ratingsSpend = 0;
+        let ratingsSpendDataPoints = 0;
+        let ratingsSpendPints = 0;
         let ratingsHasMore = true;
         let ratingsStart = 0;
         while (ratingsHasMore) {
@@ -327,6 +333,8 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
                     ratingsPints += drank;
                     if (r.exact_price) {
                         ratingsSpend += convertToGbp(r.exact_price, r.pub_id) * drank;
+                        ratingsSpendDataPoints++;
+                        ratingsSpendPints += drank;
                     }
                 });
                 if (ratingData.length < limit) ratingsHasMore = false;
@@ -338,6 +346,9 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
         responseData.kpis.totalRatingsPints = ratingsPints;
         responseData.kpis.totalPintsDrankSum = checkinPints + ratingsPints;
         responseData.kpis.totalSpentOnPints = checkinSpend + ratingsSpend;
+        responseData.kpis.totalSpendDataPoints = checkinSpendDataPoints + ratingsSpendDataPoints;
+        const totalSpendPints = checkinSpendPints + ratingsSpendPints;
+        responseData.kpis.avgSpendPerPint = totalSpendPints > 0 ? (checkinSpend + ratingsSpend) / totalSpendPints : 0;
 
         const { count: manuallyAddedPubsCount, error: manuallyAddedPubsError } = await supabase
             .from('pubs')

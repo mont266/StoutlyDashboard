@@ -45,6 +45,8 @@ export interface HomeKpis {
     totalPintsDrankSum?: number;
     manuallyAddedPubs?: number;
     totalSpentOnPints?: number;
+    totalSpendDataPoints?: number;
+    avgSpendPerPint?: number;
 }
 
 export interface PintPriceByCountry {

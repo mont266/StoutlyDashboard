@@ -355,6 +355,11 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     <div className="bg-background rounded-xl p-4 border border-border/50 col-span-2 flex flex-col justify-center items-center text-center">
                                         <p className="text-2xl font-bold text-text-primary">{formatCurrency(data.kpis.totalSpentOnPints || 0, 'GB')}</p>
                                         <p className="text-xs text-text-secondary mt-1">Total User Spend on Pints</p>
+                                        <div className="flex space-x-4 mt-3 text-xs text-text-secondary">
+                                            <span>Avg: {formatCurrency(data.kpis.avgSpendPerPint || 0, 'GB')}/pint</span>
+                                            <span>&bull;</span>
+                                            <span>Based on {data.kpis.totalSpendDataPoints?.toLocaleString() || 0} price entries</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
