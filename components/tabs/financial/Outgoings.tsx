@@ -87,10 +87,10 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
         setAddModalOpen(true);
     };
 
-    const handleLogAdditionalCharge = (subscription: Subscription) => {
+    const handleOpenAdjustment = (subscription: Subscription) => {
         const prefillData: Partial<NewOutgoingData> = {
-            name: `${subscription.name} - Additional Charge`,
-            description: `Additional charge for ${subscription.name}`,
+            name: `${subscription.name} - Adjustment`,
+            description: `Manual adjustment for variable subscription: ${subscription.name}`,
             amount: 0,
             currency: subscription.currency as 'GBP' | 'USD' | 'EUR',
             category: subscription.category,
@@ -288,7 +288,7 @@ const Outgoings: React.FC<OutgoingsProps> = ({ refreshKey }) => {
                     onOpenEndModal={handleOpenEndModal}
                     onRenewSubscription={handleRenewSubscription}
                     onOpenEditModal={handleOpenEditModal}
-                    onLogAdditionalCharge={handleLogAdditionalCharge}
+                    onLogAdditionalCharge={handleOpenAdjustment}
                 />
             )}
             {activeView === 'charts' && <ChartsView data={data} />}
@@ -571,7 +571,7 @@ const TablesView: React.FC<TablesViewProps> = ({ data, onOpenEndModal, onRenewSu
                                             <div className="flex items-center justify-center space-x-3">
                                                 {sub.status === 'Active' && (
                                                     <>
-                                                        <button onClick={() => onLogAdditionalCharge(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Log Additional Charge">
+                                                        <button onClick={() => onLogAdditionalCharge(sub)} className="text-text-secondary hover:text-primary transition-colors" title="Log Adjustment (Use negative for less)">
                                                             <PlusIcon />
                                                         </button>
                                                         <button onClick={() => onOpenEndModal(sub)} className="text-text-secondary hover:text-warning-red transition-colors" title="End Subscription">
@@ -738,8 +738,11 @@ const AddOutgoingModal: React.FC<{
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                         <span className="text-text-secondary sm:text-sm">{CURRENCY_SYMBOLS[formData.currency]}</span>
                                     </div>
-                                    <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required min="0.01" step="0.01" className="w-full bg-background border border-border rounded-lg p-2 pl-7 mt-1 focus:ring-primary focus:border-primary" />
+                                    <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required step="0.01" className="w-full bg-background border border-border rounded-lg p-2 pl-7 mt-1 focus:ring-primary focus:border-primary" />
                                 </div>
+                                {formData.type === 'manual' && (
+                                    <p className="text-xs text-text-secondary mt-1">Use a negative value to log a reduction or discount.</p>
+                                )}
                             </div>
                         </div>
 
@@ -912,8 +915,9 @@ const EditOutgoingModal: React.FC<{
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                         <span className="text-text-secondary sm:text-sm">{CURRENCY_SYMBOLS[formData.currency]}</span>
                                     </div>
-                                    <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required min="0.01" step="0.01" className="w-full bg-background border border-border rounded-lg p-2 pl-7 mt-1 focus:ring-primary focus:border-primary" />
+                                    <input type="number" id="amount" name="amount" value={formData.amount} onChange={handleChange} required step="0.01" className="w-full bg-background border border-border rounded-lg p-2 pl-7 mt-1 focus:ring-primary focus:border-primary" />
                                 </div>
+                                <p className="text-xs text-text-secondary mt-1">Use a negative value to log a reduction or discount.</p>
                             </div>
                         </div>
 
