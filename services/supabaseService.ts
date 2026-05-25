@@ -129,6 +129,16 @@ export const CURRENCY_MAP: Record<string, CurrencyInfo> = {
     'VN': { symbol: '₫', code: 'VND' },       // Vietnam - Dong
     'TH': { symbol: '฿', code: 'THB' },       // Thailand - Baht
     'FI': { symbol: '€', code: 'EUR' },       // Finland - Euro
+    
+    // East Caribbean Dollar
+    'LC': { symbol: '$', code: 'XCD' },       // Saint Lucia
+    'AI': { symbol: '$', code: 'XCD' },       // Anguilla
+    'AG': { symbol: '$', code: 'XCD' },       // Antigua and Barbuda
+    'DM': { symbol: '$', code: 'XCD' },       // Dominica
+    'GD': { symbol: '$', code: 'XCD' },       // Grenada
+    'MS': { symbol: '$', code: 'XCD' },       // Montserrat
+    'KN': { symbol: '$', code: 'XCD' },       // Saint Kitts and Nevis
+    'VC': { symbol: '$', code: 'XCD' },       // Saint Vincent and the Grenadines
 };
 
 // Default to GBP if country code not found
