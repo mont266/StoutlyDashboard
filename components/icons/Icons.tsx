@@ -349,6 +349,26 @@ export const StoutlyLogo: React.FC<LogoProps> = ({ className }) => (
     </svg>
 );
 
+export const StoutlyPin: React.FC<LogoProps> = ({ className }) => (
+    <svg 
+        viewBox='0 0 100 100' 
+        xmlns='http://www.w3.org/2000/svg' 
+        className={className}
+        aria-label="Stoutly Pin"
+    >
+        <path 
+            d='M50 5 C 29.5 5, 12.5 22.5, 12.5 42.5 C 12.5 67.5, 50 95, 50 95 C 50 95, 87.5 67.5, 87.5 42.5 C 87.5 22.5, 70.5 5, 50 5 Z' 
+            fill='#1A120F'
+            stroke='#F59E0B'
+            strokeWidth='4'
+        />
+        <path 
+            d='M25 45 C 40 30, 60 30, 75 45 C 75 35, 65 25, 50 25 C 35 25, 25 35, 25 45 Z' 
+            fill='#FDEED4'
+        />
+    </svg>
+);
+
 export const TableIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M4 9h18"></path><path d="M10 9v12"></path></svg>
 );

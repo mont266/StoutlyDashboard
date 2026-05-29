@@ -3,7 +3,8 @@ import Map, { Source, Layer, MapRef, Marker, Popup } from 'react-map-gl/mapbox';
 import type { SymbolLayer, CircleLayer } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { dash_getWorldMapData, formatCurrency, CURRENCY_MAP } from '../../services/supabaseService';
-import { RefreshCwIcon } from '../icons/Icons'; 
+import { RefreshCwIcon, DownloadIcon } from '../icons/Icons'; 
+import InfographicModal from '../InfographicModal';
 
 interface PubMapData {
     id: string;
@@ -14,6 +15,7 @@ interface PubMapData {
     country_code: string | null;
     ratings_count: number;
     avg_score: number | null;
+    avg_quality: number | null;
     min_price: number | null;
     max_price: number | null;
 }
@@ -66,6 +68,8 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
     const [stoutlyMode, setStoutlyMode] = useState(false);
     const [selectedCluster, setSelectedCluster] = useState<any>(null);
     const [selectedPub, setSelectedPub] = useState<PubMapData | null>(null);
+    const [infographicModalOpen, setInfographicModalOpen] = useState(false);
+    const [infographicClusterTarget, setInfographicClusterTarget] = useState<any>(null);
 
     useEffect(() => {
         const fetchMap = async () => {
@@ -163,6 +167,16 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                 <h2 className="text-3xl font-bold text-text-primary tracking-tight">World Map</h2>
                 
                 <div className="flex items-center space-x-4">
+                    <button 
+                        onClick={() => {
+                            setInfographicClusterTarget(null);
+                            setInfographicModalOpen(true);
+                        }}
+                        className="bg-primary hover:bg-primary-hover text-background font-bold px-4 py-2 rounded-lg border border-border/50 flex items-center space-x-2 transition-colors"
+                    >
+                        <DownloadIcon className="w-4 h-4" />
+                        <span className="text-sm">Infographic</span>
+                    </button>
                     <label className="flex items-center space-x-2 cursor-pointer bg-surface px-4 py-2 rounded-lg border border-border/50">
                         <span className="text-sm font-medium">Stoutly Mode (Pins only)</span>
                         <input 
@@ -244,7 +258,18 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                             maxWidth="400px"
                         >
                             <div className="p-5 max-h-[400px] overflow-y-auto text-sm text-[#FDEED4]">
-                                <h3 className="font-bold text-xl mb-4 pr-4 border-b border-[#374151] pb-2">Cluster area ({selectedCluster.count} pubs)</h3>
+                                <div className="flex justify-between items-start mb-4 pr-4 border-b border-[#374151] pb-2">
+                                    <h3 className="font-bold text-xl">Cluster area ({selectedCluster.count} pubs)</h3>
+                                    <button 
+                                        onClick={() => {
+                                            setInfographicClusterTarget(selectedCluster);
+                                            setInfographicModalOpen(true);
+                                        }}
+                                        className="bg-[#10B981]/20 hover:bg-[#10B981]/40 text-[#10B981] px-3 py-1 rounded font-medium text-xs flex items-center gap-1 transition-colors border border-[#10B981]/50 whitespace-nowrap"
+                                    >
+                                        <DownloadIcon className="w-3 h-3" /> Infographic
+                                    </button>
+                                </div>
                                 
                                 {selectedCluster.cheapest.length > 0 && (
                                     <div className="mb-4">
@@ -373,6 +398,13 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                     color: #FFFFFF !important;
                 }
             `}} />
+            
+            <InfographicModal 
+                isOpen={infographicModalOpen}
+                onClose={() => setInfographicModalOpen(false)}
+                allPubs={data}
+                initialCluster={infographicClusterTarget}
+            />
         </div>
     );
 }

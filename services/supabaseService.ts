@@ -900,22 +900,25 @@ export const dash_getWorldMapData = async () => {
             pubScoreMap[s.pub_id] = s.pub_score;
         });
 
-        const pubRatingsMap: Record<string, { ratingsCount: number; prices: number[] }> = {};
+        const pubRatingsMap: Record<string, { ratingsCount: number; prices: number[]; qualities: number[] }> = {};
         allRatings.forEach(r => {
             if (!pubRatingsMap[r.pub_id]) {
-                pubRatingsMap[r.pub_id] = { ratingsCount: 0, prices: [] };
+                pubRatingsMap[r.pub_id] = { ratingsCount: 0, prices: [], qualities: [] };
             }
             pubRatingsMap[r.pub_id].ratingsCount++;
             if (r.exact_price !== null && r.exact_price !== undefined && r.exact_price > 0) pubRatingsMap[r.pub_id].prices.push(r.exact_price);
+            if (r.quality !== null && r.quality !== undefined) pubRatingsMap[r.pub_id].qualities.push(r.quality);
         });
 
         // Convert the map to the final format, grouping by area if needed
         const ratedPubs = allPubs.filter(p => p.id && pubRatingsMap[p.id] && p.lat && p.lng).map(p => {
             const prices = pubRatingsMap[p.id].prices;
+            const qualities = pubRatingsMap[p.id].qualities;
             return {
                 ...p,
                 ratings_count: pubRatingsMap[p.id].ratingsCount,
                 avg_score: pubScoreMap[p.id] !== undefined ? pubScoreMap[p.id] : null,
+                avg_quality: qualities.length > 0 ? qualities.reduce((a, b) => a + b, 0) / qualities.length : null,
                 min_price: prices.length > 0 ? Math.min(...prices) : null,
                 max_price: prices.length > 0 ? Math.max(...prices) : null,
             };
