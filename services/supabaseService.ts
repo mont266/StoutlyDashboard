@@ -837,6 +837,97 @@ export const getGoalsProgressData = async (): Promise<{ totalUsers: number; tota
     }
 };
 
+export const dash_getWorldMapData = async () => {
+    try {
+        let allPubs: any[] = [];
+        let hasMore = true;
+        let start = 0;
+        const limit = 1000;
+        
+        while (hasMore) {
+            const { data, error } = await supabase.from('pubs').select('id, name, lat, lng, area_identifier, country_code').range(start, start + limit - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                hasMore = false;
+            } else {
+                allPubs = allPubs.concat(data);
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
+            }
+        }
+
+        let allRatings: any[] = [];
+        hasMore = true;
+        start = 0;
+        while (hasMore) {
+            const { data, error } = await supabase.from('ratings').select('pub_id, quality, exact_price').range(start, start + limit - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                hasMore = false;
+            } else {
+                allRatings = allRatings.concat(data);
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
+            }
+        }
+
+        let allScores: any[] = [];
+        hasMore = true;
+        start = 0;
+        while (hasMore) {
+            const { data, error } = await supabase.from('pub_scores').select('pub_id, pub_score').range(start, start + limit - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                hasMore = false;
+            } else {
+                allScores = allScores.concat(data);
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
+            }
+        }
+
+        const pubScoreMap: Record<string, number> = {};
+        allScores.forEach(s => {
+            pubScoreMap[s.pub_id] = s.pub_score;
+        });
+
+        const pubRatingsMap: Record<string, { ratingsCount: number; prices: number[] }> = {};
+        allRatings.forEach(r => {
+            if (!pubRatingsMap[r.pub_id]) {
+                pubRatingsMap[r.pub_id] = { ratingsCount: 0, prices: [] };
+            }
+            pubRatingsMap[r.pub_id].ratingsCount++;
+            if (r.exact_price !== null && r.exact_price !== undefined && r.exact_price > 0) pubRatingsMap[r.pub_id].prices.push(r.exact_price);
+        });
+
+        // Convert the map to the final format, grouping by area if needed
+        const ratedPubs = allPubs.filter(p => p.id && pubRatingsMap[p.id] && p.lat && p.lng).map(p => {
+            const prices = pubRatingsMap[p.id].prices;
+            return {
+                ...p,
+                ratings_count: pubRatingsMap[p.id].ratingsCount,
+                avg_score: pubScoreMap[p.id] !== undefined ? pubScoreMap[p.id] : null,
+                min_price: prices.length > 0 ? Math.min(...prices) : null,
+                max_price: prices.length > 0 ? Math.max(...prices) : null,
+            };
+        });
+
+        return ratedPubs;
+    } catch (e) {
+        console.error("Failed to fetch world map data", e);
+        return [];
+    }
+};
+
 export const getPublicMapUsers = async (): Promise<PublicMapUser[]> => {
     try {
         const { data, error } = await supabase

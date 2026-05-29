@@ -7,7 +7,8 @@ import Maps from './tabs/Maps';
 import Pubs from './tabs/Pubs';
 import Goals from './tabs/Goals';
 import Crawls from './tabs/Crawls';
-import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, BuildingIcon, LogOutIcon, MoreHorizontalIcon, TrophyIcon, MapIcon } from './icons/Icons';
+import WorldMap from './tabs/WorldMap';
+import { HomeIcon, UsersIcon, FileTextIcon, CreditCardIcon, StoutlyLogo, BuildingIcon, LogOutIcon, MoreHorizontalIcon, TrophyIcon, MapIcon, GlobeIcon } from './icons/Icons';
 import { getLaunchDuration } from '../services/supabaseService';
 
 const TABS = {
@@ -15,6 +16,7 @@ const TABS = {
     Users: { component: Users, icon: <UsersIcon /> },
     Pubs: { component: Pubs, icon: <BuildingIcon /> },
     Crawls: { component: Crawls, icon: <MapIcon /> },
+    WorldMap: { component: WorldMap, icon: <GlobeIcon /> },
     Content: { component: Content, icon: <FileTextIcon /> },
     Financial: { component: Financial, icon: <CreditCardIcon /> },
     Maps: { component: Maps, icon: <MapIcon /> },
