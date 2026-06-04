@@ -6,8 +6,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { dash_getPubsData, formatCurrency } from '../../services/supabaseService';
 import type { Pub } from '../../types';
 import type { DashPubsData } from '../../services/dashContracts';
-import { StarIcon, BuildingIcon, HashIcon, RefreshCwIcon } from '../icons/Icons';
+import { StarIcon, BuildingIcon, HashIcon, RefreshCwIcon, DownloadIcon } from '../icons/Icons';
 import StatCard from '../StatCard';
+import PintPriceInfographicModal from '../PintPriceInfographicModal';
 
 interface PubsProps {
     refreshKey: number;
@@ -16,6 +17,7 @@ interface PubsProps {
 const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
     const [data, setData] = useState<DashPubsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [infographicModalOpen, setInfographicModalOpen] = useState(false);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -146,7 +148,16 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
             </div>
 
              <div className="bg-surface rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold text-text-primary p-4 border-b border-border">Average Pint Price by Country</h3>
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-text-primary">Average Pint Price by Country</h3>
+                    <button 
+                        onClick={() => setInfographicModalOpen(true)}
+                        className="text-text-secondary hover:text-primary transition-colors p-1"
+                        title="Generate Infographic"
+                    >
+                        <DownloadIcon className="w-5 h-5" />
+                    </button>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-text-secondary">
                          <thead className="text-xs text-text-secondary uppercase bg-background">
@@ -193,6 +204,14 @@ const Pubs: React.FC<PubsProps> = ({ refreshKey }) => {
                     </table>
                 </div>
             </div>
+
+            {data?.analytics && (
+                <PintPriceInfographicModal 
+                    isOpen={infographicModalOpen}
+                    onClose={() => setInfographicModalOpen(false)}
+                    data={data.analytics.pintPriceByCountry}
+                />
+            )}
         </section>
     );
 };

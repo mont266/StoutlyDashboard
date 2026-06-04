@@ -58,48 +58,48 @@ const DeadlineCountdown: React.FC<{ deadline: Date }> = ({ deadline }) => {
 const goalsByYear = [
     {
         year: 1,
-        deadline: new Date(LAUNCH_DATE.getFullYear() + 1, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
+        deadline: new Date('2026-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', target: 10000 },
-            { name: 'Ratings', target: 50000 },
-            { name: 'Pubs', target: 5000 },
+            { name: 'Users', target: 1000 },
+            { name: 'Ratings', target: 2000 },
+            { name: 'Pubs', target: 2500 },
         ],
     },
     {
         year: 2,
-        deadline: new Date(LAUNCH_DATE.getFullYear() + 2, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
+        deadline: new Date('2027-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', target: 50000 },
+            { name: 'Users', target: 3500 },
             { name: 'All-Time Profit', target: 0, format: 'currency' },
-            { name: 'Ratings', target: 250000 },
-            { name: 'Pubs', target: 25000 },
+            { name: 'Ratings', target: 8750 },
+            { name: 'Pubs', target: 7500 },
         ],
     },
     {
         year: 3,
-        deadline: new Date(LAUNCH_DATE.getFullYear() + 3, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
+        deadline: new Date('2028-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', current: 0, target: 150000 },
-            { name: 'Ratings', current: 0, target: 750000 },
-            { name: 'Pubs', current: 0, target: 75000 },
+            { name: 'Users', current: 0, target: 12500 },
+            { name: 'Ratings', current: 0, target: 37500 },
+            { name: 'Pubs', current: 0, target: 20000 },
         ],
     },
     {
         year: 4,
-        deadline: new Date(LAUNCH_DATE.getFullYear() + 4, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
+        deadline: new Date('2029-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', current: 0, target: 450000 },
-            { name: 'Ratings', current: 0, target: 2250000 },
-            { name: 'Pubs', current: 0, target: 225000 },
+            { name: 'Users', current: 0, target: 45000 },
+            { name: 'Ratings', current: 0, target: 150000 },
+            { name: 'Pubs', current: 0, target: 50000 },
         ],
     },
     {
         year: 5,
-        deadline: new Date(LAUNCH_DATE.getFullYear() + 5, LAUNCH_DATE.getMonth(), LAUNCH_DATE.getDate()),
+        deadline: new Date('2030-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', current: 0, target: 750000 },
-            { name: 'Ratings', current: 0, target: 5000000 },
-            { name: 'Pubs', current: 0, target: 500000 },
+            { name: 'Users', current: 0, target: 150000 },
+            { name: 'Ratings', current: 0, target: 500000 },
+            { name: 'Pubs', current: 0, target: 150000 },
         ],
     },
 ];
