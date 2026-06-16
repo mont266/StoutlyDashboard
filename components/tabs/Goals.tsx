@@ -61,8 +61,8 @@ const goalsByYear = [
         deadline: new Date('2026-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', target: 1000 },
-            { name: 'Ratings', target: 2000 },
-            { name: 'Pubs', target: 2500 },
+            { name: 'Ratings', target: 3000 },
+            { name: 'Pubs', target: 1000 },
         ],
     },
     {
@@ -71,8 +71,8 @@ const goalsByYear = [
         goals: [
             { name: 'Users', target: 3500 },
             { name: 'All-Time Profit', target: 0, format: 'currency' },
-            { name: 'Ratings', target: 8750 },
-            { name: 'Pubs', target: 7500 },
+            { name: 'Ratings', target: 12500 },
+            { name: 'Pubs', target: 3000 },
         ],
     },
     {
@@ -80,8 +80,8 @@ const goalsByYear = [
         deadline: new Date('2028-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', current: 0, target: 12500 },
-            { name: 'Ratings', current: 0, target: 37500 },
-            { name: 'Pubs', current: 0, target: 20000 },
+            { name: 'Ratings', current: 0, target: 50000 },
+            { name: 'Pubs', current: 0, target: 8000 },
         ],
     },
     {
@@ -89,8 +89,8 @@ const goalsByYear = [
         deadline: new Date('2029-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', current: 0, target: 45000 },
-            { name: 'Ratings', current: 0, target: 150000 },
-            { name: 'Pubs', current: 0, target: 50000 },
+            { name: 'Ratings', current: 0, target: 180000 },
+            { name: 'Pubs', current: 0, target: 25000 },
         ],
     },
     {
@@ -98,8 +98,8 @@ const goalsByYear = [
         deadline: new Date('2030-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', current: 0, target: 150000 },
-            { name: 'Ratings', current: 0, target: 500000 },
-            { name: 'Pubs', current: 0, target: 150000 },
+            { name: 'Ratings', current: 0, target: 600000 },
+            { name: 'Pubs', current: 0, target: 75000 },
         ],
     },
 ];
@@ -194,9 +194,9 @@ const Goals: React.FC = () => {
         
         // Achieved check
         if (target === 0) {
-            if (current >= 0) return { status: 'achieved', shortfall: 0, projectedPercentage: 100 };
+            if (current >= 0) return { status: 'achieved', shortfall: 0, overachievement: 0, projectedPercentage: 100 };
         } else {
-            if (current >= target) return { status: 'achieved', shortfall: 0, projectedPercentage: 100 };
+            if (current >= target) return { status: 'achieved', shortfall: 0, overachievement: 0, projectedPercentage: 100 };
         }
 
         const daysRemaining = Math.max(0, (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -208,10 +208,11 @@ const Goals: React.FC = () => {
         }
 
         if (target === 0 ? projected >= 0 : projected >= target) {
-            return { status: 'on-track', shortfall: 0, projectedPercentage: 100 };
+            const over = Math.max(0, projected - target);
+            return { status: 'on-track', shortfall: 0, overachievement: Math.floor(over), projectedPercentage: 100 };
         } else {
             const pct = target === 0 ? 0 : Math.max(0, (projected / target) * 100);
-            return { status: 'behind', shortfall: Math.ceil(target - projected), projectedPercentage: pct };
+            return { status: 'behind', shortfall: Math.ceil(target - projected), overachievement: 0, projectedPercentage: pct };
         }
     };
 
@@ -275,21 +276,21 @@ const Goals: React.FC = () => {
                                                 </div>
                                             ) : (
                                                 <div 
-                                                    className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                                                        status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10 cursor-pointer'
+                                                    className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded cursor-pointer ${
+                                                        status === 'on-track' ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10'
                                                     }`}
-                                                    title={status === 'behind' ? `Projected to miss target by ${formatValue(prediction.shortfall, goal.format)} (Finish at ${prediction.projectedPercentage?.toFixed(1)}%)` : undefined}
-                                                    onClick={status === 'behind' ? () => toggleClickedGoal(goalKey) : undefined}
+                                                    title={status === 'behind' ? `Projected to miss target by ${formatValue(prediction.shortfall, goal.format)} (Finish at ${prediction.projectedPercentage?.toFixed(1)}%)` : `Projected to beat target by ${formatValue(prediction.overachievement, goal.format)}`}
+                                                    onClick={() => toggleClickedGoal(goalKey)}
                                                 >
                                                     {status === 'on-track' ? (
                                                         <>
                                                             <TrendingUpIcon />
-                                                            On Track
+                                                            {isClicked ? `Beat by ${formatValue(prediction.overachievement, goal.format)}` : 'On Track'}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <AlertTriangleIcon />
-                                                            {isClicked ? `Miss by ${formatValue(prediction.shortfall, goal.format)} (${prediction.projectedPercentage?.toFixed(1)}%)` : 'Behind'}
+                                                            {isClicked ? `Miss by ${formatValue(prediction.shortfall, goal.format)} ${prediction.projectedPercentage ? `(${prediction.projectedPercentage.toFixed(1)}%)` : ''}` : 'Behind'}
                                                         </>
                                                     )}
                                                 </div>
