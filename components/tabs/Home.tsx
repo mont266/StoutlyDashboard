@@ -6,6 +6,7 @@ import { dash_getHomeData, dash_getStripeFinancials, dash_getFinancialSummary, f
 import type { DashHomeData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import SimpleLineChart from '../charts/SimpleLineChart';
+import CombinedRatingsCheckinsChart from '../charts/CombinedRatingsCheckinsChart';
 // FIX: Import ArrowUpRightIcon and ArrowDownRightIcon.
 import { UsersIcon, ActivityIcon, StarIcon, ImageIcon, MessageSquareIcon, BuildingIcon, DollarSignIcon, GiftIcon, TrendingUpIcon, TrendingDownIcon, RefreshCwIcon, ArrowUpRightIcon, ArrowDownRightIcon, GlobeIcon, MapIcon, MaximizeIcon, XIcon } from '../icons/Icons';
 
@@ -141,6 +142,9 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
             title = `Pub Crawls (${timeframes[timeframe as keyof typeof timeframes]})`;
             chartData = data.charts.pubCrawlsOverTime;
             color = "#10B981";
+        } else if (expandedChart === 'activity') {
+            title = `Activity Trend (${timeframes[timeframe as keyof typeof timeframes]})`;
+            // chartData / color handled manually
         } else if (expandedChart === 'checkins') {
             title = `Pub Check-ins (${timeframes[timeframe as keyof typeof timeframes]})`;
             chartData = data.charts.pubCheckinsOverTime || [];
@@ -186,7 +190,14 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                         </div>
                     </div>
                     <div className="flex-1 p-6 min-h-0">
-                        <SimpleLineChart data={chartData} color={color} />
+                        {expandedChart === 'activity' ? (
+                            <CombinedRatingsCheckinsChart 
+                                ratingsData={data.charts.newRatingsOverTime}
+                                checkinsData={data.charts.pubCheckinsOverTime || []}
+                            />
+                        ) : (
+                            <SimpleLineChart data={chartData} color={color} />
+                        )}
                     </div>
                 </div>
             </div>
@@ -272,25 +283,8 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-surface p-6 rounded-xl shadow-lg border border-border/50">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-text-primary">Ratings Trend</h3>
-                                            <p className="text-sm text-text-secondary mt-1">New ratings submitted</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => setExpandedChart('ratings')}
-                                            className="p-2 rounded-lg text-text-secondary hover:text-primary hover:bg-border/50 transition-colors"
-                                            title="Full Screen"
-                                        >
-                                            <MaximizeIcon />
-                                        </button>
-                                    </div>
-                                    <div className="h-64">
-                                        <SimpleLineChart data={data.charts.newRatingsOverTime} color="#F59E0B" />
-                                    </div>
-                                </div>
-                                <div className="bg-surface p-6 rounded-xl shadow-lg border border-border/50">
+                                {/* Pub Crawls */}
+                                <div className="bg-surface p-6 rounded-xl shadow-lg border border-border/50 md:col-span-1">
                                     <div className="flex items-center justify-between mb-6">
                                         <div>
                                             <h3 className="text-lg font-bold text-text-primary">Pub Crawls</h3>
@@ -310,15 +304,15 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                 </div>
                             </div>
                             
-                            {/* Check-ins Chart (Full Width) */}
+                            {/* Combined Chart (Full Width) */}
                             <div className="bg-surface p-6 rounded-xl shadow-lg border border-border/50">
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
-                                        <h3 className="text-xl font-bold text-text-primary">Pub Check-ins</h3>
-                                        <p className="text-sm text-text-secondary mt-1">Check-ins over {timeframes[timeframe as keyof typeof timeframes].toLowerCase()}</p>
+                                        <h3 className="text-xl font-bold text-text-primary">Ratings & Check-ins</h3>
+                                        <p className="text-sm text-text-secondary mt-1">Activity over {timeframes[timeframe as keyof typeof timeframes].toLowerCase()}</p>
                                     </div>
                                     <button 
-                                        onClick={() => setExpandedChart('checkins')}
+                                        onClick={() => setExpandedChart('activity')}
                                         className="p-2 rounded-lg text-text-secondary hover:text-primary hover:bg-border/50 transition-colors"
                                         title="Full Screen"
                                     >
@@ -326,7 +320,10 @@ const Home: React.FC<HomeProps> = ({ refreshKey }) => {
                                     </button>
                                 </div>
                                 <div className="h-64">
-                                    <SimpleLineChart data={data.charts.pubCheckinsOverTime || []} color="#8B5CF6" />
+                                    <CombinedRatingsCheckinsChart 
+                                        ratingsData={data.charts.newRatingsOverTime}
+                                        checkinsData={data.charts.pubCheckinsOverTime || []}
+                                    />
                                 </div>
                             </div>
                         </div>

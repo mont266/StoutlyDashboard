@@ -86,6 +86,7 @@ export interface User {
   hasDonated?: boolean;
   reviewsCount: number;
   signupUtmSource?: string | null;
+  dob?: string | null;
 }
 
 export interface UTMStat {

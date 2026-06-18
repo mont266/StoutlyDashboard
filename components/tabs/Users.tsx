@@ -7,6 +7,7 @@ import type { DashUsersData } from '../../services/dashContracts';
 import StatCard from '../StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { UsersIcon, GlobeIcon, ChevronsUpDownIcon, RefreshCwIcon } from '../icons/Icons';
+import UserModal from '../UserModal';
 
 type SubTab = 'all' | 'today' | 'utm';
 
@@ -23,6 +24,8 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
 
     // State for UTM drill-down
     const [selectedUtm, setSelectedUtm] = useState<string | null>(null);
+
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -59,9 +62,9 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
 
         switch (subTab) {
             case 'all':
-                return <UserTable users={data.allUsers} />;
+                return <UserTable users={data.allUsers} onUserClick={setSelectedUser} />;
             case 'today':
-                return <UserList users={data.todayUsers} />;
+                return <UserList users={data.todayUsers} onUserClick={setSelectedUser} />;
             case 'utm':
                 if (selectedUtm) {
                     const filteredUtmUsers = data.allUsers.filter(user => {
@@ -79,7 +82,7 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
                                 &larr; Back to UTM Sources
                             </button>
                             <h3 className="text-lg font-semibold mb-2">Users from "{selectedUtm}"</h3>
-                            <UserTable users={filteredUtmUsers} />
+                            <UserTable users={filteredUtmUsers} onUserClick={setSelectedUser} />
                         </div>
                     );
                 }
@@ -129,6 +132,7 @@ const Users: React.FC<UsersProps> = ({ refreshKey }) => {
                     {renderContent()}
                 </div>
             </div>
+            <UserModal isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} user={selectedUser} />
         </section>
     );
 };
@@ -144,7 +148,7 @@ const UserBadges: React.FC<{ user: User }> = ({ user }) => (
 
 type SortableUserKeys = 'name' | 'level' | 'reviewsCount' | 'lastActive' | 'signupDate';
 
-const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
+const UserTable: React.FC<{ users: User[], onUserClick: (user: User) => void }> = ({ users, onUserClick }) => {
     // Basic pagination and search state
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
@@ -235,8 +239,8 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
                                             onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                                         />
                                         <div>
-                                            <div className="flex items-center flex-wrap">
-                                                <a href={`https://app.stoutly.co.uk/?user_id=${user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-primary hover:underline transition-colors">{user.name}</a>
+                                            <div className="flex items-center flex-wrap gap-2">
+                                                <button onClick={() => onUserClick(user)} className="font-semibold hover:text-primary transition-colors text-left">{user.name}</button>
                                                 <UserBadges user={user} />
                                             </div>
                                             <p className="text-xs text-text-secondary">Joined: {formatDate(user.signupDate)}</p>
@@ -267,7 +271,7 @@ const UserTable: React.FC<{ users: User[] }> = ({ users }) => {
     )
 };
 
-const UserList: React.FC<{ users: User[] }> = ({ users }) => (
+const UserList: React.FC<{ users: User[], onUserClick: (user: User) => void }> = ({ users, onUserClick }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {users.map(user => (
             <div key={user.id} className="bg-background p-4 rounded-lg flex items-center space-x-3 border border-border">
@@ -278,7 +282,7 @@ const UserList: React.FC<{ users: User[] }> = ({ users }) => (
                     onError={(e) => { e.currentTarget.src = PLACEHOLDER_AVATAR; }}
                  />
                 <div>
-                    <a href={`https://app.stoutly.co.uk/?user_id=${user.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-text-primary hover:text-primary hover:underline transition-colors">{user.name}</a>
+                    <button onClick={() => onUserClick(user)} className="font-semibold text-text-primary hover:text-primary transition-colors text-left">{user.name}</button>
                     <p className="text-xs text-text-secondary">{new Date(user.lastActive).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                 </div>
             </div>

@@ -402,6 +402,29 @@ export const dash_getHomeData = async (timeframe: string): Promise<DashHomeData>
     }
 };
 
+export const fetchUserAdditionalDetails = async (userId: string) => {
+    try {
+        const [{ data: profile }, { count: ratingsCount }, { count: crawlsCount }, { count: pubsCount }] = await Promise.all([
+            supabase.from('profiles').select('accepts_marketing, dob, signup_utm_source').eq('id', userId).single(),
+            supabase.from('ratings').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+            supabase.from('pub_crawls').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+            supabase.from('pubs').select('*', { count: 'exact', head: true }).eq('created_by', userId),
+        ]);
+
+        return {
+            acceptsMarketing: profile?.accepts_marketing || false,
+            dob: profile?.dob || null,
+            signupUtmSource: profile?.signup_utm_source || null,
+            ratingsCount: ratingsCount || 0,
+            crawlsCount: crawlsCount || 0,
+            pubsAddedCount: pubsCount || 0,
+        };
+    } catch (error) {
+        console.error("Error fetching user additional details:", error);
+        return null;
+    }
+};
+
 // --- USERS TAB ---
 export const dash_getUsersData = async (): Promise<DashUsersData> => {
     try {

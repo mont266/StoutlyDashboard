@@ -61,7 +61,7 @@ const goalsByYear = [
         deadline: new Date('2026-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', target: 1000 },
-            { name: 'Ratings', target: 3000 },
+            { name: 'Ratings', target: 1500 },
             { name: 'Pubs', target: 1000 },
         ],
     },
@@ -69,28 +69,28 @@ const goalsByYear = [
         year: 2,
         deadline: new Date('2027-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', target: 3500 },
+            { name: 'Users', target: 4000 },
             { name: 'All-Time Profit', target: 0, format: 'currency' },
-            { name: 'Ratings', target: 12500 },
-            { name: 'Pubs', target: 3000 },
+            { name: 'Ratings', target: 6000 },
+            { name: 'Pubs', target: 4000 },
         ],
     },
     {
         year: 3,
         deadline: new Date('2028-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', current: 0, target: 12500 },
-            { name: 'Ratings', current: 0, target: 50000 },
-            { name: 'Pubs', current: 0, target: 8000 },
+            { name: 'Users', current: 0, target: 15000 },
+            { name: 'Ratings', current: 0, target: 22500 },
+            { name: 'Pubs', current: 0, target: 15000 },
         ],
     },
     {
         year: 4,
         deadline: new Date('2029-07-25T00:00:00Z'),
         goals: [
-            { name: 'Users', current: 0, target: 45000 },
-            { name: 'Ratings', current: 0, target: 180000 },
-            { name: 'Pubs', current: 0, target: 25000 },
+            { name: 'Users', current: 0, target: 50000 },
+            { name: 'Ratings', current: 0, target: 75000 },
+            { name: 'Pubs', current: 0, target: 50000 },
         ],
     },
     {
@@ -98,8 +98,8 @@ const goalsByYear = [
         deadline: new Date('2030-07-25T00:00:00Z'),
         goals: [
             { name: 'Users', current: 0, target: 150000 },
-            { name: 'Ratings', current: 0, target: 600000 },
-            { name: 'Pubs', current: 0, target: 75000 },
+            { name: 'Ratings', current: 0, target: 225000 },
+            { name: 'Pubs', current: 0, target: 150000 },
         ],
     },
 ];
