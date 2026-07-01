@@ -123,6 +123,30 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                     const expensive = [...pubsInCluster].filter(p => p.max_price != null).sort((a, b) => b.max_price! - a.max_price!).slice(0, 10);
                     const topRated = [...pubsInCluster].filter(p => p.avg_score != null).sort((a, b) => b.avg_score! - a.avg_score!).slice(0, 10);
                     
+                    let sum = 0;
+                    let count = 0;
+                    pubsInCluster.forEach(p => {
+                        if (p.min_price != null) {
+                            sum += p.min_price;
+                            count++;
+                        }
+                    });
+                    const avgPrice = count > 0 ? sum / count : null;
+                    const clusterCountryCode = pubsInCluster.length > 0 ? pubsInCluster[0].country_code : null;
+                    const currency = clusterCountryCode ? (CURRENCY_MAP[clusterCountryCode.toUpperCase()]?.symbol || '£') : '£';
+                    
+                    let countrySum = 0;
+                    let countryCount = 0;
+                    if (clusterCountryCode) {
+                        data.forEach(p => {
+                            if (p.country_code === clusterCountryCode && p.min_price != null) {
+                                countrySum += p.min_price;
+                                countryCount++;
+                            }
+                        });
+                    }
+                    const countryAvgPrice = countryCount > 0 ? countrySum / countryCount : null;
+                    
                     setSelectedCluster({
                         count: pubsInCluster.length,
                         lng: feature.geometry.coordinates[0],
@@ -130,7 +154,10 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                         pubs: pubsInCluster,
                         cheapest,
                         expensive,
-                        topRated
+                        topRated,
+                        avgPrice,
+                        countryAvgPrice,
+                        currency
                     });
                 });
 
@@ -270,6 +297,21 @@ export default function WorldMap({ refreshKey }: { refreshKey: number }) {
                                         <DownloadIcon className="w-3 h-3" /> Infographic
                                     </button>
                                 </div>
+                                
+                                {selectedCluster.avgPrice != null && (
+                                    <div className="mb-4 bg-[#111827]/50 rounded-lg p-3 border border-[#374151] flex flex-col gap-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[#9CA3AF] font-medium">Area Avg Price:</span>
+                                            <span className="font-bold text-lg text-[#10B981]">{selectedCluster.currency}{selectedCluster.avgPrice.toFixed(2)}</span>
+                                        </div>
+                                        {selectedCluster.countryAvgPrice != null && (
+                                            <div className="flex justify-between items-center pt-2 border-t border-[#374151]/50">
+                                                <span className="text-[#9CA3AF] font-medium">Country Avg Price:</span>
+                                                <span className="font-bold text-md text-[#10B981]">{selectedCluster.currency}{selectedCluster.countryAvgPrice.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 
                                 {selectedCluster.cheapest.length > 0 && (
                                     <div className="mb-4">

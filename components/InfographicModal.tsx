@@ -105,6 +105,41 @@ export default function InfographicModal({ isOpen, onClose, allPubs, initialClus
         return unique.slice(0, 10);
     }, [clusterData, cityInput, allPubs, statMode, excludedIds]);
 
+    const clusterAvgPrice = useMemo(() => {
+        if (!clusterData || !clusterData.pubs) return null;
+        let sum = 0;
+        let count = 0;
+        clusterData.pubs.forEach((p: PubMapData) => {
+            // Using min_price as it's typically the standard pint price in Stoutly's schema
+            if (p.min_price != null) {
+                sum += p.min_price;
+                count++;
+            }
+        });
+        return count > 0 ? sum / count : null;
+    }, [clusterData]);
+
+    const countryAvgPrice = useMemo(() => {
+        if (!clusterData || !clusterData.pubs || clusterData.pubs.length === 0) return null;
+        const code = clusterData.pubs[0].country_code;
+        if (!code) return null;
+        let sum = 0;
+        let count = 0;
+        allPubs.forEach((p: PubMapData) => {
+            if (p.country_code === code && p.min_price != null) {
+                sum += p.min_price;
+                count++;
+            }
+        });
+        return count > 0 ? sum / count : null;
+    }, [clusterData, allPubs]);
+
+    const clusterCurrency = useMemo(() => {
+        if (!clusterData || !clusterData.pubs || clusterData.pubs.length === 0) return '£';
+        const code = clusterData.pubs[0].country_code?.toUpperCase() || 'GB';
+        return CURRENCY_MAP[code]?.symbol || '£';
+    }, [clusterData]);
+
     const handleDownload = async () => {
         if (!graphicRef.current) return;
         setGenerating(true);
@@ -284,6 +319,21 @@ export default function InfographicModal({ isOpen, onClose, allPubs, initialClus
                                         {statMode}
                                     </h1>
                                     <p className="text-lg font-medium text-[#D1D5DB] uppercase tracking-widest">{displayTitle}</p>
+                                    
+                                    {clusterData && clusterAvgPrice != null && (
+                                        <div className="mt-4 flex justify-center gap-4 flex-wrap">
+                                            <div className="bg-[#1e293b]/80 border border-[#374151] rounded-full px-4 py-1.5 flex items-center gap-2 shadow-sm">
+                                                <span className="text-sm font-semibold text-[#9CA3AF] uppercase tracking-wider">Avg Price in Area:</span>
+                                                <span className="text-sm font-bold text-[#10B981]">{clusterCurrency}{clusterAvgPrice.toFixed(2)}</span>
+                                            </div>
+                                            {countryAvgPrice != null && (
+                                                <div className="bg-[#1e293b]/80 border border-[#374151] rounded-full px-4 py-1.5 flex items-center gap-2 shadow-sm">
+                                                    <span className="text-sm font-semibold text-[#9CA3AF] uppercase tracking-wider">Country Avg:</span>
+                                                    <span className="text-sm font-bold text-[#10B981]">{clusterCurrency}{countryAvgPrice.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* List */}
